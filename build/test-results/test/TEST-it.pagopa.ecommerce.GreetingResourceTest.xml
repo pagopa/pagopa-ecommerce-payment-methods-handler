@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="it.pagopa.ecommerce.GreetingResourceTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2025-09-02T15:07:38.908Z" hostname="LUIGIPC" time="1.309">
+  <properties/>
+  <testcase name="testHelloEndpoint()" classname="it.pagopa.ecommerce.GreetingResourceTest" time="1.309"/>
+  <system-out><![CDATA[2025-09-02 17:07:38,888 INFO  [io.quarkus] (Test worker) pagopa-ecommerce-payment-methods-handler-service 1.0.0-SNAPSHOT on JVM (powered by Quarkus 3.26.1) started in 3.824s. Listening on: http://localhost:8081
+2025-09-02 17:07:38,889 INFO  [io.quarkus] (Test worker) Profile test activated. 
+2025-09-02 17:07:38,890 INFO  [io.quarkus] (Test worker) Installed features: [cdi, resteasy, resteasy-client, resteasy-client-jackson, resteasy-jackson, resteasy-mutiny, smallrye-context-propagation, vertx]
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
