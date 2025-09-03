@@ -1,4 +1,4 @@
-# pagopa-ecommerce-payment-methods-handler
+# code-with-quarkus
 
 This project uses Quarkus, the Supersonic Subatomic Java Framework.
 
@@ -49,27 +49,18 @@ Or, if you don't have GraalVM installed, you can run the native executable build
 ./gradlew build -Dquarkus.native.enabled=true -Dquarkus.native.container-build=true
 ```
 
-You can then execute your native executable with: `./build/pagopa-ecommerce-payment-methods-handler-1.0.0-SNAPSHOT-runner`
+You can then execute your native executable with: `./build/code-with-quarkus-1.0.0-SNAPSHOT-runner`
 
 If you want to learn more about building native executables, please consult <https://quarkus.io/guides/gradle-tooling>.
 
 ## Related Guides
 
-- RESTEasy Classic's REST Client ([guide](https://quarkus.io/guides/resteasy-client)): Call REST services
-- RESTEasy Classic Mutiny ([guide](https://quarkus.io/guides/resteasy#reactive)): Mutiny support for RESTEasy Classic server
-- RESTEasy Classic ([guide](https://quarkus.io/guides/resteasy)): REST endpoint framework implementing Jakarta REST and more
-- RESTEasy Classic's REST Client Jackson ([guide](https://quarkus.io/guides/resteasy-client)): Jackson serialization support for the REST Client
+- REST Jackson ([guide](https://quarkus.io/guides/rest#json-serialisation)): Jackson serialization support for Quarkus REST. This extension is not compatible with the quarkus-resteasy extension, or any of the extensions that depend on it
 
 ## Provided Code
 
-### RESTEasy Client
+### REST
 
-Invoke different services through REST with JSON
+Easily start your REST Web Services
 
-[Related guide section...](https://quarkus.io/guides/resteasy-client)
-
-### RESTEasy JAX-RS
-
-Easily start your RESTful Web Services
-
-[Related guide section...](https://quarkus.io/guides/getting-started#the-jax-rs-resources)
+[Related guide section...](https://quarkus.io/guides/getting-started-reactive#reactive-jax-rs-resources)
