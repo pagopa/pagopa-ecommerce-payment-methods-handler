@@ -1,0 +1,84 @@
+microservice-chart:
+  namespace: "ecommerce"
+  nameOverride: ""
+  fullnameOverride: "pagopa-ecommerce-payment-methods-handler"
+  image:
+    repository: pagopaucommonacr.azurecr.io/pagopaecommercepaymentmethodshandler
+    tag: "0.0.1"
+    pullPolicy: Always
+  livenessProbe:
+    handlerType: httpGet
+    httpGet:
+      path: /actuator/health/liveness
+      port: 8080
+    initialDelaySeconds: 10
+    failureThreshold: 6
+    periodSeconds: 10
+  readinessProbe:
+    handlerType: httpGet
+    httpGet:
+      path: /actuator/health/readiness
+      port: 8080
+    initialDelaySeconds: 10
+    failureThreshold: 6
+    periodSeconds: 10
+  deployment:
+    create: true
+  service:
+    create: true
+    type: ClusterIP
+    ports:
+      - 8080
+  ingress:
+    create: true
+    host: "weuuat.ecommerce.internal.uat.platform.pagopa.it"
+    path: /pagopa-ecommerce-payment-methods-handler/(.*)
+    servicePort: 8080
+  serviceAccount:
+    name: "ecommerce-workload-identity"
+  podAnnotations: {}
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - all
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "150m"
+    limits:
+      memory: "256Mi"
+      cpu: "150m"
+  autoscaling:
+    enable: false
+    minReplica: 1
+    maxReplica: 1
+    pollingInterval: 10 # seconds
+    cooldownPeriod: 50 # seconds
+    triggers:
+      - type: cpu
+        metadata:
+          # Required
+          type: Utilization # Allowed types are 'Utilization' or 'AverageValue'
+          value: "75"
+  envConfig:
+    ROOT_LOGGING_LEVEL: "info"
+  nodeSelector: {}
+  tolerations: []
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: node_type
+                operator: In
+                values:
+                  - user
+  secretProviderClass:
+    create: false
+  azure:
+    workloadIdentityClientId: "449c5b65-f368-487a-881a-b03676420c53"

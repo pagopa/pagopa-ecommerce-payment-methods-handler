@@ -1,0 +1,52 @@
+## Stage 1 : Build the application with a full JDK and Gradle
+FROM quay.io/quarkus/ubi9-quarkus-mandrel-builder-image:jdk-21 AS build
+
+# Copy build files and set ownership to the quarkus user
+COPY --chown=quarkus:quarkus gradlew /code/gradlew
+COPY --chown=quarkus:quarkus gradle /code/gradle
+COPY --chown=quarkus:quarkus build.gradle.kts /code/
+COPY --chown=quarkus:quarkus settings.gradle.kts /code/
+COPY --chown=quarkus:quarkus gradle.properties /code/
+
+# Change to the application directory
+WORKDIR /code
+
+# Copy application source code with correct ownership
+COPY --chown=quarkus:quarkus src /code/src
+
+# Grant execute permission to the gradlew script
+RUN chmod +x ./gradlew
+
+# Build the fast-jar. This is the standard command for a JVM build.
+# This does NOT build a native image.
+RUN ./gradlew build
+
+## Stage 2 : Create the final, minimal image with just the JRE
+FROM eclipse-temurin:21-jre-jammy
+
+# Define user and group for security
+ENV RUN_USER=quarkus \
+    RUN_GROUP=quarkus \
+    RUN_UID=1001 \
+    RUN_GID=1001
+
+# Create the user and group
+RUN groupadd -g ${RUN_GID} ${RUN_GROUP} && \
+    useradd -u ${RUN_UID} -g ${RUN_GROUP} -m -s /bin/bash ${RUN_USER}
+
+# Set the working directory
+WORKDIR /work/
+
+# Copy the built application artifacts from the 'build' stage
+# This copies the libs, the app jar, and the quarkus loader.
+COPY --from=build --chown=${RUN_USER}:${RUN_GROUP} /code/build/quarkus-app/ .
+
+# Switch to the non-root user
+USER ${RUN_USER}
+
+# Expose the application port
+EXPOSE 8080
+
+# Define the command to run the application
+# This uses the fast-jar runner for optimized startup.
+CMD ["java", "-jar", "quarkus-run.jar"]
