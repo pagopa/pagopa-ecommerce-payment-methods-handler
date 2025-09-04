@@ -12,18 +12,12 @@ class ApiKeyFilterTest {
 
     @Test
     fun testWithoutApiKeyShouldReturnUnauthorized() {
-        RestAssured
-            .given()
-            .`when`()
-            .get(securedPath)
-            .then()
-            .statusCode(401)
+        RestAssured.given().`when`().get(securedPath).then().statusCode(401)
     }
 
     @Test
     fun testWithValidPrimaryApiKeyShouldReturnOk() {
-        RestAssured
-            .given()
+        RestAssured.given()
             .header("x-api-key", "test-primary")
             .`when`()
             .get(securedPath)
@@ -33,8 +27,7 @@ class ApiKeyFilterTest {
 
     @Test
     fun testWithInvalidApiKeyShouldReturnUnauthorized() {
-        RestAssured
-            .given()
+        RestAssured.given()
             .header("x-api-key", "invalid-key")
             .`when`()
             .get(securedPath)
@@ -44,8 +37,7 @@ class ApiKeyFilterTest {
 
     @Test
     fun testWithValidSecondaryApiKeyShouldReturnOk() {
-        RestAssured
-            .given()
+        RestAssured.given()
             .header("x-api-key", "test-secondary")
             .`when`()
             .get(securedPath)

@@ -13,14 +13,11 @@ class ApiKeyFilter {
         private val LOG: Logger = Logger.getLogger(ApiKeyFilter::class.java)
     }
 
-    @ConfigProperty(name = "security.apiKey.primary")
-    lateinit var primaryApiKey: String
+    @ConfigProperty(name = "security.apiKey.primary") lateinit var primaryApiKey: String
 
-    @ConfigProperty(name = "security.apiKey.secondary")
-    lateinit var secondaryApiKey: String
+    @ConfigProperty(name = "security.apiKey.secondary") lateinit var secondaryApiKey: String
 
-    @ConfigProperty(name = "security.apiKey.securedPaths")
-    lateinit var securedPaths: List<String>
+    @ConfigProperty(name = "security.apiKey.securedPaths") lateinit var securedPaths: List<String>
 
     private val validApiKeys: Set<String>
         get() = setOf(primaryApiKey, secondaryApiKey)
@@ -49,11 +46,12 @@ class ApiKeyFilter {
     }
 
     private fun logWhichApiKey(apiKey: String?, path: String) {
-        val apiKeyType = when (apiKey) {
-            primaryApiKey -> "primary"
-            secondaryApiKey -> "secondary"
-            else -> "unknown"
-        }
+        val apiKeyType =
+            when (apiKey) {
+                primaryApiKey -> "primary"
+                secondaryApiKey -> "secondary"
+                else -> "unknown"
+            }
         LOG.debugf("API key type used for path %s: %s", path, apiKeyType)
     }
 }

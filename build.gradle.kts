@@ -1,6 +1,6 @@
 plugins {
-kotlin("jvm") version "2.2.10"
-kotlin("plugin.allopen") version "2.2.10"
+  kotlin("jvm") version "2.2.10"
+  kotlin("plugin.allopen") version "2.2.10"
   id("io.quarkus")
   id("org.sonarqube") version "6.0.1.5171"
   id("com.diffplug.spotless") version "7.0.2"
@@ -18,15 +18,15 @@ val quarkusPlatformVersion: String by project
 
 dependencies {
   implementation("io.quarkus:quarkus-jacoco")
-    implementation(kotlin("stdlib-jdk8"))
+  implementation(kotlin("stdlib-jdk8"))
   implementation(
     enforcedPlatform(
       "${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}"
     )
   )
-    implementation("io.quarkus:quarkus-kotlin")
-    implementation("io.quarkus:quarkus-rest")
-    implementation("io.quarkus:quarkus-rest-jackson")
+  implementation("io.quarkus:quarkus-kotlin")
+  implementation("io.quarkus:quarkus-rest")
+  implementation("io.quarkus:quarkus-rest-jackson")
   implementation("io.quarkus:quarkus-resteasy-client")
   implementation("io.quarkus:quarkus-resteasy-client-jackson")
   implementation("io.quarkus:quarkus-arc")
@@ -34,14 +34,14 @@ dependencies {
   implementation("io.quarkus:quarkus-opentelemetry")
   implementation("io.quarkus:quarkus-logging-json")
   testImplementation("io.quarkus:quarkus-junit5")
-    testImplementation("io.quarkus:quarkus-junit5-mockito")
-    testImplementation(kotlin("test"))
+  testImplementation("io.quarkus:quarkus-junit5-mockito")
+  testImplementation(kotlin("test"))
   testImplementation("io.rest-assured:rest-assured")
-    testImplementation("org.mockito:mockito-core:5.19.0")
-    testImplementation("org.mockito:mockito-junit-jupiter:5.19.0")
-    testImplementation("org.mockito.kotlin:mockito-kotlin:5.1.0")
-    testImplementation("io.quarkus:quarkus-junit5-mockito")
-    implementation("io.quarkus:quarkus-vertx-web:2.16.12.Final")
+  testImplementation("org.mockito:mockito-core:5.19.0")
+  testImplementation("org.mockito:mockito-junit-jupiter:5.19.0")
+  testImplementation("org.mockito.kotlin:mockito-kotlin:5.1.0")
+  testImplementation("io.quarkus:quarkus-junit5-mockito")
+  implementation("io.quarkus:quarkus-vertx-web:2.16.12.Final")
 }
 
 group = "it.pagopa.ecommerce"
@@ -54,10 +54,12 @@ java {
 }
 
 allOpen {
-    annotation("jakarta.ws.rs.Path")
-    annotation("jakarta.enterprise.context.ApplicationScoped")
-    annotation("jakarta.persistence.Entity")
-    annotation("io.quarkus.test.junit.QuarkusTest")
+  annotation("jakarta.ws.rs.Path")
+  annotation("jakarta.enterprise.context.ApplicationScoped")
+  annotation("jakarta.persistence.Entity")
+  annotation("io.quarkus.test.junit.QuarkusTest")
+}
+
 tasks.withType<Test> {
   systemProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager")
 }
@@ -65,12 +67,13 @@ tasks.withType<Test> {
 tasks.withType<JavaCompile> {
   options.encoding = "UTF-8"
   options.compilerArgs.add("-parameters")
+}
 
 kotlin {
-    compilerOptions {
-        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21
-        javaParameters = true
-    }
+  compilerOptions {
+    jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21
+    javaParameters = true
+  }
 }
 
 tasks
