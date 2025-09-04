@@ -27,8 +27,8 @@ dependencies {
   implementation("io.quarkus:quarkus-kotlin")
   implementation("io.quarkus:quarkus-rest")
   implementation("io.quarkus:quarkus-rest-jackson")
-  implementation("io.quarkus:quarkus-resteasy-client")
-  implementation("io.quarkus:quarkus-resteasy-client-jackson")
+  implementation("io.quarkus:quarkus-rest-client")
+  implementation("io.quarkus:quarkus-rest-client-jackson")
   implementation("io.quarkus:quarkus-arc")
   implementation("io.quarkus:quarkus-smallrye-health")
   implementation("io.quarkus:quarkus-opentelemetry")
@@ -56,8 +56,6 @@ java {
 allOpen {
   annotation("jakarta.ws.rs.Path")
   annotation("jakarta.enterprise.context.ApplicationScoped")
-  annotation("jakarta.persistence.Entity")
-  annotation("io.quarkus.test.junit.QuarkusTest")
 }
 
 tasks.withType<Test> {
