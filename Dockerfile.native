@@ -1,0 +1,35 @@
+## Stage 1 : build with Gradle builder image with native capabilities
+FROM quay.io/quarkus/ubi9-quarkus-mandrel-builder-image:jdk-21 AS build
+USER root
+RUN microdnf install findutils -y
+COPY --chown=quarkus:quarkus gradlew /code/gradlew
+COPY --chown=quarkus:quarkus gradle /code/gradle
+COPY --chown=quarkus:quarkus build.gradle.kts /code/
+COPY --chown=quarkus:quarkus settings.gradle.kts /code/
+COPY --chown=quarkus:quarkus gradle.properties /code/
+USER quarkus
+WORKDIR /code
+COPY src /code/src
+RUN ./gradlew build -Dquarkus.native.enabled=true -Dquarkus.package.jar.enabled=false
+
+## Stage 2 : create the docker final image
+FROM eclipse-temurin:21-jre-jammy
+
+# Define user and group for security
+ENV RUN_USER=quarkus \
+    RUN_GROUP=quarkus \
+    RUN_UID=1001 \
+    RUN_GID=1001
+
+# Create the user and group
+RUN groupadd -g ${RUN_GID} ${RUN_GROUP} && \
+    useradd -u ${RUN_UID} -g ${RUN_GROUP} -m -s /bin/bash ${RUN_USER}
+
+WORKDIR /work/
+COPY --from=build --chown=${RUN_USER}:${RUN_GROUP} /code/build/*-runner /work/application
+
+# Switch to the non-root user
+USER ${RUN_USER}
+
+EXPOSE 8080
+CMD ["./application", "-Dquarkus.http.host=0.0.0.0"]
