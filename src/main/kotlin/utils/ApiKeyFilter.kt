@@ -1,13 +1,14 @@
 package utils
 
-import io.quarkus.vertx.web.RouteFilter
-import io.vertx.ext.web.RoutingContext
-import jakarta.enterprise.context.ApplicationScoped
+import jakarta.ws.rs.container.ContainerRequestContext
+import jakarta.ws.rs.container.ContainerRequestFilter
+import jakarta.ws.rs.core.Response
+import jakarta.ws.rs.ext.Provider
 import org.eclipse.microprofile.config.inject.ConfigProperty
 import org.jboss.logging.Logger
 
-@ApplicationScoped
-class ApiKeyFilter {
+@Provider
+class ApiKeyFilter : ContainerRequestFilter {
 
     companion object {
         private val LOG: Logger = Logger.getLogger(ApiKeyFilter::class.java)
@@ -22,23 +23,20 @@ class ApiKeyFilter {
     private val validApiKeys: Set<String>
         get() = setOf(primaryApiKey, secondaryApiKey)
 
-    @RouteFilter
-    fun filter(ctx: RoutingContext) {
-        val path = ctx.request().path()
+    override fun filter(ctx: ContainerRequestContext) {
+        val path = ctx.uriInfo.path
 
         if (securedPaths.any { path.startsWith(it) }) {
-            val apiKey = ctx.request().getHeader("x-api-key")
+            val apiKey = ctx.getHeaderString("x-api-key")
 
             if (!isValidApiKey(apiKey)) {
                 LOG.errorf("Unauthorized request for path %s - Missing or invalid API key", path)
-                ctx.response().setStatusCode(401).end()
+                ctx.abortWith(Response.status(Response.Status.UNAUTHORIZED).build())
                 return
             }
 
             logWhichApiKey(apiKey, path)
         }
-
-        ctx.next()
     }
 
     private fun isValidApiKey(apiKey: String?): Boolean {
