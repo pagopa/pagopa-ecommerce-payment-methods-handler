@@ -23,6 +23,7 @@ dependencies {
     implementation("io.quarkus:quarkus-arc")
     testImplementation("io.quarkus:quarkus-junit5")
     testImplementation("io.rest-assured:rest-assured")
+    implementation("io.quarkus:quarkus-vertx-web:2.16.12.Final")
 }
 
 group = "it.pagopa.ecommerce"
