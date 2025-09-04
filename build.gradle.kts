@@ -1,6 +1,7 @@
 plugins {
     java
     id("io.quarkus")
+    id("org.sonarqube") version "6.0.1.5171"
 }
 
 repositories {
@@ -21,12 +22,13 @@ dependencies {
     implementation("io.quarkus:quarkus-resteasy-jackson")
     implementation("io.quarkus:quarkus-resteasy-client-jackson")
     implementation("io.quarkus:quarkus-arc")
+    implementation("io.quarkus:quarkus-smallrye-health")
     testImplementation("io.quarkus:quarkus-junit5")
     testImplementation("io.rest-assured:rest-assured")
 }
 
 group = "it.pagopa.ecommerce"
-version = "1.0.0-SNAPSHOT"
+version = "0.0.1-SNAPSHOT"
 
 java {
     sourceCompatibility = JavaVersion.VERSION_21
