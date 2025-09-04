@@ -1,14 +1,14 @@
 package utils
 
 import jakarta.ws.rs.container.ContainerRequestContext
-import jakarta.ws.rs.container.ContainerRequestFilter
 import jakarta.ws.rs.core.Response
 import jakarta.ws.rs.ext.Provider
 import org.eclipse.microprofile.config.inject.ConfigProperty
 import org.jboss.logging.Logger
+import org.jboss.resteasy.reactive.server.ServerRequestFilter
 
 @Provider
-class ApiKeyFilter : ContainerRequestFilter {
+class ApiKeyFilter {
 
     companion object {
         private val LOG: Logger = Logger.getLogger(ApiKeyFilter::class.java)
@@ -23,7 +23,8 @@ class ApiKeyFilter : ContainerRequestFilter {
     private val validApiKeys: Set<String>
         get() = setOf(primaryApiKey, secondaryApiKey)
 
-    override fun filter(ctx: ContainerRequestContext) {
+    @ServerRequestFilter
+    fun filter(ctx: ContainerRequestContext): Response? {
         val path = ctx.uriInfo.path
 
         if (securedPaths.any { path.startsWith(it) }) {
@@ -31,12 +32,13 @@ class ApiKeyFilter : ContainerRequestFilter {
 
             if (!isValidApiKey(apiKey)) {
                 LOG.errorf("Unauthorized request for path %s - Missing or invalid API key", path)
-                ctx.abortWith(Response.status(Response.Status.UNAUTHORIZED).build())
-                return
+
+                return Response.status(Response.Status.UNAUTHORIZED).build()
             }
 
             logWhichApiKey(apiKey, path)
         }
+        return null
     }
 
     private fun isValidApiKey(apiKey: String?): Boolean {
