@@ -77,7 +77,14 @@ microservice-chart:
       maxSurge: 2
       maxUnavailable: 0
   envConfig:
-    ROOT_LOGGING_LEVEL: "info"
+    ROOT_LOG_LEVEL: INFO
+    OTEL_RESOURCE_ATTRIBUTES: "service.name=pagopa-ecommerce-payment-methods-handler,deployment.environment=prod"
+    OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector.elastic-system.svc:4317"
+    OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
+    OTEL_LOGS_EXPORTER: none
+    OTEL_TRACES_SAMPLER: "always_on"
+    ECS_SERVICE_NAME: pagopa-ecommerce-payment-methods-handler
+    ECS_SERVICE_ENVIRONMENT: prod
   nodeSelector: {}
   tolerations: []
   affinity:
