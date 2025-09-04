@@ -1,0 +1,10 @@
+apiVersion: v2
+type: application
+version: 0.0.1
+appVersion: 0.0.1
+name: pagopa-ecommerce-payment-methods-handler
+description: Microservice that handles payment methods, session and fees
+dependencies:
+  - name: microservice-chart
+    repository: "https://pagopa.github.io/aks-microservice-chart-blueprint"
+    version: 7.5.0
