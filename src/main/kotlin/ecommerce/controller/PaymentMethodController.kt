@@ -1,24 +1,22 @@
 package ecommerce.controller
 
-import io.smallrye.mutiny.Uni
 import ecommerce.dto.PaymentMethod
 import ecommerce.services.PaymentMethodService
+import io.smallrye.mutiny.Uni
 import jakarta.inject.Inject
 import jakarta.ws.rs.GET
 import jakarta.ws.rs.Path
 import jakarta.ws.rs.PathParam
+import java.util.concurrent.CompletionStage
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.util.concurrent.CompletionStage
 
 @Path("/payment-method")
 class PaymentMethodController {
 
-    @Inject
-    lateinit var paymentMethodService: PaymentMethodService
+    @Inject lateinit var paymentMethodService: PaymentMethodService
 
     private val logger: Logger = LoggerFactory.getLogger(PaymentMethodController::class.java)
-
 
     @GET
     @Path("/all")

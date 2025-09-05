@@ -1,17 +1,17 @@
 package ecommerce.services
 
-import io.smallrye.mutiny.Uni
 import ecommerce.client.PaymentMethodRestClient
 import ecommerce.dto.PaymentMethod
+import io.smallrye.mutiny.Uni
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Inject
-import org.eclipse.microprofile.rest.client.inject.RestClient
 import java.util.concurrent.CompletionStage
+import org.eclipse.microprofile.rest.client.inject.RestClient
 
 @ApplicationScoped
-class PaymentMethodServiceImpl @Inject constructor(
-    @RestClient private val restClient: PaymentMethodRestClient
-) : PaymentMethodService {
+class PaymentMethodServiceImpl
+@Inject
+constructor(@RestClient private val restClient: PaymentMethodRestClient) : PaymentMethodService {
 
     override fun getAll(): Set<PaymentMethod> {
         return restClient.getAll()

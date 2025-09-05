@@ -2,24 +2,23 @@ package it.pagopa.ecommerce.controller
 
 import ecommerce.controller.PaymentMethodController
 import ecommerce.dto.PaymentMethod
+import ecommerce.dto.Range
 import ecommerce.services.PaymentMethodService
 import io.quarkus.test.InjectMock
 import io.quarkus.test.junit.QuarkusTest
 import io.smallrye.mutiny.Uni
 import jakarta.inject.Inject
-import kotlin.test.*
-import org.mockito.Mockito.`when`
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
+import kotlin.test.*
+import org.mockito.Mockito.`when`
 
 @QuarkusTest
 class PaymentMethodControllerTest {
 
-    @Inject
-    lateinit var controller: PaymentMethodController
+    @Inject lateinit var controller: PaymentMethodController
 
-    @InjectMock
-    lateinit var paymentMethodService: PaymentMethodService
+    @InjectMock lateinit var paymentMethodService: PaymentMethodService
 
     private fun mockPaymentMethod(id: String, name: String): PaymentMethod {
         val method = PaymentMethod()
@@ -28,7 +27,7 @@ class PaymentMethodControllerTest {
         method.paymentMethodDescription = "desc"
         method.paymentMethodStatus = "ACTIVE"
         method.paymentMethodAsset = "asset.png"
-        method.paymentMethodRanges = emptyList()
+        method.paymentMethodRanges = listOf(Range(1, 10), Range(20, 30))
         method.paymentMethodTypeCode = "TYPE1"
         method.clientId = "client123"
         method.methodManagement = "AUTO"
@@ -49,7 +48,8 @@ class PaymentMethodControllerTest {
     @Test
     fun testGetAllPaymentMethodsAsync() {
         val mock = mockPaymentMethod("1", "Card")
-        `when`(paymentMethodService.getAllAsync()).thenReturn(CompletableFuture.completedFuture(mock))
+        `when`(paymentMethodService.getAllAsync())
+            .thenReturn(CompletableFuture.completedFuture(mock))
 
         val result: CompletionStage<PaymentMethod> = controller.getAllPaymentMethodsAsync()
         assertEquals("Card", result.toCompletableFuture().join().paymentMethodName)
@@ -77,7 +77,8 @@ class PaymentMethodControllerTest {
     @Test
     fun testGetPaymentMethodAsync() {
         val mockSet = setOf(mockPaymentMethod("1", "Card"))
-        `when`(paymentMethodService.getByIdAsync("123")).thenReturn(CompletableFuture.completedFuture(mockSet))
+        `when`(paymentMethodService.getByIdAsync("123"))
+            .thenReturn(CompletableFuture.completedFuture(mockSet))
 
         val result: CompletionStage<Set<PaymentMethod>> = controller.getPaymentMethodAsync("123")
         assertEquals(1, result.toCompletableFuture().join().size)
