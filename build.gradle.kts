@@ -42,7 +42,7 @@ dependencies {
 
 group = "it.pagopa.ecommerce"
 
-version = "0.0.1-SNAPSHOT"
+version = "0.0.2-SNAPSHOT"
 
 java {
   sourceCompatibility = JavaVersion.VERSION_21
@@ -51,6 +51,13 @@ java {
 
 tasks.withType<Test> {
   systemProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager")
+}
+
+kotlin {
+  compilerOptions {
+    jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21
+    javaParameters = true
+  }
 }
 
 kotlin {

@@ -1,7 +1,7 @@
 apiVersion: v2
 type: application
-version: 0.0.1
-appVersion: 0.0.1
+version: 0.0.2
+appVersion: 0.0.2
 name: pagopa-ecommerce-payment-methods-handler
 description: Microservice that handles payment methods, session and fees
 dependencies:
