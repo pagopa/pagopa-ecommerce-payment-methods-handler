@@ -5,6 +5,7 @@ plugins {
   id("org.sonarqube") version "6.0.1.5171"
   id("com.diffplug.spotless") version "7.0.2"
   id("com.dipien.semantic-version") version "2.0.0" apply false
+  jacoco
 }
 
 repositories {
@@ -41,7 +42,6 @@ dependencies {
   testImplementation("org.mockito:mockito-junit-jupiter:5.19.0")
   testImplementation("org.mockito.kotlin:mockito-kotlin:5.1.0")
   testImplementation("io.quarkus:quarkus-junit5-mockito")
-  implementation("io.quarkus:quarkus-vertx-web:2.16.12.Final")
 }
 
 group = "it.pagopa.ecommerce"
@@ -51,11 +51,6 @@ version = "0.0.1-SNAPSHOT"
 java {
   sourceCompatibility = JavaVersion.VERSION_21
   targetCompatibility = JavaVersion.VERSION_21
-}
-
-allOpen {
-  annotation("jakarta.ws.rs.Path")
-  annotation("jakarta.enterprise.context.ApplicationScoped")
 }
 
 tasks.withType<Test> {
@@ -77,6 +72,25 @@ kotlin {
 tasks
   .register("applySemanticVersionPlugin") { dependsOn("prepareKotlinBuildScriptModel") }
   .apply { apply(plugin = "com.dipien.semantic-version") }
+
+tasks.jacocoTestReport {
+  dependsOn(tasks.test) // tests are required to run before generating the report
+  classDirectories.setFrom(
+    files(
+      classDirectories.files.map {
+        fileTree(it).matching {
+          exclude("it/pagopa/touchpoint/jwtissuerservice/JwtIssuerServiceApplication.class")
+        }
+      }
+    )
+  )
+  reports { xml.required.set(true) }
+}
+
+tasks.test {
+  useJUnitPlatform()
+  finalizedBy(tasks.jacocoTestReport) // report is always generated after tests run
+}
 
 configure<com.diffplug.gradle.spotless.SpotlessExtension> {
   kotlin {
