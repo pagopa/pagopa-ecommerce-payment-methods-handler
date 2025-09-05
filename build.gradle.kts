@@ -1,5 +1,5 @@
 plugins {
-  kotlin("jvm") version "2.2.10"
+  kotlin("jvm") version "2.1.0"
   id("io.quarkus")
   id("org.sonarqube") version "6.0.1.5171"
   id("com.diffplug.spotless") version "7.0.2"
@@ -7,10 +7,7 @@ plugins {
   jacoco
 }
 
-repositories {
-  mavenCentral()
-  mavenLocal()
-}
+repositories { mavenCentral() }
 
 val quarkusPlatformGroupId: String by project
 val quarkusPlatformArtifactId: String by project
@@ -54,11 +51,6 @@ java {
 
 tasks.withType<Test> {
   systemProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager")
-}
-
-tasks.withType<JavaCompile> {
-  options.encoding = "UTF-8"
-  options.compilerArgs.add("-parameters")
 }
 
 kotlin {
