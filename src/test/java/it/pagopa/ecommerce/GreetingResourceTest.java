@@ -11,6 +11,7 @@ class GreetingResourceTest {
     @Test
     void testHelloEndpoint() {
         given()
+                .header("x-api-key", "test-primary")
                 .when().get("/hello")
                 .then()
                 .statusCode(200)
