@@ -1,0 +1,57 @@
+openapi: 3.1.0
+info:
+  title: PaymentMethod API
+  version: 1.0.0
+servers:
+  - url: /payment-method
+paths:
+  /:
+    get:
+      summary: Get all payment methods
+      operationId: getAll
+      responses:
+        '200':
+          description: List of payment methods
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PaymentMethod'
+  /by-id:
+    get:
+      summary: Get payment methods by ID
+      operationId: getById
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of payment methods filtered by ID
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PaymentMethod'
+components:
+  schemas:
+    PaymentMethod:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "pm_123456"
+        name:
+          type: string
+          example: "Credit Card"
+        type:
+          type: string
+          example: "CARD"
+      required:
+        - id
+        - name
+        - type
