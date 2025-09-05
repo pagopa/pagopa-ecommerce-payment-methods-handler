@@ -2,12 +2,10 @@ package utils
 
 import jakarta.ws.rs.container.ContainerRequestContext
 import jakarta.ws.rs.core.Response
-import jakarta.ws.rs.ext.Provider
 import org.eclipse.microprofile.config.inject.ConfigProperty
 import org.jboss.logging.Logger
 import org.jboss.resteasy.reactive.server.ServerRequestFilter
 
-@Provider
 class ApiKeyFilter {
 
     companion object {
