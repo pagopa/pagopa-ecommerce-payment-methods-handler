@@ -4,6 +4,7 @@ plugins {
   id("org.sonarqube") version "6.0.1.5171"
   id("com.diffplug.spotless") version "7.0.2"
   id("com.dipien.semantic-version") version "2.0.0" apply false
+  id("org.openapi.generator") version "7.15.0"
   jacoco
 }
 
@@ -33,6 +34,8 @@ dependencies {
   implementation("io.quarkus:quarkus-smallrye-health")
   implementation("io.quarkus:quarkus-opentelemetry")
   implementation("io.quarkus:quarkus-logging-json")
+  implementation("io.quarkus:quarkus-hibernate-validator")
+  implementation("io.quarkus:quarkus-smallrye-openapi")
   testImplementation("io.quarkus:quarkus-junit5")
   testImplementation("io.quarkus:quarkus-junit5-mockito")
   testImplementation(kotlin("test"))
@@ -67,6 +70,39 @@ kotlin {
     javaParameters = true
   }
 }
+
+openApiGenerate {
+  generatorName.set("jaxrs-spec")
+  inputSpec.set(layout.projectDirectory.file("api-spec/v1/api.yaml").asFile.absolutePath)
+  outputDir.set(layout.buildDirectory.dir("generated").get().asFile.absolutePath)
+
+  apiPackage.set("it.pagopa.ecommerce.payment.methods.v1.server.api")
+  modelPackage.set("it.pagopa.ecommerce.payment.methods.v1.server.model")
+
+  configOptions.set(
+    mapOf(
+      "interfaceOnly" to "true",
+      "openApiNullable" to "true",
+      "hideGenerationTimestamp" to "true",
+      "skipDefaultInterface" to "true",
+      "useSwaggerUI" to "false",
+      "dateLibrary" to "java8",
+      "useJakartaEe" to "true",
+      "useBeanValidation" to "true",
+      "oas3" to "true",
+      "useSwaggerAnnotations" to "false",
+      "generateSupportingFiles" to "true",
+    )
+  )
+
+  generateApiDocumentation.set(false)
+  generateApiTests.set(false)
+  generateModelTests.set(false)
+}
+
+sourceSets { main { java { srcDir(layout.buildDirectory.dir("generated/src/gen/java")) } } }
+
+tasks.named("compileKotlin") { dependsOn(tasks.named("openApiGenerate")) }
 
 tasks
   .register("applySemanticVersionPlugin") { dependsOn("prepareKotlinBuildScriptModel") }
