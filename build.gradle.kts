@@ -7,10 +7,7 @@ plugins {
   jacoco
 }
 
-repositories {
-  mavenCentral()
-  mavenLocal()
-}
+repositories { mavenCentral() }
 
 val quarkusPlatformGroupId: String by project
 val quarkusPlatformArtifactId: String by project
@@ -56,9 +53,11 @@ tasks.withType<Test> {
   systemProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager")
 }
 
-tasks.withType<JavaCompile> {
-  options.encoding = "UTF-8"
-  options.compilerArgs.add("-parameters")
+kotlin {
+  compilerOptions {
+    jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21
+    javaParameters = true
+  }
 }
 
 kotlin {
