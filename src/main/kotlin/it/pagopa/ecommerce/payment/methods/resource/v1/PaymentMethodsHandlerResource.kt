@@ -1,4 +1,4 @@
-package it.pagopa.ecommerce.payment.methods
+package it.pagopa.ecommerce.payment.methods.resource.v1
 
 import it.pagopa.ecommerce.payment.methods.v1.server.api.PaymentMethodsApi
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
