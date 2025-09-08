@@ -4,7 +4,7 @@ microservice-chart:
   fullnameOverride: "pagopa-ecommerce-payment-methods-handler"
   image:
     repository: pagopaucommonacr.azurecr.io/pagopaecommercepaymentmethodshandler
-    tag: "0.0.1"
+    tag: "0.0.2"
     pullPolicy: Always
   livenessProbe:
     handlerType: httpGet
@@ -66,7 +66,21 @@ microservice-chart:
           type: Utilization # Allowed types are 'Utilization' or 'AverageValue'
           value: "75"
   envConfig:
-    ROOT_LOGGING_LEVEL: "info"
+    ROOT_LOG_LEVEL: INFO
+    OTEL_RESOURCE_ATTRIBUTES: "service.name=pagopa-ecommerce-payment-methods-handler,deployment.environment=uat"
+    OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector.elastic-system.svc:4317"
+    OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
+    OTEL_LOGS_EXPORTER: none
+    OTEL_TRACES_SAMPLER: "always_on"
+    ECS_SERVICE_NAME: pagopa-ecommerce-payment-methods-handler
+    ECS_SERVICE_ENVIRONMENT: uat
+    SECURITY_API_KEY_SECURED_PATHS: "/hello"
+  envSecret:
+    SECURITY_API_KEY_PRIMARY: ecommerce-payment-methods-primary-api-key
+    SECURITY_API_KEY_SECONDARY: ecommerce-payment-methods-secondary-api-key
+  keyvault:
+    name: "pagopa-u-ecommerce-kv"
+    tenantId: "7788edaf-0346-4068-9d79-c868aed15b3d"
   nodeSelector: {}
   tolerations: []
   affinity:
@@ -79,6 +93,6 @@ microservice-chart:
                 values:
                   - user
   secretProviderClass:
-    create: false
+    create: true
   azure:
     workloadIdentityClientId: "449c5b65-f368-487a-881a-b03676420c53"

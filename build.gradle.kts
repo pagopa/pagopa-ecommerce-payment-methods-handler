@@ -1,33 +1,28 @@
 plugins {
   kotlin("jvm") version "2.2.10"
-  kotlin("plugin.allopen") version "2.2.10"
   id("io.quarkus")
   id("org.sonarqube") version "6.0.1.5171"
   id("com.diffplug.spotless") version "7.0.2"
   id("com.dipien.semantic-version") version "2.0.0" apply false
+  jacoco
 }
 
 repositories {
   mavenCentral()
   mavenLocal()
+}
+
+sourceSets {
+  named("main") { java { srcDir("build/classes/java/quarkus-generated-sources/open-api") } }
 }
 
 val quarkusPlatformGroupId: String by project
 val quarkusPlatformArtifactId: String by project
 val quarkusPlatformVersion: String by project
 
-group = "it.pagopa.ecommerce"
-
-version = "1.0.0-SNAPSHOT"
-
-repositories {
-  mavenLocal()
-  mavenCentral()
-}
-
 dependencies {
+  implementation("io.quarkus:quarkus-jacoco")
   implementation(kotlin("stdlib-jdk8"))
-
   implementation(
     enforcedPlatform(
       "${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}"
@@ -41,6 +36,8 @@ dependencies {
   implementation("io.quarkus:quarkus-rest-client-jackson")
   implementation("io.quarkus:quarkus-arc")
   implementation("io.quarkus:quarkus-smallrye-health")
+  implementation("io.quarkus:quarkus-opentelemetry")
+  implementation("io.quarkus:quarkus-logging-json")
   testImplementation("io.quarkus:quarkus-junit5")
   testImplementation("io.quarkus:quarkus-junit5-mockito")
   implementation("io.quarkus:quarkus-rest-client-reactive-jackson:3.15.6.2")
@@ -50,27 +47,58 @@ dependencies {
   testImplementation("org.mockito:mockito-junit-jupiter:5.19.0")
   testImplementation("org.mockito.kotlin:mockito-kotlin:5.1.0")
   testImplementation("io.quarkus:quarkus-junit5-mockito")
+  testImplementation("com.github.tomakehurst:wiremock-jre8:3.0.1")
 }
 
 group = "it.pagopa.ecommerce"
 
-version = "0.0.1-SNAPSHOT"
+version = "0.0.2-SNAPSHOT"
 
 java {
   sourceCompatibility = JavaVersion.VERSION_21
   targetCompatibility = JavaVersion.VERSION_21
 }
 
-allOpen {
-  annotation("jakarta.ws.rs.Path")
-  annotation("jakarta.enterprise.context.ApplicationScoped")
-  annotation("jakarta.persistence.Entity")
-  annotation("io.quarkus.test.junit.QuarkusTest")
+tasks.withType<Test> {
+  systemProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager")
+}
+
+tasks.withType<JavaCompile> {
+  options.encoding = "UTF-8"
+  options.compilerArgs.add("-parameters")
+}
+
+kotlin {
+  compilerOptions {
+    jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21
+    javaParameters = true
+  }
 }
 
 tasks
   .register("applySemanticVersionPlugin") { dependsOn("prepareKotlinBuildScriptModel") }
   .apply { apply(plugin = "com.dipien.semantic-version") }
+
+tasks.jacocoTestReport {
+  dependsOn(tasks.test) // tests are required to run before generating the report
+  classDirectories.setFrom(
+    files(
+      classDirectories.files.map {
+        fileTree(it).matching {
+          exclude("it/pagopa/touchpoint/jwtissuerservice/JwtIssuerServiceApplication.class")
+        }
+      }
+    )
+  )
+  reports { xml.required.set(true) }
+}
+
+tasks.test {
+  useJUnitPlatform()
+  finalizedBy(tasks.jacocoTestReport) // report is always generated after tests run
+}
+
+tasks.named("compileJava") { dependsOn("quarkusGenerateCode") }
 
 configure<com.diffplug.gradle.spotless.SpotlessExtension> {
   kotlin {

@@ -43,9 +43,52 @@ app.get('/payment-method/:id', (req, res) => {
     res.json(data);
 });
 
+app.post('/payment-methods/search', (req, res) => {
+    const request = req.body;
+    const xRequestId = req.headers['x-request-id'];
+
+    console.log(`Richiesta ricevuta con X-Request-Id: ${xRequestId}`);
+    console.log('Body:', request);
+
+
+    const response = {
+        paymentMethods: [
+            {
+                paymentMethodId: "pm-001",
+                name: {
+                    it: "Carta di credito",
+                    en: "Credit Card"
+                },
+                description: {
+                    it: "Pagamento con carta di credito",
+                    en: "Pay with credit card"
+                },
+                status: "ENABLED",
+                validityDateFrom: "2025-01-01",
+                group: "CP",
+                paymentMethodTypes: ["CARTE"],
+                paymentMethodAsset: "asset.png",
+                methodManagement: "ONBOARDABLE",
+                disabledReason: null,
+                paymentMethodsBrandAssets: {
+                    VISA: "visa.png",
+                    MC: "mc.png"
+                },
+                metadata: {
+                    priority: "high"
+                }
+            }
+        ]
+    };
+
+    res.json(response);
+});
 
 
 
 app.listen(port, () => {
     console.log(`Server PaymentMethod mock in ascolto su http://localhost:${port}`);
 });
+
+
+

@@ -1,85 +1,120 @@
-package it.pagopa.ecommerce.services
+package ecommerce.client
 
-import ecommerce.client.PaymentMethodRestClient
-import ecommerce.dto.PaymentMethod
+import ecommerce.exception.PaymentMethodsClientException
 import ecommerce.services.PaymentMethodServiceImpl
+import io.quarkus.test.junit.QuarkusTest
 import io.smallrye.mutiny.Uni
-import java.util.concurrent.CompletableFuture
-import kotlin.test.assertEquals
+import it.pagopa.generated.ecommerce.client.api.PaymentMethodsApi
+import it.pagopa.generated.ecommerce.client.model.PaymentMethodRequestDto
+import it.pagopa.generated.ecommerce.client.model.PaymentMethodsItemDto
+import it.pagopa.generated.ecommerce.client.model.PaymentMethodsResponseDto
+import java.time.LocalDate
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.mockito.Mockito
-import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
-class PaymentMethodServiceImplTest {
+@QuarkusTest
+class PaymentMethodsClientTest {
 
-    private val restClient = mock<PaymentMethodRestClient>()
-    private val service = PaymentMethodServiceImpl(restClient)
+    private val mockClient = Mockito.mock(PaymentMethodsClient::class.java)
+    private val service = PaymentMethodServiceImpl(mockClient)
+
+    private val mockApi = Mockito.mock(PaymentMethodsApi::class.java)
+    private val client = PaymentMethodsClient(mockApi)
 
     @Test
-    fun `getAll should return mocked payment methods`() {
-        val expected = setOf(PaymentMethod().apply { paymentMethodID = "1" })
-        Mockito.reset(restClient)
-        whenever(restClient.getAll()).thenReturn(expected)
+    fun `should return response from PaymentMethodsApi`() {
+        val requestDto =
+            PaymentMethodRequestDto().apply {
+                userTouchpoint = PaymentMethodRequestDto.UserTouchpointEnum.CHECKOUT
+                userDevice = PaymentMethodRequestDto.UserDeviceEnum.WEB
+                bin = "457865"
+                totalAmount = 2500
+                allCCp = true
+                targetKey = "TAX_2025_RENDE"
+            }
 
-        val result = service.getAll()
+        val expectedResponse =
+            PaymentMethodsResponseDto().apply {
+                paymentMethods =
+                    listOf(
+                        PaymentMethodsItemDto().apply {
+                            paymentMethodId = "card_visa"
+                            name = mapOf("it" to "Carta Visa")
+                            status = PaymentMethodsItemDto.StatusEnum.ENABLED
+                            validityDateFrom = LocalDate.of(2025, 1, 1)
+                            group = PaymentMethodsItemDto.GroupEnum.CP
+                            paymentMethodTypes =
+                                listOf(PaymentMethodsItemDto.PaymentMethodTypesEnum.CARTE)
+                            methodManagement =
+                                PaymentMethodsItemDto.MethodManagementEnum.ONBOARDABLE
+                        }
+                    )
+            }
 
-        assertEquals(expected, result)
+        whenever(mockApi.searchPaymentMethods(requestDto, "test-id"))
+            .thenReturn(Uni.createFrom().item(expectedResponse))
+
+        val response = client.searchPaymentMethods(requestDto, "test-id").await().indefinitely()
+
+        assertEquals(1, response.paymentMethods?.size)
+        assertEquals("card_visa", response.paymentMethods?.get(0)?.paymentMethodId)
+        assertEquals("Carta Visa", response.paymentMethods?.get(0)?.name?.get("it"))
     }
 
     @Test
-    fun `getAllAsync should return mocked result`() {
-        val expected = PaymentMethod().apply { paymentMethodID = "10" }
-        Mockito.reset(restClient)
-        whenever(restClient.getAllAsync()).thenReturn(CompletableFuture.completedFuture(expected))
+    fun `should handle failure from PaymentMethodsApi`() {
+        val requestDto = PaymentMethodRequestDto()
+        val simulatedError = RuntimeException("API failure")
 
-        val result = service.getAllAsync().toCompletableFuture().get()
+        whenever(mockApi.searchPaymentMethods(requestDto, "test-id"))
+            .thenReturn(Uni.createFrom().failure(simulatedError))
 
-        assertEquals("10", result.paymentMethodID)
+        val thrown =
+            assertThrows<PaymentMethodsClientException> {
+                client.searchPaymentMethods(requestDto, "test-id").await().indefinitely()
+            }
+
+        assertEquals("Error during the call to PaymentMethodsApi", thrown.message)
+        assertEquals(simulatedError, thrown.cause)
     }
 
     @Test
-    fun `getAllAsUni should return mocked result`() {
-        val expected = PaymentMethod().apply { paymentMethodID = "20" }
-        Mockito.reset(restClient)
-        whenever(restClient.getAllAsUni()).thenReturn(Uni.createFrom().item(expected))
+    fun `should handle unexpected exception in try-catch block`() {
+        val requestDto = PaymentMethodRequestDto()
+        val brokenApi =
+            object : PaymentMethodsApi {
+                override fun searchPaymentMethods(
+                    paymentMethodRequestDto: PaymentMethodRequestDto,
+                    xRequestId: String,
+                ): Uni<PaymentMethodsResponseDto> {
+                    throw IllegalStateException("Errore immediato nel client")
+                }
+            }
 
-        val result = service.getAllAsUni().await().indefinitely()
+        val client = PaymentMethodsClient(brokenApi)
 
-        assertEquals("20", result.paymentMethodID)
+        val thrown =
+            assertThrows<PaymentMethodsClientException> {
+                client.searchPaymentMethods(requestDto, "test-id").await().indefinitely()
+            }
+
+        assertEquals("Unexpected error while calling PaymentMethodsApi", thrown.message)
+        assertEquals("Errore immediato nel client", thrown.cause?.message)
     }
 
     @Test
-    fun `getById should return mocked payment methods`() {
-        val expected = setOf(PaymentMethod().apply { paymentMethodID = "99" })
-        Mockito.reset(restClient)
-        whenever(restClient.getById("99")).thenReturn(expected)
+    fun `should delegate searchPaymentMethods to client`() {
+        val requestDto = PaymentMethodRequestDto()
+        val expectedResponse = PaymentMethodsResponseDto()
 
-        val result = service.getById("99")
+        whenever(mockClient.searchPaymentMethods(requestDto, "test-id"))
+            .thenReturn(Uni.createFrom().item(expectedResponse))
 
-        assertEquals(expected, result)
-    }
+        val result = service.searchPaymentMethods(requestDto, "test-id").await().indefinitely()
 
-    @Test
-    fun `getByIdAsync should return mocked result`() {
-        val expected = setOf(PaymentMethod().apply { paymentMethodID = "42" })
-        Mockito.reset(restClient)
-        whenever(restClient.getByIdAsync("42"))
-            .thenReturn(CompletableFuture.completedFuture(expected))
-
-        val result = service.getByIdAsync("42").toCompletableFuture().get()
-
-        assertEquals("42", result.first().paymentMethodID)
-    }
-
-    @Test
-    fun `getByIdAsUni should return mocked result`() {
-        val expected = setOf(PaymentMethod().apply { paymentMethodID = "77" })
-        Mockito.reset(restClient)
-        whenever(restClient.getByIdAsUni("77")).thenReturn(Uni.createFrom().item(expected))
-
-        val result = service.getByIdAsUni("77").await().indefinitely()
-
-        assertEquals("77", result.first().paymentMethodID)
+        assertEquals(expectedResponse, result)
     }
 }
