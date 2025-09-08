@@ -92,6 +92,7 @@ openApiGenerate {
       "oas3" to "true",
       "useSwaggerAnnotations" to "false",
       "generateSupportingFiles" to "true",
+      "supportAsync" to "true",
     )
   )
 
