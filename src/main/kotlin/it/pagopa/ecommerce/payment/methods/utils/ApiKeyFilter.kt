@@ -1,4 +1,4 @@
-package utils
+package it.pagopa.ecommerce.payment.methods.utils
 
 import jakarta.ws.rs.container.ContainerRequestContext
 import jakarta.ws.rs.core.Response
