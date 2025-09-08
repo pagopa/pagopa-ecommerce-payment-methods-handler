@@ -9,9 +9,9 @@ import java.util.concurrent.CompletionStage
 
 class PaymentMethodsHandlerResource : PaymentMethodsApi {
     override fun getAllPaymentMethods(
-        xClientId: @NotNull String?,
-        amount: BigDecimal?,
-    ): CompletionStage<PaymentMethodsResponse?>? {
-        return CompletableFuture.completedFuture<PaymentMethodsResponse>(PaymentMethodsResponse())
+        xClientId: @NotNull String,
+        amount: BigDecimal,
+    ): CompletionStage<PaymentMethodsResponse> {
+        return CompletableFuture.completedFuture(PaymentMethodsResponse())
     }
 }
