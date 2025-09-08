@@ -1,7 +1,7 @@
-package ecommerce.services
+package it.pagopa.ecommerce.payment.methods.services
 
-import ecommerce.client.PaymentMethodsClient
 import io.smallrye.mutiny.Uni
+import it.pagopa.ecommerce.payment.methods.client.PaymentMethodsClient
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodRequestDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodsResponseDto
 import jakarta.enterprise.context.ApplicationScoped

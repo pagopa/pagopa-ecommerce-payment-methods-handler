@@ -108,7 +108,18 @@ openApiGenerate {
   generateModelTests.set(false)
 }
 
-sourceSets { main { java { srcDir(layout.buildDirectory.dir("generated/src/gen/java")) } } }
+sourceSets {
+  main {
+    java {
+      srcDir(layout.buildDirectory.dir("generated/src/gen/java"))
+      srcDir("build/classes/java/quarkus-generated-sources/open-api")
+    }
+  }
+}
+
+sourceSets {
+  named("main") { java { srcDir("build/classes/java/quarkus-generated-sources/open-api") } }
+}
 
 tasks.named("compileKotlin") { dependsOn(tasks.named("openApiGenerate")) }
 

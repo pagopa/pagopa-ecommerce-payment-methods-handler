@@ -1,4 +1,4 @@
-package ecommerce.exception
+package it.pagopa.ecommerce.payment.methods.exception
 
 class PaymentMethodsClientException : RuntimeException {
 

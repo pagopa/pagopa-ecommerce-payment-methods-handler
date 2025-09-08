@@ -1,4 +1,4 @@
-package ecommerce.services
+package it.pagopa.ecommerce.payment.methods.services
 
 import io.smallrye.mutiny.Uni
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodRequestDto

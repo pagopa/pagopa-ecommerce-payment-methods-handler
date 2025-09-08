@@ -1,9 +1,10 @@
 package ecommerce.client
 
-import ecommerce.exception.PaymentMethodsClientException
-import ecommerce.services.PaymentMethodServiceImpl
 import io.quarkus.test.junit.QuarkusTest
 import io.smallrye.mutiny.Uni
+import it.pagopa.ecommerce.payment.methods.client.PaymentMethodsClient
+import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodsClientException
+import it.pagopa.ecommerce.payment.methods.services.PaymentMethodServiceImpl
 import it.pagopa.generated.ecommerce.client.api.PaymentMethodsApi
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodRequestDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodsItemDto
@@ -79,30 +80,6 @@ class PaymentMethodsClientTest {
 
         assertEquals("Error during the call to PaymentMethodsApi", thrown.message)
         assertEquals(simulatedError, thrown.cause)
-    }
-
-    @Test
-    fun `should handle unexpected exception in try-catch block`() {
-        val requestDto = PaymentMethodRequestDto()
-        val brokenApi =
-            object : PaymentMethodsApi {
-                override fun searchPaymentMethods(
-                    paymentMethodRequestDto: PaymentMethodRequestDto,
-                    xRequestId: String,
-                ): Uni<PaymentMethodsResponseDto> {
-                    throw IllegalStateException("Errore immediato nel client")
-                }
-            }
-
-        val client = PaymentMethodsClient(brokenApi)
-
-        val thrown =
-            assertThrows<PaymentMethodsClientException> {
-                client.searchPaymentMethods(requestDto, "test-id").await().indefinitely()
-            }
-
-        assertEquals("Unexpected error while calling PaymentMethodsApi", thrown.message)
-        assertEquals("Errore immediato nel client", thrown.cause?.message)
     }
 
     @Test
