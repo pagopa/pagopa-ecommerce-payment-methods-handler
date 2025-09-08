@@ -111,15 +111,6 @@ tasks
 
 tasks.jacocoTestReport {
   dependsOn(tasks.test) // tests are required to run before generating the report
-  classDirectories.setFrom(
-    files(
-      classDirectories.files.map {
-        fileTree(it).matching {
-          exclude("it/pagopa/touchpoint/jwtissuerservice/JwtIssuerServiceApplication.class")
-        }
-      }
-    )
-  )
   reports { xml.required.set(true) }
 }
 
