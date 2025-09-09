@@ -34,6 +34,7 @@ dependencies {
   implementation("io.quarkus:quarkus-smallrye-health")
   implementation("io.quarkus:quarkus-opentelemetry")
   implementation("io.quarkus:quarkus-logging-json")
+  implementation("io.quarkiverse.openapi.generator:quarkus-openapi-generator:2.12.1")
   implementation("io.quarkus:quarkus-hibernate-validator")
   implementation("io.quarkus:quarkus-smallrye-openapi")
   testImplementation("io.quarkus:quarkus-junit5")
@@ -44,6 +45,7 @@ dependencies {
   testImplementation("org.mockito:mockito-junit-jupiter:5.19.0")
   testImplementation("org.mockito.kotlin:mockito-kotlin:5.1.0")
   testImplementation("io.quarkus:quarkus-junit5-mockito")
+  testImplementation("com.github.tomakehurst:wiremock-jre8:3.0.1")
 }
 
 group = "it.pagopa.ecommerce"
@@ -101,7 +103,16 @@ openApiGenerate {
   generateModelTests.set(false)
 }
 
-sourceSets { main { java { srcDir(layout.buildDirectory.dir("generated/src/gen/java")) } } }
+sourceSets {
+  named("main") {
+    java {
+      // OpenAPI generator output
+      srcDir(layout.buildDirectory.dir("generated/src/gen/java"))
+      // Quarkus code generation
+      srcDir("build/classes/java/quarkus-generated-sources/open-api")
+    }
+  }
+}
 
 tasks.named("compileKotlin") { dependsOn(tasks.named("openApiGenerate")) }
 
@@ -118,6 +129,8 @@ tasks.test {
   useJUnitPlatform()
   finalizedBy(tasks.jacocoTestReport) // report is always generated after tests run
 }
+
+tasks.named("compileJava") { dependsOn("quarkusGenerateCode") }
 
 configure<com.diffplug.gradle.spotless.SpotlessExtension> {
   kotlin {
