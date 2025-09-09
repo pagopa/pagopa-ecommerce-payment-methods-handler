@@ -1,4 +1,4 @@
-package utils
+package it.pagopa.ecommerce.payment.methods.utils
 
 import io.quarkus.test.InjectMock
 import io.quarkus.test.junit.QuarkusTest
