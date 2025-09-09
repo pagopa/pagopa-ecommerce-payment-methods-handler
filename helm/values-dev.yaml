@@ -75,7 +75,7 @@ microservice-chart:
     ECS_SERVICE_NAME: pagopa-ecommerce-payment-methods-handler
     ECS_SERVICE_ENVIRONMENT: dev
     SECURITY_API_KEY_SECURED_PATHS: "/hello"
-    AFM_URI: "https://api.dev.platform.pagopa.it/afm/calculator-service"
+    AFM_URI: "https://api.uat.platform.pagopa.it/afm/calculator-service"
   envSecret:
     SECURITY_API_KEY_PRIMARY: ecommerce-payment-methods-primary-api-key
     SECURITY_API_KEY_SECONDARY: ecommerce-payment-methods-secondary-api-key
