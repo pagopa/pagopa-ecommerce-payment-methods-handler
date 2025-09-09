@@ -35,7 +35,6 @@ dependencies {
   implementation("io.quarkus:quarkus-opentelemetry")
   implementation("io.quarkus:quarkus-logging-json")
   implementation("io.quarkiverse.openapi.generator:quarkus-openapi-generator:2.12.1")
-  implementation("io.quarkus:quarkus-rest-client-reactive-jackson:3.15.6.2")
   implementation("io.quarkus:quarkus-hibernate-validator")
   implementation("io.quarkus:quarkus-smallrye-openapi")
   testImplementation("io.quarkus:quarkus-junit5")

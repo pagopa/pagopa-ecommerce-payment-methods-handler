@@ -10,7 +10,7 @@ import org.eclipse.microprofile.rest.client.inject.RestClient
 import org.slf4j.LoggerFactory
 
 @ApplicationScoped
-class PaymentMethodsClient(@RestClient private val paymentMethodsApi: PaymentMethodsApi) {
+class PaymentMethodsClient(@param:RestClient private val paymentMethodsApi: PaymentMethodsApi) {
 
     private val log = LoggerFactory.getLogger(PaymentMethodsClient::class.java)
 
