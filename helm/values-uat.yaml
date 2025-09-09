@@ -76,8 +76,8 @@ microservice-chart:
     ECS_SERVICE_ENVIRONMENT: uat
     SECURITY_API_KEY_SECURED_PATHS: "/payment-methods"
     AFM_URI_V1: "https://api.uat.platform.pagopa.it/afm/calculator-service/v1"
-    AFM_CONNECTION_TIMEOUT: 10000
-    AFM_READ_TIMEOUT: 5000
+    AFM_CONNECTION_TIMEOUT: "10000"
+    AFM_READ_TIMEOUT: "10000"
   envSecret:
     SECURITY_API_KEY_PRIMARY: ecommerce-payment-methods-primary-api-key
     SECURITY_API_KEY_SECONDARY: ecommerce-payment-methods-secondary-api-key
