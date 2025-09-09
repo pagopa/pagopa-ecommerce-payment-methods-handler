@@ -74,7 +74,7 @@ microservice-chart:
     OTEL_TRACES_SAMPLER: "always_on"
     ECS_SERVICE_NAME: pagopa-ecommerce-payment-methods-handler
     ECS_SERVICE_ENVIRONMENT: uat
-    SECURITY_API_KEY_SECURED_PATHS: "/hello"
+    SECURITY_API_KEY_SECURED_PATHS: "/payment-methods"
     AFM_URI_V1: "https://api.uat.platform.pagopa.it/afm/calculator-service/v1"
     AFM_CONNECTION_TIMEOUT: 10000
     AFM_READ_TIMEOUT: 5000
