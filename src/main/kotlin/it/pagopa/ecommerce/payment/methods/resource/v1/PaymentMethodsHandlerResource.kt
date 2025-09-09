@@ -13,10 +13,12 @@ import java.util.*
 import java.util.concurrent.CompletionStage
 import org.jboss.resteasy.reactive.RestResponse
 import org.jboss.resteasy.reactive.server.ServerExceptionMapper
+import org.slf4j.LoggerFactory
 
 class PaymentMethodsHandlerResource
 @Inject
 constructor(private val paymentMethodService: PaymentMethodService) : PaymentMethodsApi {
+    private val log = LoggerFactory.getLogger(PaymentMethodsHandlerResource::class.java)
 
     override fun getAllPaymentMethods(
         xClientId: @NotNull String,
@@ -38,12 +40,14 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
         )
 
     @ServerExceptionMapper
-    fun mapException(exception: Exception) =
-        problemResponse(
+    fun mapException(exception: Exception): RestResponse<ProblemJson> {
+        log.error("Generic Exception While Processing the Request", exception)
+        return problemResponse(
             Response.Status.INTERNAL_SERVER_ERROR,
             "Unexpected Exception",
             "Generic Error",
         )
+    }
 
     private fun problemResponse(
         status: Response.Status,

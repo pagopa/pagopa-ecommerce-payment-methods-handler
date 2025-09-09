@@ -1,10 +1,9 @@
-package ecommerce.client
+package it.pagopa.ecommerce.payment.methods.services
 
 import io.quarkus.test.junit.QuarkusTest
 import io.smallrye.mutiny.Uni
 import it.pagopa.ecommerce.payment.methods.client.PaymentMethodsClient
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodsClientException
-import it.pagopa.ecommerce.payment.methods.services.PaymentMethodServiceImpl
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
 import it.pagopa.generated.ecommerce.client.api.PaymentMethodsApi
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodRequestDto

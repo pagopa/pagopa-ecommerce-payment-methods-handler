@@ -14,10 +14,14 @@ import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Inject
 import java.math.BigDecimal
 import java.util.concurrent.CompletableFuture
+import org.slf4j.LoggerFactory
 
 @ApplicationScoped
 class PaymentMethodServiceImpl @Inject constructor(private val restClient: PaymentMethodsClient) :
     PaymentMethodService {
+
+    private val log = LoggerFactory.getLogger(PaymentMethodServiceImpl::class.java)
+
     override fun searchPaymentMethods(
         amount: BigDecimal,
         xClientId: String,
@@ -45,6 +49,7 @@ class PaymentMethodServiceImpl @Inject constructor(private val restClient: Payme
         transferListItem.creditorInstitution = "77777777777" // TODO this is mocked
         paymentNotice.transferList = listOf(transferListItem)
         paymentRequestDto.paymentNotice = listOf(paymentNotice)
+        paymentRequestDto.allCCp = false // TODO this is mocked
 
         return paymentRequestDto
     }
@@ -55,20 +60,24 @@ class PaymentMethodServiceImpl @Inject constructor(private val restClient: Payme
         val paymentMethodsResponse = PaymentMethodsResponse()
 
         paymentMethodsResponseDto.paymentMethods.forEach { it ->
-            val paymentMethod = PaymentMethodResponse()
+            try {
+                val paymentMethod = PaymentMethodResponse()
 
-            paymentMethod.id = it.paymentMethodId
-            paymentMethod.name = it.name["it"]
-            paymentMethod.description = it.description["it"]
-            paymentMethod.status = PaymentMethodStatus.valueOf(it.status.toString())
-            paymentMethod.ranges = listOf(Range().max(it.feeRange.max).min(it.feeRange.min))
-            paymentMethod.paymentTypeCode = it.group.toString()
-            paymentMethod.asset = it.paymentMethodAsset
-            paymentMethod.methodManagement =
-                PaymentMethodManagementType.valueOf(it.methodManagement.toString())
-            paymentMethod.brandAssets = it.paymentMethodsBrandAssets
+                paymentMethod.id = it.paymentMethodId
+                paymentMethod.name = it.name["IT"]
+                paymentMethod.description = it.description["IT"]
+                paymentMethod.status = PaymentMethodStatus.valueOf(it.status.toString())
+                paymentMethod.ranges = listOf(Range().max(it.feeRange.max).min(it.feeRange.min))
+                paymentMethod.paymentTypeCode = it.group.toString()
+                paymentMethod.asset = it.paymentMethodAsset
+                paymentMethod.methodManagement =
+                    PaymentMethodManagementType.valueOf(it.methodManagement.toString())
+                paymentMethod.brandAssets = it.paymentMethodsBrandAssets
 
-            paymentMethodsResponse.addPaymentMethodsItem(paymentMethod)
+                paymentMethodsResponse.addPaymentMethodsItem(paymentMethod)
+            } catch (ex: Exception) {
+                log.error("Failed to map payment method ${it.paymentMethodId}", ex)
+            }
         }
 
         return paymentMethodsResponse
