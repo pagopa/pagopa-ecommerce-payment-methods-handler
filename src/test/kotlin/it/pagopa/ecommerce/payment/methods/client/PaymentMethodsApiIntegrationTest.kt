@@ -1,4 +1,4 @@
-package ecommerce.client
+package it.pagopa.ecommerce.payment.methods.client
 
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration

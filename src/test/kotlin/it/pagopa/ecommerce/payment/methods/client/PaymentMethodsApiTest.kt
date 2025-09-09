@@ -1,4 +1,4 @@
-package ecommerce.client
+package it.pagopa.ecommerce.payment.methods.client
 
 import io.quarkus.test.junit.QuarkusTest
 import io.smallrye.mutiny.Uni

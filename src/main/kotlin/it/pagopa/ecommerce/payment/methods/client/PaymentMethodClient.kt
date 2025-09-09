@@ -22,11 +22,8 @@ class PaymentMethodsClient(@RestClient private val paymentMethodsApi: PaymentMet
         return paymentMethodsApi
             .searchPaymentMethods(requestDto, xRequestId)
             .onFailure()
-            .invoke { error ->
-                log.error("Error while calling PaymentMethodsApi.searchPaymentMethods", error)
-            }
-            .onFailure()
             .transform { error ->
+                log.error("Error during the call to PaymentMethodsApi", error)
                 PaymentMethodsClientException("Error during the call to PaymentMethodsApi", error)
             }
     }
