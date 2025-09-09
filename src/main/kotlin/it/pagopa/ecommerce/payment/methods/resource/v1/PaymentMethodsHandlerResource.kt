@@ -18,15 +18,6 @@ class PaymentMethodsHandlerResource
 @Inject
 constructor(private val paymentMethodService: PaymentMethodService) : PaymentMethodsApi {
 
-    @ServerExceptionMapper
-    fun mapException(exception: PaymentMethodsClientException): RestResponse<ProblemJson> {
-        val problem = ProblemJson()
-        problem.status = Response.Status.INTERNAL_SERVER_ERROR.statusCode
-        problem.title = "Unexpected Exception"
-        problem.detail = "Error during GMP communication"
-        return RestResponse.status(Response.Status.INTERNAL_SERVER_ERROR, problem)
-    }
-
     override fun getAllPaymentMethods(
         xClientId: @NotNull String,
         amount: BigDecimal,
@@ -36,5 +27,35 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
             xClientId,
             UUID.randomUUID().toString(),
         )
+    }
+
+    @ServerExceptionMapper
+    fun mapPaymentMethodsClientException(exception: PaymentMethodsClientException) =
+        problemResponse(
+            Response.Status.INTERNAL_SERVER_ERROR,
+            "Unexpected Exception",
+            "Error during GMP communication",
+        )
+
+    @ServerExceptionMapper
+    fun mapException(exception: Exception) =
+        problemResponse(
+            Response.Status.INTERNAL_SERVER_ERROR,
+            "Unexpected Exception",
+            "Generic Error",
+        )
+
+    private fun problemResponse(
+        status: Response.Status,
+        title: String,
+        detail: String,
+    ): RestResponse<ProblemJson> {
+        val problem =
+            ProblemJson().apply {
+                this.status = status.statusCode
+                this.title = title
+                this.detail = detail
+            }
+        return RestResponse.status(status, problem)
     }
 }

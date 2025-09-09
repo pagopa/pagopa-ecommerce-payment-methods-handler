@@ -76,7 +76,7 @@ class PaymentMethodsHandlerResourceTest {
     }
 
     @Test
-    fun shouldHandleException() {
+    fun shouldHandleCustomException() {
         whenever(mockClient.searchPaymentMethods(anyOrNull(), anyOrNull()))
             .thenReturn(Uni.createFrom().failure(PaymentMethodsClientException("test")))
 
@@ -84,6 +84,31 @@ class PaymentMethodsHandlerResourceTest {
         expectedProblem.status = Response.Status.INTERNAL_SERVER_ERROR.statusCode
         expectedProblem.title = "Unexpected Exception"
         expectedProblem.detail = "Error during GMP communication"
+
+        val result =
+            RestAssured.given()
+                .header("x-client-id", "CHECKOUT")
+                .header("x-api-key", "test-primary")
+                .queryParam("amount", "100")
+                .`when`()
+                .get("$securedPath/payment-methods")
+                .then()
+                .statusCode(500)
+                .extract()
+                .`as`(ProblemJson::class.java)
+
+        assertEquals(expectedProblem, result)
+    }
+
+    @Test
+    fun shouldHandleException() {
+        whenever(mockClient.searchPaymentMethods(anyOrNull(), anyOrNull()))
+            .thenReturn(Uni.createFrom().failure(Exception("test")))
+
+        val expectedProblem = ProblemJson()
+        expectedProblem.status = Response.Status.INTERNAL_SERVER_ERROR.statusCode
+        expectedProblem.title = "Unexpected Exception"
+        expectedProblem.detail = "Generic Error"
 
         val result =
             RestAssured.given()
