@@ -13,10 +13,6 @@ repositories {
   mavenLocal()
 }
 
-sourceSets {
-  named("main") { java { srcDir("build/classes/java/quarkus-generated-sources/open-api") } }
-}
-
 val quarkusPlatformGroupId: String by project
 val quarkusPlatformArtifactId: String by project
 val quarkusPlatformVersion: String by project
@@ -55,7 +51,7 @@ dependencies {
 
 group = "it.pagopa.ecommerce"
 
-version = "0.0.2-SNAPSHOT"
+version = "0.0.3-SNAPSHOT"
 
 java {
   sourceCompatibility = JavaVersion.VERSION_21
@@ -109,16 +105,14 @@ openApiGenerate {
 }
 
 sourceSets {
-  main {
+  named("main") {
     java {
+      // OpenAPI generator output
       srcDir(layout.buildDirectory.dir("generated/src/gen/java"))
+      // Quarkus code generation
       srcDir("build/classes/java/quarkus-generated-sources/open-api")
     }
   }
-}
-
-sourceSets {
-  named("main") { java { srcDir("build/classes/java/quarkus-generated-sources/open-api") } }
 }
 
 tasks.named("compileKotlin") { dependsOn(tasks.named("openApiGenerate")) }
