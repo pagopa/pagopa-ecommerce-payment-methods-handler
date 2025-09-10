@@ -117,7 +117,13 @@ sourceSets {
 tasks.named("compileKotlin") { dependsOn(tasks.named("openApiGenerate")) }
 
 tasks
-  .register("applySemanticVersionPlugin") { dependsOn("prepareKotlinBuildScriptModel") }
+  .register("applySemanticVersionPlugin") {
+    group = "Versioning"
+    description =
+      "Applies the semantic-version plugin after the Kotlin build script model is prepared."
+
+    dependsOn("prepareKotlinBuildScriptModel")
+  }
   .apply { apply(plugin = "com.dipien.semantic-version") }
 
 tasks.jacocoTestReport {
