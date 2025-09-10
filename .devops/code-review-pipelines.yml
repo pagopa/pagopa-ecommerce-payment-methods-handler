@@ -44,6 +44,7 @@ stages:
               javaHomeOption: 'JDKVersion' # 'JDKVersion' | 'Path'. Alias: javaHomeSelection. Required. Set JAVA_HOME by. Default: JDKVersion.
               jdkVersionOption: '1.21' # Alias: jdkVersion. Optional. Use when javaHomeSelection = JDKVersion. JDK version. Default: default.
               sonarQubeRunAnalysis: true
+              options: '--dependency-verification=strict --debug --stacktrace'
 
           - task: SonarCloudPublish@3
             displayName: 'Publish SonarCloud results on build summary'
