@@ -58,24 +58,32 @@ class PaymentMethodServiceImpl @Inject constructor(private val restClient: Payme
     ): PaymentMethodsResponse {
         val paymentMethodsResponse = PaymentMethodsResponse()
 
-        paymentMethodsResponseDto.paymentMethods.forEach { it ->
+        paymentMethodsResponseDto.paymentMethods.forEach { gmpPaymentMethod ->
             try {
                 val paymentMethod = PaymentMethodResponse()
 
-                paymentMethod.id = it.paymentMethodId
-                paymentMethod.name = it.name["IT"]
-                paymentMethod.description = it.description["IT"]
-                paymentMethod.status = PaymentMethodStatus.valueOf(it.status.toString())
-                paymentMethod.ranges = listOf(Range().max(it.feeRange.max).min(it.feeRange.min))
-                paymentMethod.paymentTypeCode = it.group.toString()
-                paymentMethod.asset = it.paymentMethodAsset
+                paymentMethod.id = gmpPaymentMethod.paymentMethodId
+                paymentMethod.name = gmpPaymentMethod.name["IT"]
+                paymentMethod.description = gmpPaymentMethod.description["IT"]
+                paymentMethod.status =
+                    PaymentMethodStatus.valueOf(gmpPaymentMethod.status.toString())
+                paymentMethod.ranges =
+                    listOf(
+                        Range()
+                            .max(gmpPaymentMethod.feeRange.max)
+                            .min(gmpPaymentMethod.feeRange.min)
+                    )
+                paymentMethod.paymentTypeCode = gmpPaymentMethod.group.toString()
+                paymentMethod.asset = gmpPaymentMethod.paymentMethodAsset
                 paymentMethod.methodManagement =
-                    PaymentMethodManagementType.valueOf(it.methodManagement.toString())
-                paymentMethod.brandAssets = it.paymentMethodsBrandAssets
+                    PaymentMethodManagementType.valueOf(
+                        gmpPaymentMethod.methodManagement.toString()
+                    )
+                paymentMethod.brandAssets = gmpPaymentMethod.paymentMethodsBrandAssets
 
                 paymentMethodsResponse.addPaymentMethodsItem(paymentMethod)
             } catch (ex: Exception) {
-                log.error("Failed to map payment method ${it.paymentMethodId}", ex)
+                log.error("Failed to map payment method ${gmpPaymentMethod.paymentMethodId}", ex)
             }
         }
 
