@@ -13,7 +13,7 @@ import it.pagopa.generated.ecommerce.client.model.TransferListItemDto
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Inject
 import java.math.BigDecimal
-import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletionStage
 import org.slf4j.LoggerFactory
 
 @ApplicationScoped
@@ -26,12 +26,11 @@ class PaymentMethodServiceImpl @Inject constructor(private val restClient: Payme
         amount: BigDecimal,
         xClientId: String,
         xRequestId: String,
-    ): CompletableFuture<PaymentMethodsResponse> {
+    ): CompletionStage<PaymentMethodsResponse> {
         return restClient
             .searchPaymentMethods(buildRequest(amount, xClientId), xRequestId)
             .map { dto -> paymentMethodDtoToResponse(dto) }
             .subscribeAsCompletionStage()
-            .toCompletableFuture()
     }
 
     private fun buildRequest(amount: BigDecimal, xClientId: String): PaymentMethodRequestDto {
