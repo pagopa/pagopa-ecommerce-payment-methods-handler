@@ -4,7 +4,7 @@ import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsRespons
 import java.math.BigDecimal
 import java.util.concurrent.CompletionStage
 
-interface PaymentMethodService {
+fun interface PaymentMethodService {
     fun searchPaymentMethods(
         amount: BigDecimal,
         xClientId: String,
