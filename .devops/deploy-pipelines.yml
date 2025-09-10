@@ -126,7 +126,6 @@ stages:
       eq(${{parameters.UAT_PROD_DEPLOY}}, true),
       or(
       eq(variables['Build.SourceBranch'], 'refs/heads/main'),
-      eq(variables['Build.SourceBranch'], 'refs/heads/CHK-4424-add-uat-pipeline'),
       startsWith(variables['Build.SourceBranch'], 'refs/tags')
       )
       )
@@ -193,7 +192,6 @@ stages:
         in(dependencies.Get_Release_Version.result, 'Succeeded', 'Skipped'),
         or(
           eq(variables['Build.SourceBranch'], 'refs/heads/main'),
-          eq(variables['Build.SourceBranch'], 'refs/heads/CHK-4424-add-uat-pipeline'),
           startsWith(variables['Build.SourceBranch'], 'refs/tags')
         )
       )
