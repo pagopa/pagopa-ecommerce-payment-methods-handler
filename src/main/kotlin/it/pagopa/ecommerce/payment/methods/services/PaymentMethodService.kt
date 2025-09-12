@@ -1,12 +1,13 @@
 package it.pagopa.ecommerce.payment.methods.services
 
-import io.smallrye.mutiny.Uni
-import it.pagopa.generated.ecommerce.client.model.PaymentMethodRequestDto
-import it.pagopa.generated.ecommerce.client.model.PaymentMethodsResponseDto
+import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
+import java.math.BigDecimal
+import java.util.concurrent.CompletionStage
 
-interface PaymentMethodService {
+fun interface PaymentMethodService {
     fun searchPaymentMethods(
-        paymentMethodRequestDto: PaymentMethodRequestDto,
+        amount: BigDecimal,
+        xClientId: String,
         xRequestId: String,
-    ): Uni<PaymentMethodsResponseDto>
+    ): CompletionStage<PaymentMethodsResponse>
 }

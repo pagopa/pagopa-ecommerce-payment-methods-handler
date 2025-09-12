@@ -16,6 +16,10 @@ repositories {
 val quarkusPlatformGroupId: String by project
 val quarkusPlatformArtifactId: String by project
 val quarkusPlatformVersion: String by project
+val mockitoVersion = "5.19.0"
+val mockitoKotlinVersion = "5.1.0"
+val wireMockVersion = "3.13.1"
+val quarkusOpenApiGeneratorVersion = "2.12.1"
 
 dependencies {
   implementation("io.quarkus:quarkus-jacoco")
@@ -34,18 +38,20 @@ dependencies {
   implementation("io.quarkus:quarkus-smallrye-health")
   implementation("io.quarkus:quarkus-opentelemetry")
   implementation("io.quarkus:quarkus-logging-json")
-  implementation("io.quarkiverse.openapi.generator:quarkus-openapi-generator:2.12.1")
+  implementation(
+    "io.quarkiverse.openapi.generator:quarkus-openapi-generator:$quarkusOpenApiGeneratorVersion"
+  )
   implementation("io.quarkus:quarkus-hibernate-validator")
   implementation("io.quarkus:quarkus-smallrye-openapi")
   testImplementation("io.quarkus:quarkus-junit5")
   testImplementation("io.quarkus:quarkus-junit5-mockito")
   testImplementation(kotlin("test"))
   testImplementation("io.rest-assured:rest-assured")
-  testImplementation("org.mockito:mockito-core:5.19.0")
-  testImplementation("org.mockito:mockito-junit-jupiter:5.19.0")
-  testImplementation("org.mockito.kotlin:mockito-kotlin:5.1.0")
+  testImplementation("org.mockito:mockito-core:$mockitoVersion")
+  testImplementation("org.mockito:mockito-junit-jupiter:$mockitoVersion")
+  testImplementation("org.mockito.kotlin:mockito-kotlin:$mockitoKotlinVersion")
   testImplementation("io.quarkus:quarkus-junit5-mockito")
-  testImplementation("com.github.tomakehurst:wiremock-jre8:3.0.1")
+  testImplementation("org.wiremock:wiremock:$wireMockVersion")
 }
 
 group = "it.pagopa.ecommerce"
@@ -117,7 +123,13 @@ sourceSets {
 tasks.named("compileKotlin") { dependsOn(tasks.named("openApiGenerate")) }
 
 tasks
-  .register("applySemanticVersionPlugin") { dependsOn("prepareKotlinBuildScriptModel") }
+  .register("applySemanticVersionPlugin") {
+    group = "Versioning"
+    description =
+      "Applies the semantic-version plugin after the Kotlin build script model is prepared."
+
+    dependsOn("prepareKotlinBuildScriptModel")
+  }
   .apply { apply(plugin = "com.dipien.semantic-version") }
 
 tasks.jacocoTestReport {

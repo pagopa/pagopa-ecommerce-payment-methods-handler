@@ -8,6 +8,8 @@ COPY --chown=quarkus:quarkus build.gradle.kts /code/
 COPY --chown=quarkus:quarkus settings.gradle.kts /code/
 COPY --chown=quarkus:quarkus gradle.properties /code/
 COPY --chown=quarkus:quarkus eclipse-style.xml /code/
+COPY --chown=quarkus:quarkus api-spec /code/api-spec
+COPY --chown=quarkus:quarkus api-client /code/api-client
 USER quarkus
 WORKDIR /code
 COPY src /code/src

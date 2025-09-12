@@ -1,19 +1,21 @@
-package ecommerce.client
+package it.pagopa.ecommerce.payment.methods.services
 
 import io.quarkus.test.junit.QuarkusTest
 import io.smallrye.mutiny.Uni
 import it.pagopa.ecommerce.payment.methods.client.PaymentMethodsClient
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodsClientException
-import it.pagopa.ecommerce.payment.methods.services.PaymentMethodServiceImpl
+import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
 import it.pagopa.generated.ecommerce.client.api.PaymentMethodsApi
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodRequestDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodsItemDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodsResponseDto
+import java.math.BigDecimal
 import java.time.LocalDate
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.Mockito
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.whenever
 
 @QuarkusTest
@@ -84,13 +86,15 @@ class PaymentMethodsClientTest {
 
     @Test
     fun `should delegate searchPaymentMethods to client`() {
-        val requestDto = PaymentMethodRequestDto()
-        val expectedResponse = PaymentMethodsResponseDto()
+        val amount = BigDecimal(100)
+        val expectedResponse = PaymentMethodsResponse()
+        val expectedResponseDto = PaymentMethodsResponseDto()
 
-        whenever(mockClient.searchPaymentMethods(requestDto, "test-id"))
-            .thenReturn(Uni.createFrom().item(expectedResponse))
+        whenever(mockClient.searchPaymentMethods(anyOrNull(), anyOrNull()))
+            .thenReturn(Uni.createFrom().item(expectedResponseDto))
 
-        val result = service.searchPaymentMethods(requestDto, "test-id").await().indefinitely()
+        val result =
+            service.searchPaymentMethods(amount, "CHECKOUT", "test-id").toCompletableFuture().get()
 
         assertEquals(expectedResponse, result)
     }
