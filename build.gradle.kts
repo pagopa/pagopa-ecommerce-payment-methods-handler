@@ -8,10 +8,7 @@ plugins {
   jacoco
 }
 
-repositories {
-  mavenCentral()
-  mavenLocal()
-}
+repositories { mavenCentral() }
 
 val quarkusPlatformGroupId: String by project
 val quarkusPlatformArtifactId: String by project

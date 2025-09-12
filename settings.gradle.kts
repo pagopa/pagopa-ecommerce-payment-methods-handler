@@ -1,11 +1,7 @@
 pluginManagement {
   val quarkusPluginVersion: String by settings
   val quarkusPluginId: String by settings
-  repositories {
-    mavenCentral()
-    gradlePluginPortal()
-    mavenLocal()
-  }
+  repositories { gradlePluginPortal() }
   plugins { id(quarkusPluginId) version quarkusPluginVersion }
 }
 
