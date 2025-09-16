@@ -189,11 +189,11 @@ components:
       required:
         - description
         - feeRange
-        - group
+        - paymentTypeCode
         - methodManagement
         - name
         - paymentMethodAsset
-        - paymentMethodId
+        - id
         - paymentMethodTypes
         - status
         - validityDateFrom
