@@ -14,8 +14,6 @@ import org.mockito.kotlin.whenever
 
 @QuarkusTest
 class ApiKeyFilterTest {
-
-    private val securedPath = "/payment-methods-handler"
     @InjectMock lateinit var mockClient: PaymentMethodsClient
 
     @Test
@@ -23,7 +21,7 @@ class ApiKeyFilterTest {
         RestAssured.given()
             .contentType(ContentType.JSON)
             .`when`()
-            .post("$securedPath/payment-methods")
+            .post("/payment-methods")
             .then()
             .statusCode(401)
     }
@@ -39,7 +37,7 @@ class ApiKeyFilterTest {
             .header("x-api-key", "test-primary")
             .body(TestUtils.buildDefaultMockRequest())
             .`when`()
-            .post("$securedPath/payment-methods")
+            .post("/payment-methods")
             .then()
             .statusCode(200)
     }
@@ -50,7 +48,7 @@ class ApiKeyFilterTest {
             .contentType(ContentType.JSON)
             .header("x-api-key", "invalid-key")
             .`when`()
-            .post("$securedPath/payment-methods")
+            .post("/payment-methods")
             .then()
             .statusCode(401)
     }
@@ -66,7 +64,7 @@ class ApiKeyFilterTest {
             .header("x-api-key", "test-secondary")
             .body(TestUtils.buildDefaultMockRequest())
             .`when`()
-            .post("$securedPath/payment-methods")
+            .post("/payment-methods")
             .then()
             .statusCode(200)
     }

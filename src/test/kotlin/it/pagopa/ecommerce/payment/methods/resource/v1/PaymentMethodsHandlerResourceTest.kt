@@ -25,7 +25,6 @@ import org.mockito.kotlin.whenever
 
 @QuarkusTest
 class PaymentMethodsHandlerResourceTest {
-    private val securedPath = "/payment-methods-handler"
     @InjectMock lateinit var mockClient: PaymentMethodsClient
     private val request: PaymentMethodsRequest = TestUtils.buildDefaultMockRequest()
 
@@ -69,7 +68,7 @@ class PaymentMethodsHandlerResourceTest {
                 .contentType(ContentType.JSON)
                 .body(request)
                 .`when`()
-                .post("$securedPath/payment-methods")
+                .post("/payment-methods")
                 .then()
                 .statusCode(200)
                 .extract()
@@ -94,7 +93,7 @@ class PaymentMethodsHandlerResourceTest {
                 .header("x-api-key", "test-primary")
                 .body(request)
                 .`when`()
-                .post("$securedPath/payment-methods")
+                .post("/payment-methods")
                 .then()
                 .statusCode(500)
                 .extract()
@@ -120,7 +119,7 @@ class PaymentMethodsHandlerResourceTest {
                 .header("x-api-key", "test-primary")
                 .body(request)
                 .`when`()
-                .post("$securedPath/payment-methods")
+                .post("/payment-methods")
                 .then()
                 .statusCode(400)
                 .extract()
@@ -145,7 +144,7 @@ class PaymentMethodsHandlerResourceTest {
                 .header("x-api-key", "test-primary")
                 .body(request)
                 .`when`()
-                .post("$securedPath/payment-methods")
+                .post("/payment-methods")
                 .then()
                 .statusCode(500)
                 .extract()
