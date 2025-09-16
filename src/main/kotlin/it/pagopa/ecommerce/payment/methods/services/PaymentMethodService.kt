@@ -1,13 +1,12 @@
 package it.pagopa.ecommerce.payment.methods.services
 
+import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
-import java.math.BigDecimal
 import java.util.concurrent.CompletionStage
 
 fun interface PaymentMethodService {
     fun searchPaymentMethods(
-        amount: BigDecimal,
-        xClientId: String,
+        paymentMethodsRequest: PaymentMethodsRequest,
         xRequestId: String,
     ): CompletionStage<PaymentMethodsResponse>
 }

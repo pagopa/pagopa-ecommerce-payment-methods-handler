@@ -2,6 +2,7 @@ package it.pagopa.ecommerce.payment.methods.services
 
 import io.quarkus.test.junit.QuarkusTest
 import io.smallrye.mutiny.Uni
+import it.pagopa.ecommerce.payment.methods.TestUtils
 import it.pagopa.ecommerce.payment.methods.client.PaymentMethodsClient
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodsClientException
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
@@ -9,7 +10,6 @@ import it.pagopa.generated.ecommerce.client.api.PaymentMethodsApi
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodRequestDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodsItemDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodsResponseDto
-import java.math.BigDecimal
 import java.time.LocalDate
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -86,7 +86,6 @@ class PaymentMethodsClientTest {
 
     @Test
     fun `should delegate searchPaymentMethods to client`() {
-        val amount = BigDecimal(100)
         val expectedResponse = PaymentMethodsResponse()
         val expectedResponseDto = PaymentMethodsResponseDto()
 
@@ -94,7 +93,10 @@ class PaymentMethodsClientTest {
             .thenReturn(Uni.createFrom().item(expectedResponseDto))
 
         val result =
-            service.searchPaymentMethods(amount, "CHECKOUT", "test-id").toCompletableFuture().get()
+            service
+                .searchPaymentMethods(TestUtils.buildDefaultMockRequest(), "test-id")
+                .toCompletableFuture()
+                .get()
 
         assertEquals(expectedResponse, result)
     }

@@ -3,18 +3,20 @@ package it.pagopa.ecommerce.payment.methods.resource.v1
 import io.quarkus.test.InjectMock
 import io.quarkus.test.junit.QuarkusTest
 import io.restassured.RestAssured
+import io.restassured.http.ContentType
 import io.smallrye.mutiny.Uni
+import it.pagopa.ecommerce.payment.methods.TestUtils
 import it.pagopa.ecommerce.payment.methods.client.PaymentMethodsClient
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodsClientException
-import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodManagementType
+import it.pagopa.ecommerce.payment.methods.v1.server.model.FeeRange
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodResponse
-import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodStatus
+import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.ProblemJson
-import it.pagopa.ecommerce.payment.methods.v1.server.model.Range
 import it.pagopa.generated.ecommerce.client.model.FeeRangeDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodsItemDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodsResponseDto
+import jakarta.validation.ValidationException
 import jakarta.ws.rs.core.Response
 import kotlin.test.assertEquals
 import org.junit.jupiter.api.Test
@@ -25,6 +27,7 @@ import org.mockito.kotlin.whenever
 class PaymentMethodsHandlerResourceTest {
     private val securedPath = "/payment-methods-handler"
     @InjectMock lateinit var mockClient: PaymentMethodsClient
+    private val request: PaymentMethodsRequest = TestUtils.buildDefaultMockRequest()
 
     @Test
     fun shouldReturnOKResponse() {
@@ -47,14 +50,14 @@ class PaymentMethodsHandlerResourceTest {
                 .addPaymentMethodsItem(
                     PaymentMethodResponse()
                         .id("test-id")
-                        .status(PaymentMethodStatus.ENABLED)
-                        .paymentTypeCode(PaymentMethodsItemDto.GroupEnum.CP.toString())
-                        .methodManagement(PaymentMethodManagementType.ONBOARDABLE)
-                        .ranges(listOf(Range().max(10).min(1)))
-                        .name("Carte")
-                        .description("Carte")
-                        .asset("asset")
-                        .brandAssets(mapOf(Pair("first", "asset")))
+                        .status(PaymentMethodResponse.StatusEnum.ENABLED)
+                        .paymentTypeCode(PaymentMethodResponse.PaymentTypeCodeEnum.CP)
+                        .methodManagement(PaymentMethodResponse.MethodManagementEnum.ONBOARDABLE)
+                        .feeRange(FeeRange().min(1).max(10))
+                        .name(mapOf("IT" to "Carte"))
+                        .description(mapOf("IT" to "Carte"))
+                        .paymentMethodAsset("asset")
+                        .paymentMethodsBrandAssets(mapOf("first" to "asset"))
                 )
         whenever(mockClient.searchPaymentMethods(anyOrNull(), anyOrNull())).then {
             Uni.createFrom().item { mockResponseDto }
@@ -62,11 +65,11 @@ class PaymentMethodsHandlerResourceTest {
 
         val result =
             RestAssured.given()
-                .header("x-client-id", "CHECKOUT")
                 .header("x-api-key", "test-primary")
-                .queryParam("amount", "100")
+                .contentType(ContentType.JSON)
+                .body(request)
                 .`when`()
-                .get("$securedPath/payment-methods")
+                .post("$securedPath/payment-methods")
                 .then()
                 .statusCode(200)
                 .extract()
@@ -76,7 +79,7 @@ class PaymentMethodsHandlerResourceTest {
     }
 
     @Test
-    fun shouldHandleCustomException() {
+    fun shouldHandlePaymentMethodsClientException() {
         whenever(mockClient.searchPaymentMethods(anyOrNull(), anyOrNull()))
             .thenReturn(Uni.createFrom().failure(PaymentMethodsClientException("test")))
 
@@ -87,13 +90,39 @@ class PaymentMethodsHandlerResourceTest {
 
         val result =
             RestAssured.given()
-                .header("x-client-id", "CHECKOUT")
+                .contentType(ContentType.JSON)
                 .header("x-api-key", "test-primary")
-                .queryParam("amount", "100")
+                .body(request)
                 .`when`()
-                .get("$securedPath/payment-methods")
+                .post("$securedPath/payment-methods")
                 .then()
                 .statusCode(500)
+                .extract()
+                .`as`(ProblemJson::class.java)
+
+        assertEquals(expectedProblem, result)
+    }
+
+    @Test
+    fun shouldHandleValidationException() {
+        whenever(mockClient.searchPaymentMethods(anyOrNull(), anyOrNull()))
+            .thenReturn(Uni.createFrom().failure(ValidationException("test")))
+
+        val expectedProblem = ProblemJson()
+        expectedProblem.status = Response.Status.BAD_REQUEST.statusCode
+        expectedProblem.title = "Bad Request"
+        expectedProblem.detail =
+            "The request is malformed, contains invalid parameters, or is missing required information."
+
+        val result =
+            RestAssured.given()
+                .contentType(ContentType.JSON)
+                .header("x-api-key", "test-primary")
+                .body(request)
+                .`when`()
+                .post("$securedPath/payment-methods")
+                .then()
+                .statusCode(400)
                 .extract()
                 .`as`(ProblemJson::class.java)
 
@@ -112,11 +141,11 @@ class PaymentMethodsHandlerResourceTest {
 
         val result =
             RestAssured.given()
-                .header("x-client-id", "CHECKOUT")
+                .contentType(ContentType.JSON)
                 .header("x-api-key", "test-primary")
-                .queryParam("amount", "100")
+                .body(request)
                 .`when`()
-                .get("$securedPath/payment-methods")
+                .post("$securedPath/payment-methods")
                 .then()
                 .statusCode(500)
                 .extract()

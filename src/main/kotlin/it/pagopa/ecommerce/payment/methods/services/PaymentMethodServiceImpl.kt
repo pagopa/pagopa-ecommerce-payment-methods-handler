@@ -1,18 +1,16 @@
 package it.pagopa.ecommerce.payment.methods.services
 
 import it.pagopa.ecommerce.payment.methods.client.PaymentMethodsClient
-import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodManagementType
+import it.pagopa.ecommerce.payment.methods.v1.server.model.FeeRange
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodResponse
-import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodStatus
+import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
-import it.pagopa.ecommerce.payment.methods.v1.server.model.Range
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodRequestDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodsResponseDto
 import it.pagopa.generated.ecommerce.client.model.PaymentNoticeItemDto
 import it.pagopa.generated.ecommerce.client.model.TransferListItemDto
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Inject
-import java.math.BigDecimal
 import java.util.concurrent.CompletionStage
 import org.slf4j.LoggerFactory
 
@@ -23,37 +21,49 @@ class PaymentMethodServiceImpl @Inject constructor(private val restClient: Payme
     private val log = LoggerFactory.getLogger(PaymentMethodServiceImpl::class.java)
 
     override fun searchPaymentMethods(
-        amount: BigDecimal,
-        xClientId: String,
+        paymentMethodsRequest: PaymentMethodsRequest,
         xRequestId: String,
     ): CompletionStage<PaymentMethodsResponse> {
         return restClient
-            .searchPaymentMethods(buildRequest(amount, xClientId), xRequestId)
-            .map { dto -> paymentMethodDtoToResponse(dto) }
+            .searchPaymentMethods(buildAfmRequest(paymentMethodsRequest), xRequestId)
+            .map { dto -> afmResponseToPaymentHandlerResponse(dto) }
             .subscribeAsCompletionStage()
     }
 
-    private fun buildRequest(amount: BigDecimal, xClientId: String): PaymentMethodRequestDto {
+    private fun buildAfmRequest(
+        paymentMethodsRequest: PaymentMethodsRequest
+    ): PaymentMethodRequestDto {
         val paymentRequestDto = PaymentMethodRequestDto()
         paymentRequestDto.userTouchpoint =
-            PaymentMethodRequestDto.UserTouchpointEnum.valueOf(xClientId)
+            PaymentMethodRequestDto.UserTouchpointEnum.valueOf(
+                paymentMethodsRequest.userTouchpoint.toString()
+            )
         paymentRequestDto.userDevice =
-            PaymentMethodRequestDto.UserDeviceEnum.valueOf("WEB") // TODO this is mocked
+            paymentMethodsRequest.userDevice?.let { device ->
+                PaymentMethodRequestDto.UserDeviceEnum.valueOf(device.toString())
+            }
         paymentRequestDto.totalAmount =
-            amount.intValueExact() // TODO this should be fixed by GMP and set to Long/BigDecimal
-        val paymentNotice = PaymentNoticeItemDto()
-        paymentNotice.paymentAmount = amount.longValueExact()
-        paymentNotice.primaryCreditorInstitution = "77777777777" // TODO this is mocked
-        val transferListItem = TransferListItemDto()
-        transferListItem.creditorInstitution = "77777777777" // TODO this is mocked
-        paymentNotice.transferList = listOf(transferListItem)
-        paymentRequestDto.paymentNotice = listOf(paymentNotice)
-        paymentRequestDto.allCCp = false // TODO this is mocked
+            paymentMethodsRequest.totalAmount
+                .toInt() // TODO this should be fixed by GMP and set to Long/BigDecimal
+        paymentMethodsRequest.paymentNotice.forEach { notice ->
+            val paymentNotice = PaymentNoticeItemDto()
+            paymentNotice.paymentAmount = notice.paymentAmount
+            paymentNotice.primaryCreditorInstitution = notice.primaryCreditorInstitution
+            notice.transferList?.forEach { transfer ->
+                val transferListItem = TransferListItemDto()
+                transferListItem.creditorInstitution = transfer.creditorInstitution
+                paymentNotice.transferList.add(transferListItem)
+            }
+
+            paymentRequestDto.paymentNotice.add(paymentNotice)
+        }
+        paymentRequestDto.allCCp = paymentMethodsRequest.allCCp
+        paymentRequestDto.targetKey = paymentMethodsRequest.targetKey
 
         return paymentRequestDto
     }
 
-    private fun paymentMethodDtoToResponse(
+    private fun afmResponseToPaymentHandlerResponse(
         paymentMethodsResponseDto: PaymentMethodsResponseDto
     ): PaymentMethodsResponse {
         val paymentMethodsResponse = PaymentMethodsResponse()
@@ -63,23 +73,22 @@ class PaymentMethodServiceImpl @Inject constructor(private val restClient: Payme
                 val paymentMethod = PaymentMethodResponse()
 
                 paymentMethod.id = gmpPaymentMethod.paymentMethodId
-                paymentMethod.name = gmpPaymentMethod.name["IT"]
-                paymentMethod.description = gmpPaymentMethod.description["IT"]
+                paymentMethod.name = gmpPaymentMethod.name
+                paymentMethod.description = gmpPaymentMethod.description
                 paymentMethod.status =
-                    PaymentMethodStatus.valueOf(gmpPaymentMethod.status.toString())
-                paymentMethod.ranges =
-                    listOf(
-                        Range()
-                            .max(gmpPaymentMethod.feeRange.max)
-                            .min(gmpPaymentMethod.feeRange.min)
+                    PaymentMethodResponse.StatusEnum.valueOf(gmpPaymentMethod.status.toString())
+                paymentMethod.feeRange =
+                    FeeRange().max(gmpPaymentMethod.feeRange.max).min(gmpPaymentMethod.feeRange.min)
+                paymentMethod.paymentTypeCode =
+                    PaymentMethodResponse.PaymentTypeCodeEnum.valueOf(
+                        gmpPaymentMethod.group.toString()
                     )
-                paymentMethod.paymentTypeCode = gmpPaymentMethod.group.toString()
-                paymentMethod.asset = gmpPaymentMethod.paymentMethodAsset
+                paymentMethod.paymentMethodAsset = gmpPaymentMethod.paymentMethodAsset
                 paymentMethod.methodManagement =
-                    PaymentMethodManagementType.valueOf(
+                    PaymentMethodResponse.MethodManagementEnum.valueOf(
                         gmpPaymentMethod.methodManagement.toString()
                     )
-                paymentMethod.brandAssets = gmpPaymentMethod.paymentMethodsBrandAssets
+                paymentMethod.paymentMethodsBrandAssets = gmpPaymentMethod.paymentMethodsBrandAssets
 
                 paymentMethodsResponse.addPaymentMethodsItem(paymentMethod)
             } catch (ex: Exception) {
