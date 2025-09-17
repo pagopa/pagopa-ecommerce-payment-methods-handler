@@ -67,31 +67,43 @@ class PaymentMethodServiceImpl @Inject constructor(private val restClient: Payme
         val paymentMethodsResponse = PaymentMethodsResponse()
 
         paymentMethodsResponseDto.paymentMethods.forEach { gmpPaymentMethod ->
-            try {
-                val paymentMethod = PaymentMethodResponse()
+            val paymentMethod = PaymentMethodResponse()
 
-                paymentMethod.id = gmpPaymentMethod.paymentMethodId
-                paymentMethod.name = gmpPaymentMethod.name
-                paymentMethod.description = gmpPaymentMethod.description
-                paymentMethod.status =
-                    PaymentMethodResponse.StatusEnum.valueOf(gmpPaymentMethod.status.toString())
-                paymentMethod.feeRange =
-                    FeeRange().max(gmpPaymentMethod.feeRange.max).min(gmpPaymentMethod.feeRange.min)
-                paymentMethod.paymentTypeCode =
-                    PaymentMethodResponse.PaymentTypeCodeEnum.valueOf(
-                        gmpPaymentMethod.group.toString()
+            paymentMethod.id = gmpPaymentMethod.paymentMethodId
+            paymentMethod.name = gmpPaymentMethod.name
+            paymentMethod.description = gmpPaymentMethod.description
+            paymentMethod.status =
+                PaymentMethodResponse.StatusEnum.valueOf(gmpPaymentMethod.status.toString())
+            paymentMethod.feeRange =
+                gmpPaymentMethod.feeRange?.let { gmpFeeRange ->
+                    FeeRange().max(gmpFeeRange.max).min(gmpFeeRange.min)
+                }
+            paymentMethod.paymentTypeCode =
+                PaymentMethodResponse.PaymentTypeCodeEnum.valueOf(gmpPaymentMethod.group.toString())
+            paymentMethod.paymentMethodAsset = gmpPaymentMethod.paymentMethodAsset
+            paymentMethod.methodManagement =
+                PaymentMethodResponse.MethodManagementEnum.valueOf(
+                    gmpPaymentMethod.methodManagement.toString()
+                )
+            paymentMethod.paymentMethodsBrandAssets = gmpPaymentMethod.paymentMethodsBrandAssets
+            paymentMethod.validityDateFrom = gmpPaymentMethod.validityDateFrom
+            paymentMethod.disabledReason =
+                gmpPaymentMethod.disabledReason?.let {
+                    PaymentMethodResponse.DisabledReasonEnum.valueOf(
+                        gmpPaymentMethod.disabledReason.toString()
                     )
-                paymentMethod.paymentMethodAsset = gmpPaymentMethod.paymentMethodAsset
-                paymentMethod.methodManagement =
-                    PaymentMethodResponse.MethodManagementEnum.valueOf(
-                        gmpPaymentMethod.methodManagement.toString()
-                    )
-                paymentMethod.paymentMethodsBrandAssets = gmpPaymentMethod.paymentMethodsBrandAssets
+                }
+            paymentMethod.metadata = gmpPaymentMethod.metadata
+            paymentMethod.paymentMethodTypes =
+                gmpPaymentMethod.paymentMethodTypes?.let {
+                    gmpPaymentMethod.paymentMethodTypes.map { payMethodType ->
+                        PaymentMethodResponse.PaymentMethodTypesEnum.valueOf(
+                            payMethodType.toString()
+                        )
+                    }
+                }
 
-                paymentMethodsResponse.addPaymentMethodsItem(paymentMethod)
-            } catch (ex: Exception) {
-                log.error("Failed to map payment method ${gmpPaymentMethod.paymentMethodId}", ex)
-            }
+            paymentMethodsResponse.addPaymentMethodsItem(paymentMethod)
         }
 
         return paymentMethodsResponse

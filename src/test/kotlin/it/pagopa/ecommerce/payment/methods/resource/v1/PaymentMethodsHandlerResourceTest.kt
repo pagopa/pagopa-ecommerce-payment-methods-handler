@@ -43,6 +43,7 @@ class PaymentMethodsHandlerResourceTest {
                         .description(mapOf(Pair("IT", "Carte")))
                         .paymentMethodAsset("asset")
                         .paymentMethodsBrandAssets(mapOf(Pair("first", "asset")))
+                        .metadata(mapOf("test" to "test"))
                 )
         val expectedBody =
             PaymentMethodsResponse()
@@ -57,6 +58,7 @@ class PaymentMethodsHandlerResourceTest {
                         .description(mapOf("IT" to "Carte"))
                         .paymentMethodAsset("asset")
                         .paymentMethodsBrandAssets(mapOf("first" to "asset"))
+                        .metadata(mapOf("test" to "test"))
                 )
         whenever(mockClient.searchPaymentMethods(anyOrNull(), anyOrNull())).then {
             Uni.createFrom().item { mockResponseDto }
