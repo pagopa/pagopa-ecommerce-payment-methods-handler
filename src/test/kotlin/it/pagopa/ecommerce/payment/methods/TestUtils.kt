@@ -10,6 +10,7 @@ class TestUtils {
             return PaymentMethodsRequest()
                 .userTouchpoint(PaymentMethodsRequest.UserTouchpointEnum.CHECKOUT)
                 .totalAmount(100L)
+                .userDevice(PaymentMethodsRequest.UserDeviceEnum.WEB)
                 .paymentNotice(
                     listOf(
                         PaymentNoticeItem()

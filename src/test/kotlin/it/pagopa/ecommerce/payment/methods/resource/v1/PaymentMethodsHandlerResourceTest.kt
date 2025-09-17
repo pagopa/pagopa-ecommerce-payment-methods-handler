@@ -43,6 +43,9 @@ class PaymentMethodsHandlerResourceTest {
                         .description(mapOf(Pair("IT", "Carte")))
                         .paymentMethodAsset("asset")
                         .paymentMethodsBrandAssets(mapOf(Pair("first", "asset")))
+                        .paymentMethodTypes(
+                            listOf(PaymentMethodsItemDto.PaymentMethodTypesEnum.CARTE)
+                        )
                         .metadata(mapOf("test" to "test"))
                 )
         val expectedBody =
@@ -58,6 +61,9 @@ class PaymentMethodsHandlerResourceTest {
                         .description(mapOf("IT" to "Carte"))
                         .paymentMethodAsset("asset")
                         .paymentMethodsBrandAssets(mapOf("first" to "asset"))
+                        .paymentMethodTypes(
+                            listOf(PaymentMethodResponse.PaymentMethodTypesEnum.CARTE)
+                        )
                         .metadata(mapOf("test" to "test"))
                 )
         whenever(mockClient.searchPaymentMethods(anyOrNull(), anyOrNull())).then {
