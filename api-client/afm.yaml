@@ -636,7 +636,6 @@ components:
     PaymentMethodsItem:
       required:
         - description
-        - feeRange
         - group
         - methodManagement
         - name
