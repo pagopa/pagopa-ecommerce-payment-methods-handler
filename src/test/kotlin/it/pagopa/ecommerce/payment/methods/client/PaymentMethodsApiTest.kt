@@ -45,7 +45,6 @@ class PaymentMethodsApiTest {
             PaymentMethodRequestDto().apply {
                 userTouchpoint = PaymentMethodRequestDto.UserTouchpointEnum.CHECKOUT
                 userDevice = PaymentMethodRequestDto.UserDeviceEnum.WEB
-                bin = "457865"
                 totalAmount = 2500
                 allCCp = true
                 targetKey = "TAX_2025_RENDE"

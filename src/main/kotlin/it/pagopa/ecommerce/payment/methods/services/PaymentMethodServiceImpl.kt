@@ -42,9 +42,7 @@ class PaymentMethodServiceImpl @Inject constructor(private val restClient: Payme
             paymentMethodsRequest.userDevice?.let { device ->
                 PaymentMethodRequestDto.UserDeviceEnum.valueOf(device.toString())
             }
-        paymentRequestDto.totalAmount =
-            paymentMethodsRequest.totalAmount
-                .toInt() // TODO this should be fixed by GMP and set to Long/BigDecimal
+        paymentRequestDto.totalAmount = paymentMethodsRequest.totalAmount
         paymentMethodsRequest.paymentNotice.forEach { notice ->
             val paymentNotice = PaymentNoticeItemDto()
             paymentNotice.paymentAmount = notice.paymentAmount
