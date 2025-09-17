@@ -54,7 +54,7 @@ class PaymentMethodsClientTest {
                                 PaymentMethodsItemDto.MethodManagementEnum.ONBOARDABLE
                             validityDateFrom = LocalDate.now()
                             disabledReason = null
-                            metadata = null
+                            metadata = mapOf("test" to "test")
                             paymentMethodTypes =
                                 listOf(PaymentMethodsItemDto.PaymentMethodTypesEnum.CARTE)
                         }
