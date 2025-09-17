@@ -50,6 +50,9 @@ class PaymentMethodServiceImpl @Inject constructor(private val restClient: Payme
             notice.transferList?.forEach { transfer ->
                 val transferListItem = TransferListItemDto()
                 transferListItem.creditorInstitution = transfer.creditorInstitution
+                transferListItem.transferCategory = transfer.transferCategory
+                transferListItem.digitalStamp = transfer.digitalStamp
+
                 paymentNotice.transferList.add(transferListItem)
             }
 
