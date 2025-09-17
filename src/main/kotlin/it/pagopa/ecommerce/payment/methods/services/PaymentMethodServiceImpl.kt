@@ -31,19 +31,19 @@ class PaymentMethodServiceImpl @Inject constructor(private val restClient: Payme
     }
 
     private fun buildAfmRequest(
-        paymentMethodsRequest: PaymentMethodsRequest
+        paymentHandlerRequest: PaymentMethodsRequest
     ): PaymentMethodRequestDto {
-        val paymentRequestDto = PaymentMethodRequestDto()
-        paymentRequestDto.userTouchpoint =
+        val afmRequest = PaymentMethodRequestDto()
+        afmRequest.userTouchpoint =
             PaymentMethodRequestDto.UserTouchpointEnum.valueOf(
-                paymentMethodsRequest.userTouchpoint.toString()
+                paymentHandlerRequest.userTouchpoint.toString()
             )
-        paymentRequestDto.userDevice =
-            paymentMethodsRequest.userDevice?.let { device ->
+        afmRequest.userDevice =
+            paymentHandlerRequest.userDevice?.let { device ->
                 PaymentMethodRequestDto.UserDeviceEnum.valueOf(device.toString())
             }
-        paymentRequestDto.totalAmount = paymentMethodsRequest.totalAmount
-        paymentMethodsRequest.paymentNotice.forEach { notice ->
+        afmRequest.totalAmount = paymentHandlerRequest.totalAmount
+        paymentHandlerRequest.paymentNotice.forEach { notice ->
             val paymentNotice = PaymentNoticeItemDto()
             paymentNotice.paymentAmount = notice.paymentAmount
             paymentNotice.primaryCreditorInstitution = notice.primaryCreditorInstitution
@@ -56,59 +56,63 @@ class PaymentMethodServiceImpl @Inject constructor(private val restClient: Payme
                 paymentNotice.transferList.add(transferListItem)
             }
 
-            paymentRequestDto.paymentNotice.add(paymentNotice)
+            afmRequest.paymentNotice.add(paymentNotice)
         }
-        paymentRequestDto.allCCp = paymentMethodsRequest.allCCp
-        paymentRequestDto.targetKey = paymentMethodsRequest.targetKey
+        afmRequest.allCCp = paymentHandlerRequest.allCCp
+        afmRequest.targetKey = paymentHandlerRequest.targetKey
 
-        return paymentRequestDto
+        return afmRequest
     }
 
     private fun afmResponseToPaymentHandlerResponse(
-        paymentMethodsResponseDto: PaymentMethodsResponseDto
+        afmResponse: PaymentMethodsResponseDto
     ): PaymentMethodsResponse {
-        val paymentMethodsResponse = PaymentMethodsResponse()
+        val paymentHandlerResponse = PaymentMethodsResponse()
 
-        paymentMethodsResponseDto.paymentMethods.forEach { gmpPaymentMethod ->
-            val paymentMethod = PaymentMethodResponse()
+        afmResponse.paymentMethods.forEach { afmResponsePaymentMethod ->
+            val paymentHandlerPaymentMethod = PaymentMethodResponse()
 
-            paymentMethod.id = gmpPaymentMethod.paymentMethodId
-            paymentMethod.name = gmpPaymentMethod.name
-            paymentMethod.description = gmpPaymentMethod.description
-            paymentMethod.status =
-                PaymentMethodResponse.StatusEnum.valueOf(gmpPaymentMethod.status.toString())
-            paymentMethod.feeRange =
-                gmpPaymentMethod.feeRange?.let { gmpFeeRange ->
-                    FeeRange().max(gmpFeeRange.max).min(gmpFeeRange.min)
+            paymentHandlerPaymentMethod.id = afmResponsePaymentMethod.paymentMethodId
+            paymentHandlerPaymentMethod.name = afmResponsePaymentMethod.name
+            paymentHandlerPaymentMethod.description = afmResponsePaymentMethod.description
+            paymentHandlerPaymentMethod.status =
+                PaymentMethodResponse.StatusEnum.valueOf(afmResponsePaymentMethod.status.toString())
+            paymentHandlerPaymentMethod.feeRange =
+                afmResponsePaymentMethod.feeRange?.let { afmResponseFeeRange ->
+                    FeeRange().max(afmResponseFeeRange.max).min(afmResponseFeeRange.min)
                 }
-            paymentMethod.paymentTypeCode =
-                PaymentMethodResponse.PaymentTypeCodeEnum.valueOf(gmpPaymentMethod.group.toString())
-            paymentMethod.paymentMethodAsset = gmpPaymentMethod.paymentMethodAsset
-            paymentMethod.methodManagement =
-                PaymentMethodResponse.MethodManagementEnum.valueOf(
-                    gmpPaymentMethod.methodManagement.toString()
+            paymentHandlerPaymentMethod.paymentTypeCode =
+                PaymentMethodResponse.PaymentTypeCodeEnum.valueOf(
+                    afmResponsePaymentMethod.group.toString()
                 )
-            paymentMethod.paymentMethodsBrandAssets = gmpPaymentMethod.paymentMethodsBrandAssets
-            paymentMethod.validityDateFrom = gmpPaymentMethod.validityDateFrom
-            paymentMethod.disabledReason =
-                gmpPaymentMethod.disabledReason?.let {
+            paymentHandlerPaymentMethod.paymentMethodAsset =
+                afmResponsePaymentMethod.paymentMethodAsset
+            paymentHandlerPaymentMethod.methodManagement =
+                PaymentMethodResponse.MethodManagementEnum.valueOf(
+                    afmResponsePaymentMethod.methodManagement.toString()
+                )
+            paymentHandlerPaymentMethod.paymentMethodsBrandAssets =
+                afmResponsePaymentMethod.paymentMethodsBrandAssets
+            paymentHandlerPaymentMethod.validityDateFrom = afmResponsePaymentMethod.validityDateFrom
+            paymentHandlerPaymentMethod.disabledReason =
+                afmResponsePaymentMethod.disabledReason?.let {
                     PaymentMethodResponse.DisabledReasonEnum.valueOf(
-                        gmpPaymentMethod.disabledReason.toString()
+                        afmResponsePaymentMethod.disabledReason.toString()
                     )
                 }
-            paymentMethod.metadata = gmpPaymentMethod.metadata
-            paymentMethod.paymentMethodTypes =
-                gmpPaymentMethod.paymentMethodTypes?.let {
-                    gmpPaymentMethod.paymentMethodTypes.map { payMethodType ->
+            paymentHandlerPaymentMethod.metadata = afmResponsePaymentMethod.metadata
+            paymentHandlerPaymentMethod.paymentMethodTypes =
+                afmResponsePaymentMethod.paymentMethodTypes?.let {
+                    afmResponsePaymentMethod.paymentMethodTypes.map { payMethodType ->
                         PaymentMethodResponse.PaymentMethodTypesEnum.valueOf(
                             payMethodType.toString()
                         )
                     }
                 }
 
-            paymentMethodsResponse.addPaymentMethodsItem(paymentMethod)
+            paymentHandlerResponse.addPaymentMethodsItem(paymentHandlerPaymentMethod)
         }
 
-        return paymentMethodsResponse
+        return paymentHandlerResponse
     }
 }
