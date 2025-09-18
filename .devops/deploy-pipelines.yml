@@ -227,8 +227,6 @@ stages:
     jobs:
       - deployment: "Green_deployment"
         displayName: "Green deployment"
-        pool:
-          name: pagopa-uat-linux
         environment: 'UAT'
         strategy:
           runOnce:
