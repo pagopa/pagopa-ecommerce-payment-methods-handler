@@ -118,8 +118,6 @@ stages:
   - stage: "API_Test_DEV"
     displayName: 'Running API test on DEV green app'
     dependsOn: Deploy_for_DEV
-    pool:
-      name: pagopa-dev-linux
     jobs:
       - job: newman_dev_api_test_for_checkout
         displayName: 'Running API test with api key related to CHECKOUT client'
@@ -227,6 +225,8 @@ stages:
     jobs:
       - deployment: "Green_deployment"
         displayName: "Green deployment"
+        pool:
+          name: pagopa-uat-linux
         environment: 'UAT'
         strategy:
           runOnce:
