@@ -26,10 +26,8 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
     override fun getAllPaymentMethods(
         paymentMethodsRequest: @Valid @NotNull PaymentMethodsRequest
     ): CompletionStage<PaymentMethodsResponse> {
-        return paymentMethodService.searchPaymentMethods(
-            paymentMethodsRequest,
-            UUID.randomUUID().toString(),
-        )
+        val xRequestId = UUID.randomUUID().toString()
+        return paymentMethodService.searchPaymentMethods(paymentMethodsRequest, xRequestId)
     }
 
     override fun getPaymentMethod(

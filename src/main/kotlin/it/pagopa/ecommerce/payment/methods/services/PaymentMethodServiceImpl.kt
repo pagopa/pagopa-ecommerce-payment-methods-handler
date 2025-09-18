@@ -27,6 +27,14 @@ class PaymentMethodServiceImpl @Inject constructor(private val restClient: Payme
         return restClient
             .searchPaymentMethods(buildAfmRequest(paymentMethodsRequest), xRequestId)
             .map { dto -> afmResponseToPaymentHandlerResponse(dto) }
+            .onFailure()
+            .invoke { exception ->
+                log.error("Exception during request with id $xRequestId", exception)
+            }
+            .onItem()
+            .invoke { ignored ->
+                log.info("Payment methods retrieved successfully for request with id $xRequestId")
+            }
             .subscribeAsCompletionStage()
     }
 
