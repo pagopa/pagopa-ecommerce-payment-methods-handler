@@ -3,7 +3,9 @@ package it.pagopa.ecommerce.payment.methods.utils
 import io.quarkus.test.InjectMock
 import io.quarkus.test.junit.QuarkusTest
 import io.restassured.RestAssured
+import io.restassured.http.ContentType
 import io.smallrye.mutiny.Uni
+import it.pagopa.ecommerce.payment.methods.TestUtils
 import it.pagopa.ecommerce.payment.methods.client.PaymentMethodsClient
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodsResponseDto
 import org.junit.jupiter.api.Test
@@ -12,16 +14,14 @@ import org.mockito.kotlin.whenever
 
 @QuarkusTest
 class ApiKeyFilterTest {
-
-    private val securedPath = "/payment-methods-handler"
     @InjectMock lateinit var mockClient: PaymentMethodsClient
 
     @Test
     fun testWithoutApiKeyShouldReturnUnauthorized() {
         RestAssured.given()
-            .header("x-client-id", "test")
+            .contentType(ContentType.JSON)
             .`when`()
-            .get("$securedPath/payment-methods")
+            .post("/payment-methods")
             .then()
             .statusCode(401)
     }
@@ -33,11 +33,11 @@ class ApiKeyFilterTest {
         }
 
         RestAssured.given()
-            .header("x-client-id", "CHECKOUT")
+            .contentType(ContentType.JSON)
             .header("x-api-key", "test-primary")
-            .queryParam("amount", "100")
+            .body(TestUtils.buildDefaultMockRequest())
             .`when`()
-            .get("$securedPath/payment-methods")
+            .post("/payment-methods")
             .then()
             .statusCode(200)
     }
@@ -45,10 +45,10 @@ class ApiKeyFilterTest {
     @Test
     fun testWithInvalidApiKeyShouldReturnUnauthorized() {
         RestAssured.given()
-            .header("x-client-id", "test")
+            .contentType(ContentType.JSON)
             .header("x-api-key", "invalid-key")
             .`when`()
-            .get("$securedPath/payment-methods")
+            .post("/payment-methods")
             .then()
             .statusCode(401)
     }
@@ -60,11 +60,11 @@ class ApiKeyFilterTest {
         }
 
         RestAssured.given()
-            .header("x-client-id", "CHECKOUT")
+            .contentType(ContentType.JSON)
             .header("x-api-key", "test-secondary")
-            .queryParam("amount", "100")
+            .body(TestUtils.buildDefaultMockRequest())
             .`when`()
-            .get("$securedPath/payment-methods")
+            .post("/payment-methods")
             .then()
             .statusCode(200)
     }

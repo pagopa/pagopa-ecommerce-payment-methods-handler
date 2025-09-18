@@ -23,7 +23,6 @@ class PaymentMethodsClient(@param:RestClient private val paymentMethodsApi: Paym
             .searchPaymentMethods(requestDto, xRequestId)
             .onFailure()
             .transform { error ->
-                log.error("Error during the call to PaymentMethodsApi", error)
                 PaymentMethodsClientException("Error during the call to PaymentMethodsApi", error)
             }
     }

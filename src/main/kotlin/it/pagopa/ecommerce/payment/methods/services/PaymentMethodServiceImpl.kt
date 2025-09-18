@@ -1,18 +1,16 @@
 package it.pagopa.ecommerce.payment.methods.services
 
 import it.pagopa.ecommerce.payment.methods.client.PaymentMethodsClient
-import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodManagementType
+import it.pagopa.ecommerce.payment.methods.v1.server.model.FeeRange
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodResponse
-import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodStatus
+import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
-import it.pagopa.ecommerce.payment.methods.v1.server.model.Range
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodRequestDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodsResponseDto
 import it.pagopa.generated.ecommerce.client.model.PaymentNoticeItemDto
 import it.pagopa.generated.ecommerce.client.model.TransferListItemDto
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Inject
-import java.math.BigDecimal
 import java.util.concurrent.CompletionStage
 import org.slf4j.LoggerFactory
 
@@ -23,70 +21,106 @@ class PaymentMethodServiceImpl @Inject constructor(private val restClient: Payme
     private val log = LoggerFactory.getLogger(PaymentMethodServiceImpl::class.java)
 
     override fun searchPaymentMethods(
-        amount: BigDecimal,
-        xClientId: String,
+        paymentMethodsRequest: PaymentMethodsRequest,
         xRequestId: String,
     ): CompletionStage<PaymentMethodsResponse> {
         return restClient
-            .searchPaymentMethods(buildRequest(amount, xClientId), xRequestId)
-            .map { dto -> paymentMethodDtoToResponse(dto) }
+            .searchPaymentMethods(buildAfmRequest(paymentMethodsRequest), xRequestId)
+            .map { dto -> afmResponseToPaymentHandlerResponse(dto) }
+            .onFailure()
+            .invoke { exception ->
+                log.error("Exception during request with id $xRequestId", exception)
+            }
+            .onItem()
+            .invoke { _ ->
+                log.info("Payment methods retrieved successfully for request with id $xRequestId")
+            }
             .subscribeAsCompletionStage()
     }
 
-    private fun buildRequest(amount: BigDecimal, xClientId: String): PaymentMethodRequestDto {
-        val paymentRequestDto = PaymentMethodRequestDto()
-        paymentRequestDto.userTouchpoint =
-            PaymentMethodRequestDto.UserTouchpointEnum.valueOf(xClientId)
-        paymentRequestDto.userDevice =
-            PaymentMethodRequestDto.UserDeviceEnum.valueOf("WEB") // TODO this is mocked
-        paymentRequestDto.totalAmount =
-            amount.intValueExact() // TODO this should be fixed by GMP and set to Long/BigDecimal
-        val paymentNotice = PaymentNoticeItemDto()
-        paymentNotice.paymentAmount = amount.longValueExact()
-        paymentNotice.primaryCreditorInstitution = "77777777777" // TODO this is mocked
-        val transferListItem = TransferListItemDto()
-        transferListItem.creditorInstitution = "77777777777" // TODO this is mocked
-        paymentNotice.transferList = listOf(transferListItem)
-        paymentRequestDto.paymentNotice = listOf(paymentNotice)
-        paymentRequestDto.allCCp = false // TODO this is mocked
+    private fun buildAfmRequest(
+        paymentHandlerRequest: PaymentMethodsRequest
+    ): PaymentMethodRequestDto {
+        val afmRequest = PaymentMethodRequestDto()
+        afmRequest.userTouchpoint =
+            PaymentMethodRequestDto.UserTouchpointEnum.valueOf(
+                paymentHandlerRequest.userTouchpoint.toString()
+            )
+        afmRequest.userDevice =
+            paymentHandlerRequest.userDevice?.let { device ->
+                PaymentMethodRequestDto.UserDeviceEnum.valueOf(device.toString())
+            }
+        afmRequest.totalAmount = paymentHandlerRequest.totalAmount
+        paymentHandlerRequest.paymentNotice.forEach { notice ->
+            val paymentNotice = PaymentNoticeItemDto()
+            paymentNotice.paymentAmount = notice.paymentAmount
+            paymentNotice.primaryCreditorInstitution = notice.primaryCreditorInstitution
+            notice.transferList?.forEach { transfer ->
+                val transferListItem = TransferListItemDto()
+                transferListItem.creditorInstitution = transfer.creditorInstitution
+                transferListItem.transferCategory = transfer.transferCategory
+                transferListItem.digitalStamp = transfer.digitalStamp
 
-        return paymentRequestDto
+                paymentNotice.transferList.add(transferListItem)
+            }
+
+            afmRequest.paymentNotice.add(paymentNotice)
+        }
+        afmRequest.allCCp = paymentHandlerRequest.allCCp
+        afmRequest.targetKey = paymentHandlerRequest.targetKey
+
+        return afmRequest
     }
 
-    private fun paymentMethodDtoToResponse(
-        paymentMethodsResponseDto: PaymentMethodsResponseDto
+    private fun afmResponseToPaymentHandlerResponse(
+        afmResponse: PaymentMethodsResponseDto
     ): PaymentMethodsResponse {
-        val paymentMethodsResponse = PaymentMethodsResponse()
+        val paymentHandlerResponse = PaymentMethodsResponse()
 
-        paymentMethodsResponseDto.paymentMethods.forEach { gmpPaymentMethod ->
-            try {
-                val paymentMethod = PaymentMethodResponse()
+        afmResponse.paymentMethods.forEach { afmResponsePaymentMethod ->
+            val paymentHandlerPaymentMethod = PaymentMethodResponse()
 
-                paymentMethod.id = gmpPaymentMethod.paymentMethodId
-                paymentMethod.name = gmpPaymentMethod.name["IT"]
-                paymentMethod.description = gmpPaymentMethod.description["IT"]
-                paymentMethod.status =
-                    PaymentMethodStatus.valueOf(gmpPaymentMethod.status.toString())
-                paymentMethod.ranges =
-                    listOf(
-                        Range()
-                            .max(gmpPaymentMethod.feeRange.max)
-                            .min(gmpPaymentMethod.feeRange.min)
+            paymentHandlerPaymentMethod.id = afmResponsePaymentMethod.paymentMethodId
+            paymentHandlerPaymentMethod.name = afmResponsePaymentMethod.name
+            paymentHandlerPaymentMethod.description = afmResponsePaymentMethod.description
+            paymentHandlerPaymentMethod.status =
+                PaymentMethodResponse.StatusEnum.valueOf(afmResponsePaymentMethod.status.toString())
+            paymentHandlerPaymentMethod.feeRange =
+                afmResponsePaymentMethod.feeRange?.let { afmResponseFeeRange ->
+                    FeeRange().max(afmResponseFeeRange.max).min(afmResponseFeeRange.min)
+                }
+            paymentHandlerPaymentMethod.paymentTypeCode =
+                PaymentMethodResponse.PaymentTypeCodeEnum.valueOf(
+                    afmResponsePaymentMethod.group.toString()
+                )
+            paymentHandlerPaymentMethod.paymentMethodAsset =
+                afmResponsePaymentMethod.paymentMethodAsset
+            paymentHandlerPaymentMethod.methodManagement =
+                PaymentMethodResponse.MethodManagementEnum.valueOf(
+                    afmResponsePaymentMethod.methodManagement.toString()
+                )
+            paymentHandlerPaymentMethod.paymentMethodsBrandAssets =
+                afmResponsePaymentMethod.paymentMethodsBrandAssets
+            paymentHandlerPaymentMethod.validityDateFrom = afmResponsePaymentMethod.validityDateFrom
+            paymentHandlerPaymentMethod.disabledReason =
+                afmResponsePaymentMethod.disabledReason?.let {
+                    PaymentMethodResponse.DisabledReasonEnum.valueOf(
+                        afmResponsePaymentMethod.disabledReason.toString()
                     )
-                paymentMethod.paymentTypeCode = gmpPaymentMethod.group.toString()
-                paymentMethod.asset = gmpPaymentMethod.paymentMethodAsset
-                paymentMethod.methodManagement =
-                    PaymentMethodManagementType.valueOf(
-                        gmpPaymentMethod.methodManagement.toString()
-                    )
-                paymentMethod.brandAssets = gmpPaymentMethod.paymentMethodsBrandAssets
+                }
+            paymentHandlerPaymentMethod.metadata = afmResponsePaymentMethod.metadata
+            paymentHandlerPaymentMethod.paymentMethodTypes =
+                afmResponsePaymentMethod.paymentMethodTypes?.let {
+                    afmResponsePaymentMethod.paymentMethodTypes.map { payMethodType ->
+                        PaymentMethodResponse.PaymentMethodTypesEnum.valueOf(
+                            payMethodType.toString()
+                        )
+                    }
+                }
 
-                paymentMethodsResponse.addPaymentMethodsItem(paymentMethod)
-            } catch (ex: Exception) {
-                log.error("Failed to map payment method ${gmpPaymentMethod.paymentMethodId}", ex)
-            }
+            paymentHandlerResponse.addPaymentMethodsItem(paymentHandlerPaymentMethod)
         }
 
-        return paymentMethodsResponse
+        return paymentHandlerResponse
     }
 }
