@@ -31,10 +31,11 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
     }
 
     override fun getPaymentMethod(
-        id: String?,
+        id: String,
         xClientId: @NotNull String?,
-    ): CompletionStage<PaymentMethodResponse?>? {
-        TODO("Not yet implemented")
+    ): CompletionStage<PaymentMethodResponse> {
+        val xRequestId = UUID.randomUUID().toString()
+        return paymentMethodService.getPaymentMethod(id, xRequestId)
     }
 
     @ServerExceptionMapper

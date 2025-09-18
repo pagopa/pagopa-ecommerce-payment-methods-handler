@@ -84,7 +84,10 @@ class PaymentMethodsClientTest {
                 client.searchPaymentMethods(requestDto, "test-id").await().indefinitely()
             }
 
-        assertEquals("Error during the call to PaymentMethodsApi", thrown.message)
+        assertEquals(
+            "Error during the call to PaymentMethodsApi.searchPaymentMethods",
+            thrown.message,
+        )
         assertEquals(simulatedError, thrown.cause)
     }
 

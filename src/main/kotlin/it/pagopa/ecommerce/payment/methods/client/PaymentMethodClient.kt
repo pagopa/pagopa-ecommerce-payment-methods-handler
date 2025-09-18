@@ -3,6 +3,7 @@ package it.pagopa.ecommerce.payment.methods.client
 import io.smallrye.mutiny.Uni
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodsClientException
 import it.pagopa.generated.ecommerce.client.api.PaymentMethodsApi
+import it.pagopa.generated.ecommerce.client.model.PaymentMethodDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodRequestDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodsResponseDto
 import jakarta.enterprise.context.ApplicationScoped
@@ -23,7 +24,22 @@ class PaymentMethodsClient(@param:RestClient private val paymentMethodsApi: Paym
             .searchPaymentMethods(requestDto, xRequestId)
             .onFailure()
             .transform { error ->
-                PaymentMethodsClientException("Error during the call to PaymentMethodsApi", error)
+                PaymentMethodsClientException(
+                    "Error during the call to PaymentMethodsApi.searchPaymentMethods",
+                    error,
+                )
+            }
+    }
+
+    fun getPaymentMethod(paymentMethodsId: String, xRequestId: String): Uni<PaymentMethodDto> {
+        return paymentMethodsApi
+            .getPaymentMethod(paymentMethodsId, xRequestId)
+            .onFailure()
+            .transform { error ->
+                PaymentMethodsClientException(
+                    "Error during the call to PaymentMethodsApi.getPaymentMethod",
+                    error,
+                )
             }
     }
 }
