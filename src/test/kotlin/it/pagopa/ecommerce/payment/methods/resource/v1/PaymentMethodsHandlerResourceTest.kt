@@ -7,6 +7,7 @@ import io.restassured.http.ContentType
 import io.smallrye.mutiny.Uni
 import it.pagopa.ecommerce.payment.methods.TestUtils
 import it.pagopa.ecommerce.payment.methods.client.PaymentMethodsClient
+import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodNotFoundException
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodsClientException
 import it.pagopa.ecommerce.payment.methods.v1.server.model.FeeRange
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodResponse
@@ -135,6 +136,36 @@ class PaymentMethodsHandlerResourceTest {
                 .`as`(PaymentMethodResponse::class.java)
 
         assertEquals(expectedBody, result)
+    }
+
+    @Test
+    fun `should return NOT_FOUND response for get payment method by id not found`() {
+        val methodId = "test-id"
+        val mockResponseDto =
+            PaymentMethodDto()
+                .paymentMethodId("test-id")
+                .status(PaymentMethodDto.StatusEnum.ENABLED)
+                .group(PaymentMethodDto.GroupEnum.CP)
+                .methodManagement(PaymentMethodDto.MethodManagementEnum.ONBOARDABLE)
+                .rangeAmount(FeeRangeDto().min(1).max(10))
+                .name(mapOf(Pair("IT", "Carte")))
+                .description(mapOf(Pair("IT", "Carte")))
+                .paymentMethodAsset("asset")
+                .paymentMethodsBrandAssets(mapOf(Pair("first", "asset")))
+                .paymentMethodTypes(listOf(PaymentMethodDto.PaymentMethodTypesEnum.CARTE))
+                .metadata(mapOf("test" to "test"))
+
+        whenever(mockClient.getPaymentMethod(eq(methodId), anyOrNull()))
+            .thenReturn(Uni.createFrom().failure(PaymentMethodNotFoundException("not_found_test")))
+
+        RestAssured.given()
+            .header("x-api-key", "test-primary")
+            .header("x-client-id", "CHECKOUT")
+            .contentType(ContentType.JSON)
+            .`when`()
+            .get("/payment-methods/$methodId")
+            .then()
+            .statusCode(404)
     }
 
     @Test

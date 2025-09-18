@@ -1,5 +1,6 @@
 package it.pagopa.ecommerce.payment.methods.resource.v1
 
+import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodNotFoundException
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodsClientException
 import it.pagopa.ecommerce.payment.methods.services.PaymentMethodService
 import it.pagopa.ecommerce.payment.methods.v1.server.api.PaymentMethodsApi
@@ -63,6 +64,17 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
             Response.Status.BAD_REQUEST,
             "Bad Request",
             "The request is malformed, contains invalid parameters, or is missing required information.",
+        )
+    }
+
+    @ServerExceptionMapper
+    fun mapMethodNotFoundException(
+        exception: PaymentMethodNotFoundException
+    ): RestResponse<ProblemJson> {
+        return problemResponse(
+            Response.Status.NOT_FOUND,
+            "Not Found",
+            "The requested payment method does not exist or could not be found.",
         )
     }
 

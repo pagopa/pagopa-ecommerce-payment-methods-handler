@@ -4,6 +4,7 @@ import io.quarkus.test.junit.QuarkusTest
 import io.smallrye.mutiny.Uni
 import it.pagopa.ecommerce.payment.methods.TestUtils
 import it.pagopa.ecommerce.payment.methods.client.PaymentMethodsClient
+import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodNotFoundException
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodsClientException
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
 import it.pagopa.generated.ecommerce.client.api.PaymentMethodsApi
@@ -11,7 +12,10 @@ import it.pagopa.generated.ecommerce.client.model.PaymentMethodDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodRequestDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodsItemDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodsResponseDto
+import jakarta.ws.rs.core.Response
 import java.time.LocalDate
+import org.jboss.resteasy.reactive.ClientWebApplicationException
+import org.jboss.resteasy.reactive.client.impl.ClientResponseImpl
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -70,6 +74,20 @@ class PaymentMethodsClientTest {
         assertEquals(1, response.paymentMethods?.size)
         assertEquals("card_visa", response.paymentMethods?.get(0)?.paymentMethodId)
         assertEquals("Carta Visa", response.paymentMethods?.get(0)?.name?.get("it"))
+    }
+
+    @Test
+    fun `should return payment not found exception when payment method does not exist`() {
+        val methodId = "test-id"
+        val mockResponse = ClientResponseImpl()
+        mockResponse.setStatus(Response.Status.NOT_FOUND.statusCode)
+
+        whenever(mockApi.getPaymentMethod(methodId, "test-id"))
+            .thenReturn(Uni.createFrom().failure(ClientWebApplicationException(mockResponse)))
+
+        assertThrows<PaymentMethodNotFoundException> {
+            client.getPaymentMethod(methodId, "test-id").await().indefinitely()
+        }
     }
 
     @Test
