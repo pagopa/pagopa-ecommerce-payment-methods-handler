@@ -11,8 +11,6 @@ import it.pagopa.generated.ecommerce.client.model.PaymentMethodsResponseDto
 import it.pagopa.generated.ecommerce.client.model.PaymentNoticeItemDto
 import it.pagopa.generated.ecommerce.client.model.TransferListItemDto
 
-class PaymentMethodMappers {}
-
 fun PaymentMethodsItemDto.toPaymentMethodResponse(): PaymentMethodResponse {
     val paymentHandlerPaymentMethod = PaymentMethodResponse()
 
