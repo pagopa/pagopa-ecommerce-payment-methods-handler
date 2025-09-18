@@ -48,7 +48,7 @@ class PaymentMethodServiceImpl @Inject constructor(private val restClient: Payme
                 log.error("Exception during request with id $xRequestId", exception)
             }
             .onItem()
-            .invoke { ignored ->
+            .invoke { _ ->
                 log.info("Payment method retrieved successfully for request with id $xRequestId")
             }
             .subscribeAsCompletionStage()
