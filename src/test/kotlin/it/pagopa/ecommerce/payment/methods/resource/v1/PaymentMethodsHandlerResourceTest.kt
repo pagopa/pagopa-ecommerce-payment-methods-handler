@@ -7,6 +7,7 @@ import io.restassured.http.ContentType
 import io.smallrye.mutiny.Uni
 import it.pagopa.ecommerce.payment.methods.TestUtils
 import it.pagopa.ecommerce.payment.methods.client.PaymentMethodsClient
+import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodNotFoundException
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodsClientException
 import it.pagopa.ecommerce.payment.methods.v1.server.model.FeeRange
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodResponse
@@ -14,6 +15,7 @@ import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.ProblemJson
 import it.pagopa.generated.ecommerce.client.model.FeeRangeDto
+import it.pagopa.generated.ecommerce.client.model.PaymentMethodDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodsItemDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodsResponseDto
 import jakarta.validation.ValidationException
@@ -21,6 +23,7 @@ import jakarta.ws.rs.core.Response
 import kotlin.test.assertEquals
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.whenever
 
 @QuarkusTest
@@ -29,7 +32,7 @@ class PaymentMethodsHandlerResourceTest {
     private val request: PaymentMethodsRequest = TestUtils.buildDefaultMockRequest()
 
     @Test
-    fun shouldReturnOKResponse() {
+    fun `should return OK response for get all payment methods`() {
         val mockResponseDto =
             PaymentMethodsResponseDto()
                 .addPaymentMethodsItem(
@@ -83,6 +86,86 @@ class PaymentMethodsHandlerResourceTest {
                 .`as`(PaymentMethodsResponse::class.java)
 
         assertEquals(expectedBody, result)
+    }
+
+    @Test
+    fun `should return OK response for get payment method by id`() {
+        val methodId = "test-id"
+        val mockResponseDto =
+            PaymentMethodDto()
+                .paymentMethodId("test-id")
+                .status(PaymentMethodDto.StatusEnum.ENABLED)
+                .group(PaymentMethodDto.GroupEnum.CP)
+                .methodManagement(PaymentMethodDto.MethodManagementEnum.ONBOARDABLE)
+                .rangeAmount(FeeRangeDto().min(1).max(10))
+                .name(mapOf(Pair("IT", "Carte")))
+                .description(mapOf(Pair("IT", "Carte")))
+                .paymentMethodAsset("asset")
+                .paymentMethodsBrandAssets(mapOf(Pair("first", "asset")))
+                .paymentMethodTypes(listOf(PaymentMethodDto.PaymentMethodTypesEnum.CARTE))
+                .metadata(mapOf("test" to "test"))
+
+        val expectedBody =
+            PaymentMethodResponse()
+                .id("test-id")
+                .status(PaymentMethodResponse.StatusEnum.ENABLED)
+                .paymentTypeCode(PaymentMethodResponse.PaymentTypeCodeEnum.CP)
+                .methodManagement(PaymentMethodResponse.MethodManagementEnum.ONBOARDABLE)
+                .feeRange(FeeRange().min(1).max(10))
+                .name(mapOf("IT" to "Carte"))
+                .description(mapOf("IT" to "Carte"))
+                .paymentMethodAsset("asset")
+                .paymentMethodsBrandAssets(mapOf("first" to "asset"))
+                .paymentMethodTypes(listOf(PaymentMethodResponse.PaymentMethodTypesEnum.CARTE))
+                .metadata(mapOf("test" to "test"))
+
+        whenever(mockClient.getPaymentMethod(eq(methodId), anyOrNull())).then {
+            Uni.createFrom().item { mockResponseDto }
+        }
+
+        val result =
+            RestAssured.given()
+                .header("x-api-key", "test-primary")
+                .header("x-client-id", "CHECKOUT")
+                .contentType(ContentType.JSON)
+                .`when`()
+                .get("/payment-methods/$methodId")
+                .then()
+                .statusCode(200)
+                .extract()
+                .`as`(PaymentMethodResponse::class.java)
+
+        assertEquals(expectedBody, result)
+    }
+
+    @Test
+    fun `should return NOT_FOUND response for get payment method by id not found`() {
+        val methodId = "test-id"
+        val mockResponseDto =
+            PaymentMethodDto()
+                .paymentMethodId("test-id")
+                .status(PaymentMethodDto.StatusEnum.ENABLED)
+                .group(PaymentMethodDto.GroupEnum.CP)
+                .methodManagement(PaymentMethodDto.MethodManagementEnum.ONBOARDABLE)
+                .rangeAmount(FeeRangeDto().min(1).max(10))
+                .name(mapOf(Pair("IT", "Carte")))
+                .description(mapOf(Pair("IT", "Carte")))
+                .paymentMethodAsset("asset")
+                .paymentMethodsBrandAssets(mapOf(Pair("first", "asset")))
+                .paymentMethodTypes(listOf(PaymentMethodDto.PaymentMethodTypesEnum.CARTE))
+                .metadata(mapOf("test" to "test"))
+
+        whenever(mockClient.getPaymentMethod(eq(methodId), anyOrNull()))
+            .thenReturn(Uni.createFrom().failure(PaymentMethodNotFoundException("not_found_test")))
+
+        RestAssured.given()
+            .header("x-api-key", "test-primary")
+            .header("x-client-id", "CHECKOUT")
+            .contentType(ContentType.JSON)
+            .`when`()
+            .get("/payment-methods/$methodId")
+            .then()
+            .statusCode(404)
     }
 
     @Test

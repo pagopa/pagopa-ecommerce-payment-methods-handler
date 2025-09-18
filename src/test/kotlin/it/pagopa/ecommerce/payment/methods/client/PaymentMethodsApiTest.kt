@@ -3,6 +3,7 @@ package it.pagopa.ecommerce.payment.methods.client
 import io.quarkus.test.junit.QuarkusTest
 import io.smallrye.mutiny.Uni
 import it.pagopa.generated.ecommerce.client.api.PaymentMethodsApi
+import it.pagopa.generated.ecommerce.client.model.PaymentMethodDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodRequestDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodsItemDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodsResponseDto
@@ -102,5 +103,32 @@ class PaymentMethodsApiTest {
             PaymentMethodsItemDto.MethodManagementEnum.REDIRECT,
             response.paymentMethods?.get(1)?.methodManagement,
         )
+    }
+
+    @Test
+    fun `should return payment method by id`() {
+        val methodId = "test-id"
+
+        val expectedResponse =
+            PaymentMethodDto().apply {
+                paymentMethodId = "test-id"
+                name = mapOf("it" to "Carta Visa")
+                status = PaymentMethodDto.StatusEnum.ENABLED
+                validityDateFrom = LocalDate.of(2025, 1, 1)
+                group = PaymentMethodDto.GroupEnum.CP
+                paymentMethodTypes = listOf(PaymentMethodDto.PaymentMethodTypesEnum.CARTE)
+                methodManagement = PaymentMethodDto.MethodManagementEnum.ONBOARDABLE
+                validityDateFrom = LocalDate.now()
+                metadata = mapOf("test" to "test")
+                paymentMethodTypes = listOf(PaymentMethodDto.PaymentMethodTypesEnum.CARTE)
+            }
+
+        val mockApi = Mockito.mock(PaymentMethodsApi::class.java)
+        whenever(mockApi.getPaymentMethod(methodId, "test-request-id"))
+            .thenReturn(Uni.createFrom().item(expectedResponse))
+
+        val response = mockApi.getPaymentMethod(methodId, "test-request-id").await().indefinitely()
+
+        assertEquals(response, expectedResponse)
     }
 }

@@ -5,6 +5,7 @@ import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension
 import io.quarkus.test.junit.QuarkusTest
 import it.pagopa.generated.ecommerce.client.api.PaymentMethodsApi
+import it.pagopa.generated.ecommerce.client.model.PaymentMethodDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodRequestDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodsResponseDto
 import jakarta.inject.Inject
@@ -79,5 +80,45 @@ class PaymentMethodsApiIntegrationTest {
         assertEquals(1, response.paymentMethods?.size)
         assertEquals("pm-001", response.paymentMethods?.get(0)?.paymentMethodId)
         assertEquals("Carta di credito", response.paymentMethods?.get(0)?.name?.get("it"))
+    }
+
+    @Test
+    fun `should receive mocked payment method by id response`() {
+        val methodId = "pm-001"
+        val mockResponse =
+            """
+            {
+              "payment_method_id": "$methodId",
+              "name": { "it": "Carta di credito", "en": "Credit Card" },
+              "description": { "it": "Pagamento con carta", "en": "Pay with card" },
+              "status": "ENABLED",
+              "validityDateFrom": "2025-01-01",
+              "group": "CP",
+              "payment_method_types": ["CARTE"],
+              "payment_method_asset": "asset.png",
+              "method_management": "ONBOARDABLE",
+              "payment_methods_brand_assets": { "VISA": "visa.png" },
+              "metadata": { "priority": "high" }
+            }
+        """
+                .trimIndent()
+
+        wireMock.stubFor(
+            get(urlEqualTo("/payment-methods/$methodId"))
+                .withHeader("X-Request-Id", equalTo("test-id"))
+                .willReturn(
+                    aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(mockResponse)
+                )
+        )
+
+        val response: PaymentMethodDto =
+            paymentMethodsApi.getPaymentMethod(methodId, "test-id").await().indefinitely()
+
+        assertNotNull(response)
+        assertEquals(methodId, response.paymentMethodId)
+        assertEquals("Carta di credito", response.name?.get("it"))
     }
 }
