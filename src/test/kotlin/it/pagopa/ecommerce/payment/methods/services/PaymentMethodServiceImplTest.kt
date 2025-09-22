@@ -86,7 +86,7 @@ class PaymentMethodsClientTest {
             .thenReturn(Uni.createFrom().failure(ClientWebApplicationException(mockResponse)))
 
         assertThrows<PaymentMethodNotFoundException> {
-            client.getPaymentMethod(methodId, "test-id").await().indefinitely()
+            client.getPaymentMethod(methodId, "test-id", "CHECKOUT").await().indefinitely()
         }
     }
 
@@ -101,6 +101,7 @@ class PaymentMethodsClientTest {
                 validityDateFrom = LocalDate.of(2025, 1, 1)
                 group = PaymentMethodDto.GroupEnum.CP
                 paymentMethodTypes = listOf(PaymentMethodDto.PaymentMethodTypesEnum.CARTE)
+                userTouchpoint = listOf(PaymentMethodDto.UserTouchpointEnum.CHECKOUT)
                 methodManagement = PaymentMethodDto.MethodManagementEnum.ONBOARDABLE
                 validityDateFrom = LocalDate.now()
                 metadata = mapOf("test" to "test")
@@ -110,7 +111,8 @@ class PaymentMethodsClientTest {
         whenever(mockApi.getPaymentMethod(methodId, "test-id"))
             .thenReturn(Uni.createFrom().item(expectedResponse))
 
-        val response = client.getPaymentMethod(methodId, "test-id").await().indefinitely()
+        val response =
+            client.getPaymentMethod(methodId, "test-id", "CHECKOUT").await().indefinitely()
 
         assertEquals("Carta Visa", response.name?.get("it"))
         assertEquals(methodId, response.paymentMethodId)
@@ -146,7 +148,7 @@ class PaymentMethodsClientTest {
 
         val thrown =
             assertThrows<PaymentMethodsClientException> {
-                client.getPaymentMethod(methodId, "test-id").await().indefinitely()
+                client.getPaymentMethod(methodId, "test-id", "CHECKOUT").await().indefinitely()
             }
 
         assertEquals("Error during the call to PaymentMethodsApi.getPaymentMethod", thrown.message)
@@ -168,5 +170,31 @@ class PaymentMethodsClientTest {
                 .get()
 
         assertEquals(expectedResponse, result)
+    }
+
+    @Test
+    fun `should return PaymentNotFoundException if retrieved method is not for the provided user touchpoint`() {
+        val methodId = "test-id"
+        val expectedResponse =
+            PaymentMethodDto().apply {
+                paymentMethodId = "test-id"
+                name = mapOf("it" to "Carta Visa")
+                status = PaymentMethodDto.StatusEnum.ENABLED
+                validityDateFrom = LocalDate.of(2025, 1, 1)
+                group = PaymentMethodDto.GroupEnum.CP
+                paymentMethodTypes = listOf(PaymentMethodDto.PaymentMethodTypesEnum.CARTE)
+                userTouchpoint = listOf(PaymentMethodDto.UserTouchpointEnum.CHECKOUT)
+                methodManagement = PaymentMethodDto.MethodManagementEnum.ONBOARDABLE
+                validityDateFrom = LocalDate.now()
+                metadata = mapOf("test" to "test")
+                paymentMethodTypes = listOf(PaymentMethodDto.PaymentMethodTypesEnum.CARTE)
+            }
+
+        whenever(mockApi.getPaymentMethod(methodId, "test-id"))
+            .thenReturn(Uni.createFrom().item { expectedResponse })
+
+        assertThrows<PaymentMethodNotFoundException> {
+            client.getPaymentMethod(methodId, "test-id", "IO").await().indefinitely()
+        }
     }
 }

@@ -14,5 +14,6 @@ interface PaymentMethodService {
     fun getPaymentMethod(
         paymentMethodsId: String,
         xRequestId: String,
+        xClientId: String,
     ): CompletionStage<PaymentMethodResponse>
 }

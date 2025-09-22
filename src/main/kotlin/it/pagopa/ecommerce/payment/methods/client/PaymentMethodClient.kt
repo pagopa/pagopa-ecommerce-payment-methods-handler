@@ -34,7 +34,11 @@ class PaymentMethodsClient(@param:RestClient private val paymentMethodsApi: Paym
             }
     }
 
-    fun getPaymentMethod(paymentMethodsId: String, xRequestId: String): Uni<PaymentMethodDto> {
+    fun getPaymentMethod(
+        paymentMethodsId: String,
+        xRequestId: String,
+        xClientId: String,
+    ): Uni<PaymentMethodDto> {
         return paymentMethodsApi
             .getPaymentMethod(paymentMethodsId, xRequestId)
             .onFailure()
@@ -51,6 +55,18 @@ class PaymentMethodsClient(@param:RestClient private val paymentMethodsApi: Paym
                     PaymentMethodsClientException(
                         "Error during the call to PaymentMethodsApi.getPaymentMethod",
                         exception,
+                    )
+                }
+            }
+            .onItem()
+            .invoke { res ->
+                if (
+                    !res.userTouchpoint.contains(
+                        PaymentMethodDto.UserTouchpointEnum.valueOf(xClientId)
+                    )
+                ) {
+                    throw PaymentMethodNotFoundException(
+                        "Payment method $paymentMethodsId not found for client id $xClientId"
                     )
                 }
             }
