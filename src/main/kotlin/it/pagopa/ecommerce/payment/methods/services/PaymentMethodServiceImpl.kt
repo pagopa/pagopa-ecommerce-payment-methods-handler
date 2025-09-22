@@ -39,17 +39,23 @@ class PaymentMethodServiceImpl @Inject constructor(private val restClient: Payme
     override fun getPaymentMethod(
         paymentMethodsId: String,
         xRequestId: String,
+        xClientId: String,
     ): CompletionStage<PaymentMethodResponse> {
         return restClient
-            .getPaymentMethod(paymentMethodsId, xRequestId)
+            .getPaymentMethod(paymentMethodsId, xRequestId, xClientId)
             .map { dto -> dto.toPaymentMethodResponse() }
             .onFailure()
             .invoke { exception ->
-                log.error("Exception during request with id $xRequestId", exception)
+                log.error(
+                    "Exception during request with id $xRequestId and client id $xClientId",
+                    exception,
+                )
             }
             .onItem()
             .invoke { _ ->
-                log.info("Payment method retrieved successfully for request with id $xRequestId")
+                log.info(
+                    "Payment method retrieved successfully for request with id $xRequestId and client id $xClientId"
+                )
             }
             .subscribeAsCompletionStage()
     }

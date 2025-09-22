@@ -33,10 +33,10 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
 
     override fun getPaymentMethod(
         id: String,
-        xClientId: @NotNull String?,
+        xClientId: @NotNull String,
     ): CompletionStage<PaymentMethodResponse> {
         val xRequestId = UUID.randomUUID().toString()
-        return paymentMethodService.getPaymentMethod(id, xRequestId)
+        return paymentMethodService.getPaymentMethod(id, xRequestId, xClientId)
     }
 
     @ServerExceptionMapper

@@ -119,7 +119,7 @@ class PaymentMethodsHandlerResourceTest {
                 .paymentMethodTypes(listOf(PaymentMethodResponse.PaymentMethodTypesEnum.CARTE))
                 .metadata(mapOf("test" to "test"))
 
-        whenever(mockClient.getPaymentMethod(eq(methodId), anyOrNull())).then {
+        whenever(mockClient.getPaymentMethod(eq(methodId), anyOrNull(), anyOrNull())).then {
             Uni.createFrom().item { mockResponseDto }
         }
 
@@ -155,7 +155,7 @@ class PaymentMethodsHandlerResourceTest {
                 .paymentMethodTypes(listOf(PaymentMethodDto.PaymentMethodTypesEnum.CARTE))
                 .metadata(mapOf("test" to "test"))
 
-        whenever(mockClient.getPaymentMethod(eq(methodId), anyOrNull()))
+        whenever(mockClient.getPaymentMethod(eq(methodId), anyOrNull(), anyOrNull()))
             .thenReturn(Uni.createFrom().failure(PaymentMethodNotFoundException("not_found_test")))
 
         RestAssured.given()
