@@ -11,17 +11,17 @@ microservice-chart:
     httpGet:
       path: /q/health/live
       port: 8080
-    initialDelaySeconds: 5
+    initialDelaySeconds: 2
     failureThreshold: 6
-    periodSeconds: 10
+    periodSeconds: 3
   readinessProbe:
     handlerType: httpGet
     httpGet:
       path: /q/health/ready
       port: 8080
-    initialDelaySeconds: 5
+    initialDelaySeconds: 2
     failureThreshold: 6
-    periodSeconds: 10
+    periodSeconds: 3
   deployment:
     create: true
     replicas: 3
@@ -49,10 +49,10 @@ microservice-chart:
         - all
   resources:
     requests:
-      memory: "256Mi"
+      memory: "128Mi"
       cpu: "150m"
     limits:
-      memory: "256Mi"
+      memory: "128Mi"
       cpu: "150m"
   autoscaling:
     enable: true
