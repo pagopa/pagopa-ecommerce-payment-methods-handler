@@ -122,7 +122,7 @@ stages:
       - job: newman_dev_api_test_for_checkout
         displayName: 'Running API test with api key related to CHECKOUT client'
         steps:
-          - template: ./api-tests.yml
+          - template: azure-templates/api-tests.yml
             parameters:
               API_TEST_FILE: api-tests/ecommerce-payment-handler.postman-collection.json
               ENV_FILE: api-tests/ecommerce-dev.env.json
@@ -132,7 +132,7 @@ stages:
       - job: newman_dev_api_test_for_io
         displayName: 'Running API test with api key related to IO client'
         steps:
-          - template: ./api-tests.yml
+          - template: azure-templates/api-tests.yml
             parameters:
               API_TEST_FILE: api-tests/ecommerce-payment-handler.postman-collection.json
               ENV_FILE: api-tests/ecommerce-dev.env.json
@@ -264,7 +264,7 @@ stages:
       - job: newman_uat_api_test_for_checkout
         displayName: 'Running API test with api key related to CHECKOUT client'
         steps:
-          - template: ./api-tests.yml
+          - template: azure-templates/api-tests.yml
             parameters:
               API_TEST_FILE: api-tests/ecommerce-payment-handler.postman-collection.json
               ENV_FILE: api-tests/ecommerce-dev.env.json
@@ -274,7 +274,7 @@ stages:
       - job: newman_uat_api_test_for_io
         displayName: 'Running API test with api key related to IO client'
         steps:
-          - template: ./api-tests.yml
+          - template: azure-templates/api-tests.yml
             parameters:
               API_TEST_FILE: api-tests/ecommerce-payment-handler.postman-collection.json
               ENV_FILE: api-tests/ecommerce-uat.env.json
