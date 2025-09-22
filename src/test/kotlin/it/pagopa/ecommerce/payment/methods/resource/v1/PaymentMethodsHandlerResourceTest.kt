@@ -20,6 +20,7 @@ import it.pagopa.generated.ecommerce.client.model.PaymentMethodsItemDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodsResponseDto
 import jakarta.validation.ValidationException
 import jakarta.ws.rs.core.Response
+import java.time.LocalDate
 import kotlin.test.assertEquals
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.anyOrNull
@@ -33,6 +34,7 @@ class PaymentMethodsHandlerResourceTest {
 
     @Test
     fun `should return OK response for get all payment methods`() {
+        val validityDate = LocalDate.now()
         val mockResponseDto =
             PaymentMethodsResponseDto()
                 .addPaymentMethodsItem(
@@ -50,6 +52,7 @@ class PaymentMethodsHandlerResourceTest {
                             listOf(PaymentMethodsItemDto.PaymentMethodTypesEnum.CARTE)
                         )
                         .metadata(mapOf("test" to "test"))
+                        .validityDateFrom(validityDate)
                 )
         val expectedBody =
             PaymentMethodsResponse()
@@ -68,6 +71,7 @@ class PaymentMethodsHandlerResourceTest {
                             listOf(PaymentMethodResponse.PaymentMethodTypesEnum.CARTE)
                         )
                         .metadata(mapOf("test" to "test"))
+                        .validityDateFrom(validityDate)
                 )
         whenever(mockClient.searchPaymentMethods(anyOrNull(), anyOrNull())).then {
             Uni.createFrom().item { mockResponseDto }
@@ -90,6 +94,7 @@ class PaymentMethodsHandlerResourceTest {
 
     @Test
     fun `should return OK response for get payment method by id`() {
+        val validityDate = LocalDate.now()
         val methodId = "test-id"
         val mockResponseDto =
             PaymentMethodDto()
@@ -104,6 +109,7 @@ class PaymentMethodsHandlerResourceTest {
                 .paymentMethodsBrandAssets(mapOf(Pair("first", "asset")))
                 .paymentMethodTypes(listOf(PaymentMethodDto.PaymentMethodTypesEnum.CARTE))
                 .metadata(mapOf("test" to "test"))
+                .validityDateFrom(validityDate)
 
         val expectedBody =
             PaymentMethodResponse()
@@ -118,8 +124,9 @@ class PaymentMethodsHandlerResourceTest {
                 .paymentMethodsBrandAssets(mapOf("first" to "asset"))
                 .paymentMethodTypes(listOf(PaymentMethodResponse.PaymentMethodTypesEnum.CARTE))
                 .metadata(mapOf("test" to "test"))
+                .validityDateFrom(validityDate)
 
-        whenever(mockClient.getPaymentMethod(eq(methodId), anyOrNull())).then {
+        whenever(mockClient.getPaymentMethod(eq(methodId), anyOrNull(), anyOrNull())).then {
             Uni.createFrom().item { mockResponseDto }
         }
 
@@ -155,7 +162,7 @@ class PaymentMethodsHandlerResourceTest {
                 .paymentMethodTypes(listOf(PaymentMethodDto.PaymentMethodTypesEnum.CARTE))
                 .metadata(mapOf("test" to "test"))
 
-        whenever(mockClient.getPaymentMethod(eq(methodId), anyOrNull()))
+        whenever(mockClient.getPaymentMethod(eq(methodId), anyOrNull(), anyOrNull()))
             .thenReturn(Uni.createFrom().failure(PaymentMethodNotFoundException("not_found_test")))
 
         RestAssured.given()
