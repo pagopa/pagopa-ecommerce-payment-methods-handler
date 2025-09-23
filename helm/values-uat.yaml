@@ -64,7 +64,7 @@ microservice-chart:
         metadata:
           # Required
           type: Utilization # Allowed types are 'Utilization' or 'AverageValue'
-          value: "75"
+          value: "70"
   envConfig:
     ROOT_LOG_LEVEL: INFO
     OTEL_RESOURCE_ATTRIBUTES: "service.name=pagopa-ecommerce-payment-methods-handler,deployment.environment=uat"
