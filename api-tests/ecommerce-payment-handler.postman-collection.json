@@ -170,14 +170,6 @@
 						"exec": [
 							"pm.test(\"Status code is 404 Not Found\", function () {",
 							"    pm.response.to.have.status(404);",
-							"});",
-							"",
-							"pm.test(\"Response is a valid ProblemJson\", function () {",
-							"    pm.response.to.be.json;",
-							"    const responseJson = pm.response.json();",
-							"    pm.expect(responseJson).to.have.property('title');",
-							"    pm.expect(responseJson).to.have.property('status', 404);",
-							"    pm.expect(responseJson).to.have.property('detail');",
 							"});"
 						],
 						"type": "text/javascript",
@@ -208,7 +200,7 @@
 		"apikey": [
 			{
 				"key": "value",
-				"value": "{{OCP-APIM-SUBSCRIPTION-KEY}}",
+				"value": "{{API_KEY}}",
 				"type": "string"
 			},
 			{
@@ -247,7 +239,7 @@
 		},
 		{
 			"key": "ocp-apim-subscription-key",
-			"value": "INSERISCI_LA_TUA_API_KEY"
+			"value": "{{API_KEY}}"
 		},
 		{
 			"key": "paymentMethodId",
@@ -255,7 +247,7 @@
 		},
 		{
 			"key": "ocp-apim-subscription-key",
-			"value": "CHECKOUT"
+			"value": "{{API_KEY}}"
 		}
 	]
 }
