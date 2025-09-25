@@ -4,7 +4,7 @@ microservice-chart:
   fullnameOverride: "pagopa-ecommerce-payment-methods-handler"
   image:
     repository: pagopadcommonacr.azurecr.io/pagopaecommercepaymentmethodshandler
-    tag: "1.0.2"
+    tag: "1.0.3"
     pullPolicy: Always
   livenessProbe:
     handlerType: httpGet
