@@ -8,8 +8,8 @@ import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodNotFoundExcept
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodsClientException
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
 import it.pagopa.generated.ecommerce.client.api.PaymentMethodsApi
-import it.pagopa.generated.ecommerce.client.model.PaymentMethodDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodRequestDto
+import it.pagopa.generated.ecommerce.client.model.PaymentMethodResponseDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodsItemDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodsResponseDto
 import jakarta.ws.rs.core.Response
@@ -94,18 +94,18 @@ class PaymentMethodsClientTest {
     fun `should return response from PaymentMethodsApi get method by id`() {
         val methodId = "test-id"
         val expectedResponse =
-            PaymentMethodDto().apply {
+            PaymentMethodResponseDto().apply {
                 paymentMethodId = "test-id"
                 name = mapOf("it" to "Carta Visa")
-                status = PaymentMethodDto.StatusEnum.ENABLED
+                status = PaymentMethodResponseDto.StatusEnum.ENABLED
                 validityDateFrom = LocalDate.of(2025, 1, 1)
-                group = PaymentMethodDto.GroupEnum.CP
-                paymentMethodTypes = listOf(PaymentMethodDto.PaymentMethodTypesEnum.CARTE)
-                userTouchpoint = listOf(PaymentMethodDto.UserTouchpointEnum.CHECKOUT)
-                methodManagement = PaymentMethodDto.MethodManagementEnum.ONBOARDABLE
+                group = PaymentMethodResponseDto.GroupEnum.CP
+                paymentMethodTypes = listOf(PaymentMethodResponseDto.PaymentMethodTypesEnum.CARTE)
+                userTouchpoint = listOf(PaymentMethodResponseDto.UserTouchpointEnum.CHECKOUT)
+                methodManagement = PaymentMethodResponseDto.MethodManagementEnum.ONBOARDABLE
                 validityDateFrom = LocalDate.now()
                 metadata = mapOf("test" to "test")
-                paymentMethodTypes = listOf(PaymentMethodDto.PaymentMethodTypesEnum.CARTE)
+                paymentMethodTypes = listOf(PaymentMethodResponseDto.PaymentMethodTypesEnum.CARTE)
             }
 
         whenever(mockApi.getPaymentMethod(methodId, "test-id"))
@@ -176,18 +176,18 @@ class PaymentMethodsClientTest {
     fun `should return PaymentNotFoundException if retrieved method is not for the provided user touchpoint`() {
         val methodId = "test-id"
         val expectedResponse =
-            PaymentMethodDto().apply {
+            PaymentMethodResponseDto().apply {
                 paymentMethodId = "test-id"
                 name = mapOf("it" to "Carta Visa")
-                status = PaymentMethodDto.StatusEnum.ENABLED
+                status = PaymentMethodResponseDto.StatusEnum.ENABLED
                 validityDateFrom = LocalDate.of(2025, 1, 1)
-                group = PaymentMethodDto.GroupEnum.CP
-                paymentMethodTypes = listOf(PaymentMethodDto.PaymentMethodTypesEnum.CARTE)
-                userTouchpoint = listOf(PaymentMethodDto.UserTouchpointEnum.CHECKOUT)
-                methodManagement = PaymentMethodDto.MethodManagementEnum.ONBOARDABLE
+                group = PaymentMethodResponseDto.GroupEnum.CP
+                paymentMethodTypes = listOf(PaymentMethodResponseDto.PaymentMethodTypesEnum.CARTE)
+                userTouchpoint = listOf(PaymentMethodResponseDto.UserTouchpointEnum.CHECKOUT)
+                methodManagement = PaymentMethodResponseDto.MethodManagementEnum.ONBOARDABLE
                 validityDateFrom = LocalDate.now()
                 metadata = mapOf("test" to "test")
-                paymentMethodTypes = listOf(PaymentMethodDto.PaymentMethodTypesEnum.CARTE)
+                paymentMethodTypes = listOf(PaymentMethodResponseDto.PaymentMethodTypesEnum.CARTE)
             }
 
         whenever(mockApi.getPaymentMethod(methodId, "test-id"))

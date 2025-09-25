@@ -15,7 +15,7 @@ import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.ProblemJson
 import it.pagopa.generated.ecommerce.client.model.FeeRangeDto
-import it.pagopa.generated.ecommerce.client.model.PaymentMethodDto
+import it.pagopa.generated.ecommerce.client.model.PaymentMethodResponseDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodsItemDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodsResponseDto
 import jakarta.validation.ValidationException
@@ -97,17 +97,17 @@ class PaymentMethodsHandlerResourceTest {
         val validityDate = LocalDate.now()
         val methodId = "test-id"
         val mockResponseDto =
-            PaymentMethodDto()
+            PaymentMethodResponseDto()
                 .paymentMethodId("test-id")
-                .status(PaymentMethodDto.StatusEnum.ENABLED)
-                .group(PaymentMethodDto.GroupEnum.CP)
-                .methodManagement(PaymentMethodDto.MethodManagementEnum.ONBOARDABLE)
+                .status(PaymentMethodResponseDto.StatusEnum.ENABLED)
+                .group(PaymentMethodResponseDto.GroupEnum.CP)
+                .methodManagement(PaymentMethodResponseDto.MethodManagementEnum.ONBOARDABLE)
                 .rangeAmount(FeeRangeDto().min(1).max(10))
                 .name(mapOf(Pair("IT", "Carte")))
                 .description(mapOf(Pair("IT", "Carte")))
                 .paymentMethodAsset("asset")
                 .paymentMethodsBrandAssets(mapOf(Pair("first", "asset")))
-                .paymentMethodTypes(listOf(PaymentMethodDto.PaymentMethodTypesEnum.CARTE))
+                .paymentMethodTypes(listOf(PaymentMethodResponseDto.PaymentMethodTypesEnum.CARTE))
                 .metadata(mapOf("test" to "test"))
                 .validityDateFrom(validityDate)
 
@@ -149,17 +149,17 @@ class PaymentMethodsHandlerResourceTest {
     fun `should return NOT_FOUND response for get payment method by id not found`() {
         val methodId = "test-id"
         val mockResponseDto =
-            PaymentMethodDto()
+            PaymentMethodResponseDto()
                 .paymentMethodId("test-id")
-                .status(PaymentMethodDto.StatusEnum.ENABLED)
-                .group(PaymentMethodDto.GroupEnum.CP)
-                .methodManagement(PaymentMethodDto.MethodManagementEnum.ONBOARDABLE)
+                .status(PaymentMethodResponseDto.StatusEnum.ENABLED)
+                .group(PaymentMethodResponseDto.GroupEnum.CP)
+                .methodManagement(PaymentMethodResponseDto.MethodManagementEnum.ONBOARDABLE)
                 .rangeAmount(FeeRangeDto().min(1).max(10))
                 .name(mapOf(Pair("IT", "Carte")))
                 .description(mapOf(Pair("IT", "Carte")))
                 .paymentMethodAsset("asset")
                 .paymentMethodsBrandAssets(mapOf(Pair("first", "asset")))
-                .paymentMethodTypes(listOf(PaymentMethodDto.PaymentMethodTypesEnum.CARTE))
+                .paymentMethodTypes(listOf(PaymentMethodResponseDto.PaymentMethodTypesEnum.CARTE))
                 .metadata(mapOf("test" to "test"))
 
         whenever(mockClient.getPaymentMethod(eq(methodId), anyOrNull(), anyOrNull()))
