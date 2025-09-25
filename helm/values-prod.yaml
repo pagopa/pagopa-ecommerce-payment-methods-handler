@@ -117,6 +117,6 @@ microservice-chart:
             namespaces: ["ecommerce"]
             topologyKey: topology.kubernetes.io/zone
   secretProviderClass:
-    create: false
+    create: true
   azure:
     workloadIdentityClientId: "d5614882-90dd-47a1-aad1-cdf295201469"
