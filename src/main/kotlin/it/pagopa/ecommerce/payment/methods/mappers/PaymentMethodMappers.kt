@@ -4,11 +4,11 @@ import it.pagopa.ecommerce.payment.methods.v1.server.model.FeeRange
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
-import it.pagopa.generated.ecommerce.client.model.PaymentMethodDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodRequestDto
+import it.pagopa.generated.ecommerce.client.model.PaymentMethodResponseDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodsItemDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodsResponseDto
-import it.pagopa.generated.ecommerce.client.model.PaymentNoticeItemDto
+import it.pagopa.generated.ecommerce.client.model.PaymentNoticeItemOptionalTransferListDto
 import it.pagopa.generated.ecommerce.client.model.TransferListItemDto
 
 fun PaymentMethodsItemDto.toPaymentMethodResponse(): PaymentMethodResponse {
@@ -45,7 +45,7 @@ fun PaymentMethodsItemDto.toPaymentMethodResponse(): PaymentMethodResponse {
     return paymentHandlerPaymentMethod
 }
 
-fun PaymentMethodDto.toPaymentMethodResponse(): PaymentMethodResponse {
+fun PaymentMethodResponseDto.toPaymentMethodResponse(): PaymentMethodResponse {
     val paymentHandlerPaymentMethod = PaymentMethodResponse()
 
     paymentHandlerPaymentMethod.id = this.paymentMethodId
@@ -97,7 +97,7 @@ fun PaymentMethodsRequest.toPaymentMethodRequestDto(): PaymentMethodRequestDto {
         }
     afmRequest.totalAmount = this.totalAmount
     this.paymentNotice.forEach { notice ->
-        val paymentNotice = PaymentNoticeItemDto()
+        val paymentNotice = PaymentNoticeItemOptionalTransferListDto()
         paymentNotice.paymentAmount = notice.paymentAmount
         paymentNotice.primaryCreditorInstitution = notice.primaryCreditorInstitution
         notice.transferList?.forEach { transfer ->
@@ -106,7 +106,7 @@ fun PaymentMethodsRequest.toPaymentMethodRequestDto(): PaymentMethodRequestDto {
             transferListItem.transferCategory = transfer.transferCategory
             transferListItem.digitalStamp = transfer.digitalStamp
 
-            paymentNotice.transferList.add(transferListItem)
+            paymentNotice.addTransferListItem(transferListItem)
         }
 
         afmRequest.paymentNotice.add(paymentNotice)

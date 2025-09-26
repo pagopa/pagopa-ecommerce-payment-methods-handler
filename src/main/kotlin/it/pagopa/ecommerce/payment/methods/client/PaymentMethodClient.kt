@@ -4,8 +4,8 @@ import io.smallrye.mutiny.Uni
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodNotFoundException
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodsClientException
 import it.pagopa.generated.ecommerce.client.api.PaymentMethodsApi
-import it.pagopa.generated.ecommerce.client.model.PaymentMethodDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodRequestDto
+import it.pagopa.generated.ecommerce.client.model.PaymentMethodResponseDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodsResponseDto
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.ws.rs.core.Response
@@ -38,7 +38,7 @@ class PaymentMethodsClient(@param:RestClient private val paymentMethodsApi: Paym
         paymentMethodsId: String,
         xRequestId: String,
         xClientId: String,
-    ): Uni<PaymentMethodDto> {
+    ): Uni<PaymentMethodResponseDto> {
         return paymentMethodsApi
             .getPaymentMethod(paymentMethodsId, xRequestId)
             .onFailure()
@@ -62,7 +62,7 @@ class PaymentMethodsClient(@param:RestClient private val paymentMethodsApi: Paym
             .invoke { res ->
                 if (
                     !res.userTouchpoint.contains(
-                        PaymentMethodDto.UserTouchpointEnum.valueOf(xClientId)
+                        PaymentMethodResponseDto.UserTouchpointEnum.valueOf(xClientId)
                     )
                 ) {
                     throw PaymentMethodNotFoundException(
