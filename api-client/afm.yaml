@@ -1,9 +1,10 @@
+#https://raw.githubusercontent.com/pagopa/pagopa-afm-calculator/refs/tags/2.11.28/openapi/openapi-v1.json
 openapi: 3.0.1
 info:
   title: PagoPA API Calculator Logic - API AFM-Calculator v1 Production
   description: Calculator Logic microservice for pagoPA AFM
   termsOfService: https://www.pagopa.gov.it/
-  version: 2.11.25-1-PIDM-977-gmp-integrazione-con-touchpoint
+  version: 2.11.28
 servers:
   - url: http://localhost:8080
   - url: https://{host}{basePath}
