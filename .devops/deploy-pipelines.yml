@@ -116,7 +116,7 @@ stages:
                       ARGUMENTS: "--timeout 5m0s --values helm/valuesOverrides/overrides-jvm-dev.yaml"
 
   - stage: "API_Test_DEV"
-    displayName: 'Running API test on DEV green app'
+    displayName: 'API test on DEV green app'
     dependsOn: Deploy_for_DEV
     jobs:
       - job: newman_dev_api_test_for_checkout
@@ -258,7 +258,7 @@ stages:
                       ARGUMENTS: "--timeout 5m0s --values helm/valuesOverrides/overrides-jvm-uat.yaml"
 
   - stage: "API_Test_UAT"
-    displayName: 'Running API test on UAT green app'
+    displayName: 'API test on UAT green app'
     dependsOn: Deploy_UAT_Green
     jobs:
       - job: newman_uat_api_test_for_checkout
