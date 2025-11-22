@@ -4,24 +4,24 @@ microservice-chart:
   fullnameOverride: "pagopa-ecommerce-payment-methods-handler"
   image:
     repository: pagopapcommonacr.azurecr.io/pagopaecommercepaymentmethodshandler
-    tag: "1.0.0"
+    tag: "1.0.5"
     pullPolicy: Always
   livenessProbe:
     handlerType: httpGet
     httpGet:
       path: /q/health/live
       port: 8080
-    initialDelaySeconds: 5
+    initialDelaySeconds: 2
     failureThreshold: 6
-    periodSeconds: 10
+    periodSeconds: 3
   readinessProbe:
     handlerType: httpGet
     httpGet:
       path: /q/health/ready
       port: 8080
-    initialDelaySeconds: 5
+    initialDelaySeconds: 2
     failureThreshold: 6
-    periodSeconds: 10
+    periodSeconds: 3
   deployment:
     create: true
     replicas: 3
@@ -49,10 +49,10 @@ microservice-chart:
         - all
   resources:
     requests:
-      memory: "256Mi"
+      memory: "128Mi"
       cpu: "150m"
     limits:
-      memory: "256Mi"
+      memory: "128Mi"
       cpu: "150m"
   autoscaling:
     enable: true
@@ -65,7 +65,7 @@ microservice-chart:
         metadata:
           # Required
           type: Utilization # Allowed types are 'Utilization' or 'AverageValue'
-          value: "75"
+          value: "70"
     advanced:
       horizontalPodAutoscalerConfig:
         behavior:
@@ -117,6 +117,6 @@ microservice-chart:
             namespaces: ["ecommerce"]
             topologyKey: topology.kubernetes.io/zone
   secretProviderClass:
-    create: false
+    create: true
   azure:
     workloadIdentityClientId: "d5614882-90dd-47a1-aad1-cdf295201469"

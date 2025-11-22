@@ -1,5 +1,8 @@
 # PagoPA Payment Methods Handler
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=pagopa_pagopa-ecommerce-payment-methods-handler&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=pagopa_pagopa-ecommerce-payment-methods-handler)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=pagopa_pagopa-ecommerce-payment-methods-handler&metric=coverage)](https://sonarcloud.io/summary/new_code?id=pagopa_pagopa-ecommerce-payment-methods-handler)
+
 `pagopa-ecommerce-payment-methods-handler` is a high-performance, cloud-native microservice responsible for managing user payment methods within PagoPA e-commerce platform. Built with Quarkus and Kotlin, it is designed for exceptionally fast startup times, low memory consumption, and seamless scalability.
 
 ## Technology Stack

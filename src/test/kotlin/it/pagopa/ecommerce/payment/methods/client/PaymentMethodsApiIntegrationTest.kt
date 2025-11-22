@@ -5,8 +5,8 @@ import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension
 import io.quarkus.test.junit.QuarkusTest
 import it.pagopa.generated.ecommerce.client.api.PaymentMethodsApi
-import it.pagopa.generated.ecommerce.client.model.PaymentMethodDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodRequestDto
+import it.pagopa.generated.ecommerce.client.model.PaymentMethodResponseDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodsResponseDto
 import jakarta.inject.Inject
 import org.eclipse.microprofile.rest.client.inject.RestClient
@@ -88,16 +88,16 @@ class PaymentMethodsApiIntegrationTest {
         val mockResponse =
             """
             {
-              "payment_method_id": "$methodId",
+              "paymentMethodId": "$methodId",
               "name": { "it": "Carta di credito", "en": "Credit Card" },
               "description": { "it": "Pagamento con carta", "en": "Pay with card" },
               "status": "ENABLED",
               "validityDateFrom": "2025-01-01",
               "group": "CP",
-              "payment_method_types": ["CARTE"],
-              "payment_method_asset": "asset.png",
-              "method_management": "ONBOARDABLE",
-              "payment_methods_brand_assets": { "VISA": "visa.png" },
+              "paymentMethodTypes": ["CARTE"],
+              "paymentMethodAsset": "asset.png",
+              "methodManagement": "ONBOARDABLE",
+              "paymentMethodsBrandAssets": { "VISA": "visa.png" },
               "metadata": { "priority": "high" }
             }
         """
@@ -114,7 +114,7 @@ class PaymentMethodsApiIntegrationTest {
                 )
         )
 
-        val response: PaymentMethodDto =
+        val response: PaymentMethodResponseDto =
             paymentMethodsApi.getPaymentMethod(methodId, "test-id").await().indefinitely()
 
         assertNotNull(response)

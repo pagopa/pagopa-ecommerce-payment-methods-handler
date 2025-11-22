@@ -3,11 +3,11 @@ package it.pagopa.ecommerce.payment.methods.client
 import io.quarkus.test.junit.QuarkusTest
 import io.smallrye.mutiny.Uni
 import it.pagopa.generated.ecommerce.client.api.PaymentMethodsApi
-import it.pagopa.generated.ecommerce.client.model.PaymentMethodDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodRequestDto
+import it.pagopa.generated.ecommerce.client.model.PaymentMethodResponseDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodsItemDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodsResponseDto
-import it.pagopa.generated.ecommerce.client.model.PaymentNoticeItemDto
+import it.pagopa.generated.ecommerce.client.model.PaymentNoticeItemOptionalTransferListDto
 import it.pagopa.generated.ecommerce.client.model.TransferListItemDto
 import java.time.LocalDate
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -36,7 +36,7 @@ class PaymentMethodsApiTest {
             }
 
         val noticeItem =
-            PaymentNoticeItemDto().apply {
+            PaymentNoticeItemOptionalTransferListDto().apply {
                 paymentAmount = 2500L
                 primaryCreditorInstitution = "Comune di Rende"
                 transferList = listOf(transfer1, transfer2)
@@ -110,17 +110,17 @@ class PaymentMethodsApiTest {
         val methodId = "test-id"
 
         val expectedResponse =
-            PaymentMethodDto().apply {
+            PaymentMethodResponseDto().apply {
                 paymentMethodId = "test-id"
                 name = mapOf("it" to "Carta Visa")
-                status = PaymentMethodDto.StatusEnum.ENABLED
+                status = PaymentMethodResponseDto.StatusEnum.ENABLED
                 validityDateFrom = LocalDate.of(2025, 1, 1)
-                group = PaymentMethodDto.GroupEnum.CP
-                paymentMethodTypes = listOf(PaymentMethodDto.PaymentMethodTypesEnum.CARTE)
-                methodManagement = PaymentMethodDto.MethodManagementEnum.ONBOARDABLE
+                group = PaymentMethodResponseDto.GroupEnum.CP
+                paymentMethodTypes = listOf(PaymentMethodResponseDto.PaymentMethodTypesEnum.CARTE)
+                methodManagement = PaymentMethodResponseDto.MethodManagementEnum.ONBOARDABLE
                 validityDateFrom = LocalDate.now()
                 metadata = mapOf("test" to "test")
-                paymentMethodTypes = listOf(PaymentMethodDto.PaymentMethodTypesEnum.CARTE)
+                paymentMethodTypes = listOf(PaymentMethodResponseDto.PaymentMethodTypesEnum.CARTE)
             }
 
         val mockApi = Mockito.mock(PaymentMethodsApi::class.java)
