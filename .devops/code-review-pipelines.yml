@@ -87,7 +87,7 @@ stages:
             env:
               GITHUB_TOKEN: $(GITHUB_RO_TOKEN)
           - script: |
-              timeout 180 bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' localhost:8082/actuator/health/liveness)" != "200" ]]; do sleep 5; done' || exit 1
+              timeout 180 bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' localhost:8082/q/health/live)" != "200" ]]; do sleep 5; done' || exit 1
             displayName: 'Health check'
           - script: yarn global add newman
             displayName: 'newman installation'
