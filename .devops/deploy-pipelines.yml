@@ -124,7 +124,7 @@ stages:
         steps:
           - template: azure-templates/api-tests.yml
             parameters:
-              API_TEST_FILE: api-tests/ecommerce-payment-handler.postman-collection.json
+              API_TEST_FILE: api-tests/ecommerce-payment-handler-for-checkout.postman-collection.json
               ENV_FILE: api-tests/ecommerce-dev.env.json
               TEST_FILE_PREFIX: "dev"
               USE_NEWMAN_DOCKER_IMAGE: true
@@ -134,7 +134,7 @@ stages:
         steps:
           - template: azure-templates/api-tests.yml
             parameters:
-              API_TEST_FILE: api-tests/ecommerce-payment-handler.postman-collection.json
+              API_TEST_FILE: api-tests/ecommerce-payment-handler-for-io.postman-collection.json
               ENV_FILE: api-tests/ecommerce-dev.env.json
               TEST_FILE_PREFIX: "dev"
               USE_NEWMAN_DOCKER_IMAGE: true

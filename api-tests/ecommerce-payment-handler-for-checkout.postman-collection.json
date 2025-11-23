@@ -1,7 +1,7 @@
 {
 	"info": {
 		"_postman_id": "a52c14a7-e91f-4bf8-b31e-c7961748b311",
-		"name": "Pagopa eCommerce payment methods handler",
+		"name": "Pagopa eCommerce payment methods handler for checkout",
 		"description": "This microservice handles payment methods.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "12957952"
