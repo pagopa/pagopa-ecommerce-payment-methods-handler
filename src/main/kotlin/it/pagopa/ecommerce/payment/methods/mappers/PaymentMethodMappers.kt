@@ -1,6 +1,5 @@
 package it.pagopa.ecommerce.payment.methods.mappers
 
-import it.pagopa.ecommerce.payment.methods.v1.server.model.FeeRange
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
@@ -19,10 +18,12 @@ fun PaymentMethodsItemDto.toPaymentMethodResponse(): PaymentMethodResponse {
     paymentHandlerPaymentMethod.description = this.description
     paymentHandlerPaymentMethod.status =
         PaymentMethodResponse.StatusEnum.valueOf(this.status.toString())
-    paymentHandlerPaymentMethod.feeRange =
-        this.feeRange?.let { afmResponseFeeRange ->
-            FeeRange().max(afmResponseFeeRange.max).min(afmResponseFeeRange.min)
-        }
+    paymentHandlerPaymentMethod.feeRange = null
+    /**
+     * CHK-4632 feeRange conversion disabled as the field is currently unused. Keep for potential
+     * future re-enablement when AFM provides fee ranges. this.feeRange?.let { afmResponseFeeRange
+     * -> FeeRange().max(afmResponseFeeRange.max).min(afmResponseFeeRange.min) }
+     */
     paymentHandlerPaymentMethod.paymentTypeCode =
         PaymentMethodResponse.PaymentTypeCodeEnum.valueOf(this.group.toString())
     paymentHandlerPaymentMethod.paymentMethodAsset = this.paymentMethodAsset
@@ -53,10 +54,12 @@ fun PaymentMethodResponseDto.toPaymentMethodResponse(): PaymentMethodResponse {
     paymentHandlerPaymentMethod.description = this.description
     paymentHandlerPaymentMethod.status =
         PaymentMethodResponse.StatusEnum.valueOf(this.status.toString())
-    paymentHandlerPaymentMethod.feeRange =
-        this.rangeAmount?.let { afmResponseFeeRange ->
-            FeeRange().max(afmResponseFeeRange.max).min(afmResponseFeeRange.min)
-        }
+    paymentHandlerPaymentMethod.feeRange = null
+    /**
+     * CHK-4632 feeRange conversion disabled as the field is currently unused. Keep for potential
+     * future re-enablement when AFM provides fee ranges. this.rangeAmount?.let {
+     * afmResponseFeeRange -> FeeRange().max(afmResponseFeeRange.max).min(afmResponseFeeRange.min) }
+     */
     paymentHandlerPaymentMethod.paymentTypeCode =
         PaymentMethodResponse.PaymentTypeCodeEnum.valueOf(this.group.toString())
     paymentHandlerPaymentMethod.paymentMethodAsset = this.paymentMethodAsset

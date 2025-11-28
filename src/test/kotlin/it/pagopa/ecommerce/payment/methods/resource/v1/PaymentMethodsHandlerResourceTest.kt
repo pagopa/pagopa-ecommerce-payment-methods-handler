@@ -9,7 +9,6 @@ import it.pagopa.ecommerce.payment.methods.TestUtils
 import it.pagopa.ecommerce.payment.methods.client.PaymentMethodsClient
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodNotFoundException
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodsClientException
-import it.pagopa.ecommerce.payment.methods.v1.server.model.FeeRange
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
@@ -62,7 +61,7 @@ class PaymentMethodsHandlerResourceTest {
                         .status(PaymentMethodResponse.StatusEnum.ENABLED)
                         .paymentTypeCode(PaymentMethodResponse.PaymentTypeCodeEnum.CP)
                         .methodManagement(PaymentMethodResponse.MethodManagementEnum.ONBOARDABLE)
-                        .feeRange(FeeRange().min(1).max(10))
+                        .feeRange(null)
                         .name(mapOf("IT" to "Carte"))
                         .description(mapOf("IT" to "Carte"))
                         .paymentMethodAsset("asset")
@@ -102,7 +101,7 @@ class PaymentMethodsHandlerResourceTest {
                 .status(PaymentMethodResponseDto.StatusEnum.ENABLED)
                 .group(PaymentMethodResponseDto.GroupEnum.CP)
                 .methodManagement(PaymentMethodResponseDto.MethodManagementEnum.ONBOARDABLE)
-                .rangeAmount(FeeRangeDto().min(1).max(10))
+                .rangeAmount(null)
                 .name(mapOf(Pair("IT", "Carte")))
                 .description(mapOf(Pair("IT", "Carte")))
                 .paymentMethodAsset("asset")
@@ -117,7 +116,7 @@ class PaymentMethodsHandlerResourceTest {
                 .status(PaymentMethodResponse.StatusEnum.ENABLED)
                 .paymentTypeCode(PaymentMethodResponse.PaymentTypeCodeEnum.CP)
                 .methodManagement(PaymentMethodResponse.MethodManagementEnum.ONBOARDABLE)
-                .feeRange(FeeRange().min(1).max(10))
+                .feeRange(null)
                 .name(mapOf("IT" to "Carte"))
                 .description(mapOf("IT" to "Carte"))
                 .paymentMethodAsset("asset")
