@@ -9,6 +9,14 @@ trigger:
 pool:
   vmImage: ubuntu-latest
 
+resources:
+  repositories:
+    - repository: pagopaEcommerceLocal
+      type: github
+      name: pagopa/pagopa-ecommerce-local
+      ref: main
+      endpoint: 'io-azure-devops-github-ro'
+
 stages:
   - stage: BuildEndUnitTest
     jobs:
@@ -63,3 +71,31 @@ stages:
               summaryFileLocation: 'build/reports/jacoco/test/jacocoTestReport.xml'
               reportDirectory: 'build/reports/jacoco/test/html'
             displayName: 'Publish Code Coverage on Azure Devops'
+
+  - stage: IntegrationTest
+    dependsOn: [ ]
+    jobs:
+      - job: make_integration_test
+        steps:
+          - checkout: pagopaEcommerceLocal
+          - script: |
+              echo "##[debug] Change placeholder for ecommerce-payment-method-service set branch: $(BRANCH_NAME)"
+              sed -i "s/^ECOMMERCE_PAYMENT_METHODS_COMMIT_SHA=.*$/ECOMMERCE_PAYMENT_METHODS_HANDLER_COMMIT_SHA=$(BRANCH_NAME)/" .env
+            displayName: 'Change payment-method-handler branch name ecommerce-local .env'
+          - script: docker compose up pagopa-ecommerce-payment-methods-handler pagopa-gec-mock --build -d
+            displayName: 'Run app with docker-compose'
+            env:
+              GITHUB_TOKEN: $(GITHUB_RO_TOKEN)
+          - script: |
+              timeout 180 bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' localhost:8082/q/health/live)" != "200" ]]; do sleep 5; done' || exit 1
+            displayName: 'Health check'
+          - script: yarn global add newman
+            displayName: 'newman installation'
+          - script: newman run api-tests/payment-method-handler/payment-method-handler_ecommerce_local.postman_collection.json --environment=api-tests/payment-method-handler/payment-method-handler_ecommerce_local.postman_environment.json --reporters cli,junit --reporter-junit-export Results/checkout-api-TEST.xml
+            displayName: 'Run api test'
+            continueOnError: false
+          - task: PublishTestResults@2
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: '**/*-TEST.xml'
+              searchFolder: '$(System.DefaultWorkingDirectory)'
