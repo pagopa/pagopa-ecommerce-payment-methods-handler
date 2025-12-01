@@ -1,7 +1,7 @@
 microservice-chart:
   namespace: "ecommerce"
   nameOverride: "b-pagopa-ecommerce-payment-methods-handler"
-  fullnameOverride: "b-pagopa-ecommerce-payment-methods-handler"
+  fullnameOverride: "b-pagopaecommercepaymentmethodshandler"
   canaryDelivery:
     create: false
     ingress:
@@ -17,8 +17,8 @@ microservice-chart:
         tag: "latest"
         pullPolicy: Always
     envConfig:
-      OTEL_RESOURCE_ATTRIBUTES: "service.name=pagopa-ecommerce-payment-requests-service-blue,deployment.environment=uat"
-      ECS_SERVICE_NAME: pagopa-ecommerce-payment-requests-service-blue
+      OTEL_RESOURCE_ATTRIBUTES: "service.name=pagopa-ecommerce-payment-methods-handler-blue,deployment.environment=uat"
+      ECS_SERVICE_NAME: pagopa-ecommerce-payment-methods-handler-blue
     envSecret: {}
   image:
     repository: pagopaucommonacr.azurecr.io/pagopaecommercepaymentmethodshandler

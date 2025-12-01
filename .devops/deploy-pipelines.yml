@@ -126,7 +126,7 @@ stages:
                     ENV: 'UAT'
                     KUBERNETES_SERVICE_CONN: $(UAT_KUBERNETES_SERVICE_CONN)
                     NAMESPACE: ecommerce
-                    APP_NAME: $(K8S_IMAGE_REPOSITORY_NAME)
+                    APP_NAME: $(K8S_IMAGE_REPOSITORY_NAME)-b
                     VALUE_FILE: "helm/values-uat.yaml"
                     GREEN_VERSION: $(app_version)${{ variables.DOCKER_FILE_VERSION_SUFFIX }}
                     #for jvm build add --values option targeting containing overrides from native helm values, such as required resources etc
