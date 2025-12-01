@@ -5,6 +5,11 @@ info:
   description: This microservice handles payment methods.
   contact:
     name: pagoPA - Touchpoints team
+    url: https://www.pagopa.it/
+    email: info@pagopa.it
+  license:
+    name: EUPL-1.2
+    url: https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
 tags:
   - name: payment-methods-handler
     description: Api's for handle payment methods
@@ -15,7 +20,15 @@ externalDocs:
   url: https://pagopa.atlassian.net/wiki/spaces/I/pages/2003402841/DR+IPG-147+Integrazione+GMP+su+checkout+e+eCommerce
   description: Design review
 servers:
-  - url: https://api.platform.pagopa.it/
+  - url: https://${host}
+    variables:
+      host:
+          description: The hostname of the API server
+          default: weuprod.ecommerce.internal.platform.pagopa.it
+          enum:
+            - weudev.ecommerce.internal.dev.platform.pagopa.it
+            - weuuat.ecommerce.internal.uat.platform.pagopa.it
+            - weuprod.ecommerce.internal.platform.pagopa.it
 security:
   - ApiKeyAuth: []
 paths:
