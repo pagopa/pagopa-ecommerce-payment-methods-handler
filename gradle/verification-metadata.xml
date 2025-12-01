@@ -3,6 +3,14 @@
    <configuration>
       <verify-metadata>true</verify-metadata>
       <verify-signatures>false</verify-signatures>
+       <trusted-artifacts>
+           <trust group="org.sonarsource.parent"/>
+           <trust group="org.sonarsource.scanner.api"/>
+           <trust group="org.sonarsource.scanner.gradle"/>
+           <trust file=".*-javadoc[.]jar" regex="true"/>
+           <trust file=".*-sources[.]jar" regex="true"/>
+           <trust file="gradle.*-src[.]zip" regex="true"/>
+       </trusted-artifacts>
    </configuration>
    <components>
       <component group="aopalliance" name="aopalliance" version="1.0">
