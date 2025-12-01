@@ -1,7 +1,25 @@
 microservice-chart:
   namespace: "ecommerce"
-  nameOverride: ""
-  fullnameOverride: "pagopa-ecommerce-payment-methods-handler"
+  nameOverride: "b-pagopa-ecommerce-payment-methods-handler"
+  fullnameOverride: "b-pagopa-ecommerce-payment-methods-handler"
+  canaryDelivery:
+    create: false
+    ingress:
+      create: true
+      canary:
+        type: bluegreen
+    service:
+      create: true
+    deployment:
+      create: true
+      image:
+        repository: pagopaucommonacr.azurecr.io/pagopaecommercepaymentmethodshandler
+        tag: "latest"
+        pullPolicy: Always
+    envConfig:
+      OTEL_RESOURCE_ATTRIBUTES: "service.name=pagopa-ecommerce-payment-requests-service-blue,deployment.environment=uat"
+      ECS_SERVICE_NAME: pagopa-ecommerce-payment-requests-service-blue
+    envSecret: {}
   image:
     repository: pagopaucommonacr.azurecr.io/pagopaecommercepaymentmethodshandler
     tag: "1.1.1"
@@ -24,6 +42,7 @@ microservice-chart:
     periodSeconds: 3
   deployment:
     create: true
+    replicas: 3
   service:
     create: true
     type: ClusterIP
@@ -32,7 +51,7 @@ microservice-chart:
   ingress:
     create: true
     host: "weuuat.ecommerce.internal.uat.platform.pagopa.it"
-    path: /pagopa-ecommerce-payment-methods-handler/(.*)
+    path: /beta/pagopa-ecommerce-payment-methods-handler/(.*)
     servicePort: 8080
   serviceAccount:
     name: "ecommerce-workload-identity"
@@ -54,9 +73,9 @@ microservice-chart:
       memory: "128Mi"
       cpu: "150m"
   autoscaling:
-    enable: false
-    minReplica: 1
-    maxReplica: 1
+    enable: true
+    minReplica: 3
+    maxReplica: 10
     pollingInterval: 10 # seconds
     cooldownPeriod: 50 # seconds
     triggers:
