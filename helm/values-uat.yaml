@@ -86,12 +86,12 @@ microservice-chart:
           value: "70"
   envConfig:
     ROOT_LOG_LEVEL: INFO
-    OTEL_RESOURCE_ATTRIBUTES: "service.name=pagopa-ecommerce-payment-methods-handler,deployment.environment=uat"
+    OTEL_RESOURCE_ATTRIBUTES: "service.name=pagopa-ecommerce-payment-methods-handler-blue,deployment.environment=uat"
     OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector.elastic-system.svc:4317"
     OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
     OTEL_LOGS_EXPORTER: none
     OTEL_TRACES_SAMPLER: "always_on"
-    ECS_SERVICE_NAME: pagopa-ecommerce-payment-methods-handler
+    ECS_SERVICE_NAME: pagopa-ecommerce-payment-methods-handler-blue
     ECS_SERVICE_ENVIRONMENT: uat
     SECURITY_API_KEY_SECURED_PATHS: "/payment-methods"
     AFM_URI_V1: "https://api.uat.platform.pagopa.it/afm/calculator-service/v1"
