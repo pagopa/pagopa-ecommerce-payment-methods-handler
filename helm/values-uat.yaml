@@ -40,9 +40,6 @@ microservice-chart:
     initialDelaySeconds: 2
     failureThreshold: 6
     periodSeconds: 3
-  deployment:
-    create: true
-    replicas: 3
   service:
     create: true
     type: ClusterIP
@@ -72,6 +69,9 @@ microservice-chart:
     limits:
       memory: "128Mi"
       cpu: "150m"
+  deployment:
+    create: true
+    replicas: 3
   autoscaling:
     enable: true
     minReplica: 3
