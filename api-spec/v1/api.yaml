@@ -148,7 +148,6 @@ components:
     PaymentNoticeItem:
       required:
         - paymentAmount
-        - primaryCreditorInstitution
       type: object
       properties:
         paymentAmount:
