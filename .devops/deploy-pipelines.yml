@@ -160,7 +160,6 @@ stages:
               USE_NEWMAN_DOCKER_IMAGE: true
               SERVICE_API_KEY: $(IO_PAYMENT_HANDLER_API_KEY_DEV)
   # --- END Deploy DEV --- #
-
   # --- START Deploy UAT --- #
   - stage: "Build_release_candidate"
     displayName: 'Build release candidate'
