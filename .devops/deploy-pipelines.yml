@@ -66,9 +66,58 @@ variables:
 
 # --- START Deploy DEV --- #
 stages:
+  - stage: "Build_for_DEV"
+    displayName: "Build for DEV"
+    condition: and(succeeded(), not(${{ parameters.SKIP_BUILD }}), eq(${{parameters.DEV_DEPLOY}}, true))
+    jobs:
+      - job: Build_docker
+        displayName: Build docker with Build.SourceVersion as TAG
+        steps:
+          - template: templates/docker-release/template.yaml@pagopaCommons
+            parameters:
+              CONTAINER_REGISTRY_SERVICE_CONN: $(DEV_CONTAINER_REGISTRY_SERVICE_CONN)
+              CONTAINER_REGISTRY_FQDN: $(DEV_CONTAINER_NAMESPACE)
+              DOCKER_IMAGE_NAME: $(K8S_IMAGE_REPOSITORY_NAME)
+              DOCKER_IMAGE_TAG: $(Build.SourceVersion)${{ variables.DOCKER_FILE_VERSION_SUFFIX }}
+              FORCE_REPLACE_DOCKER_IMAGE: ${{ parameters.FORCE_REPLACE_DOCKER_IMAGE }}
+              DOCKERFILE: ${{ variables.DOCKER_FILE_NAME }}
+  - stage: "Deploy_for_DEV"
+    displayName: "Deploy DEV"
+    dependsOn: Build_for_DEV
+    condition: or(succeeded(), ${{ parameters.SKIP_BUILD }}, eq(${{parameters.DEV_DEPLOY}}, true) )
+    jobs:
+      - deployment: "deploy"
+        environment: "DEV"
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                  displayName: "Checkout"
+                - task: Bash@3
+                  name: update_chart_version
+                  displayName: "Setup helm microservice chart"
+                  inputs:
+                    targetType: "inline"
+                    script: |
+                      helm repo add microservice-chart https://pagopa.github.io/aks-microservice-chart-blueprint
+                      helm dep build helm
+                - template: azure-templates/helm-microservice-chart-deploy.yml
+                  parameters:
+                    DO_DEPLOY: true
+                    ENV: "DEV"
+                    KUBERNETES_SERVICE_CONN: $(DEV_KUBERNETES_SERVICE_CONN)
+                    NAMESPACE: ecommerce
+                    APP_NAME: $(K8S_IMAGE_REPOSITORY_NAME)
+                    VALUE_FILE: "helm/values-dev.yaml"
+                    GREEN_VERSION: $(Build.SourceVersion)${{ variables.DOCKER_FILE_VERSION_SUFFIX }}
+                    #for jvm build add --values option targeting containing overrides from native helm values, such as required resources etc
+                    ${{ if eq(parameters['NATIVE_COMPILATION'], False) }}:
+                      ARGUMENTS: "--timeout 5m0s --values helm/valuesOverrides/overrides-jvm-dev.yaml"
 
   - stage: "API_Test_DEV"
     displayName: 'API test on DEV green app'
+    dependsOn: Deploy_for_DEV
     jobs:
       - job: newman_dev_api_test_for_checkout
         displayName: 'Running API test for CHECKOUT client'
@@ -230,8 +279,7 @@ stages:
 
   - stage: "API_Test_UAT"
     displayName: 'API test on UAT green app'
-    dependsOn: Build_release_candidate
-    condition: in(dependencies.Build_release_candidate.result, 'Succeeded', 'Skipped')
+    dependsOn: Deploy_UAT_Green
     jobs:
       - job: newman_uat_api_test_for_checkout
         displayName: 'Running API test for CHECKOUT client'
