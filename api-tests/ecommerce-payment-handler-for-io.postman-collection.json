@@ -1,11 +1,11 @@
 {
 	"info": {
-		"_postman_id": "cac6fcf3-99d6-4871-8158-25e5a943c966",
+		"_postman_id": "ca68097c-76a5-4460-87b7-7ca443d908e8",
 		"name": "Pagopa eCommerce payment methods handler for IO",
 		"description": "This microservice handles payment methods.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "23305473",
-		"_collection_link": "https://solar-shuttle-72092.postman.co/workspace/Payment-method-handler~bb874c13-68a1-4c46-bb8b-fbeb1d5d454c/collection/23305473-cac6fcf3-99d6-4871-8158-25e5a943c966?action=share&source=collection_link&creator=23305473"
+		"_collection_link": "https://solar-shuttle-72092.postman.co/workspace/bb874c13-68a1-4c46-bb8b-fbeb1d5d454c/collection/23305473-ca68097c-76a5-4460-87b7-7ca443d908e8?action=share&source=collection_link&creator=23305473"
 	},
 	"item": [
 		{
@@ -406,6 +406,7 @@
 			"script": {
 				"type": "text/javascript",
 				"packages": {},
+				"requests": {},
 				"exec": [
 					""
 				]
@@ -416,6 +417,7 @@
 			"script": {
 				"type": "text/javascript",
 				"packages": {},
+				"requests": {},
 				"exec": [
 					""
 				]
@@ -425,7 +427,7 @@
 	"variable": [
 		{
 			"key": "baseUrl",
-			"value": "{{PROTOCOL}}{{HOST}}{{BASE_PATH}}"
+			"value": "{{PROTOCOL}}{{HOST}}{{BASE_PATH_V3}}"
 		},
 		{
 			"key": "ocp-apim-subscription-key",
@@ -437,8 +439,7 @@
 		},
 		{
 			"key": "baseUrlV2",
-			"value": "",
-			"type": "default"
+			"value": "{{PROTOCOL}}{{HOST}}{{BASE_PATH_V2}}"
 		}
 	]
 }
