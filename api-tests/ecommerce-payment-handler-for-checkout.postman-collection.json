@@ -1,14 +1,15 @@
 {
 	"info": {
-		"_postman_id": "a52c14a7-e91f-4bf8-b31e-c7961748b311",
+		"_postman_id": "7e9586de-5310-4761-9dcb-d950e8e9efd9",
 		"name": "Pagopa eCommerce payment methods handler for checkout",
 		"description": "This microservice handles payment methods.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "12957952"
+		"_exporter_id": "23305473",
+		"_collection_link": "https://solar-shuttle-72092.postman.co/workspace/Payment-method-handler~bb874c13-68a1-4c46-bb8b-fbeb1d5d454c/collection/23305473-7e9586de-5310-4761-9dcb-d950e8e9efd9?action=share&source=collection_link&creator=23305473"
 	},
 	"item": [
 		{
-			"name": "Retrieve all Payment Methods (by filter)",
+			"name": "Retrieve all Payment Methods (by filter) Generic Web User Agent",
 			"event": [
 				{
 					"listen": "test",
@@ -72,6 +73,11 @@
 							"    });",
 							"});",
 							"",
+							"pm.test(\"Must contain applepay payment method and not googlepay\", function() {",
+							"    pm.expect(responseJson.paymentMethods.filter(p => p.paymentTypeCode === \"APPL\")).to.be.empty;",
+							"    pm.expect(responseJson.paymentMethods.filter(p => p.paymentTypeCode === \"GOOG\")).to.not.be.empty;",
+							"});",
+							"",
 							"pm.test(\"The 'validityDateFrom' property should be in YYYY-MM-DD format\", function() {",
 							"    const dateRegex = /^\\d{4}-\\d{2}-\\d{2}$/;  ",
 							"    responseJson.paymentMethods.forEach(function(method) {",
@@ -82,7 +88,8 @@
 							"});"
 						],
 						"type": "text/javascript",
-						"packages": {}
+						"packages": {},
+						"requests": {}
 					}
 				}
 			],
@@ -92,6 +99,116 @@
 				"body": {
 					"mode": "raw",
 					"raw": "{\n    \"userTouchpoint\": \"CHECKOUT\",\n    \"userDevice\": \"WEB\",\n    \"totalAmount\": 15050,\n    \"paymentNotice\": [\n        {\n            \"paymentAmount\": 15050,\n            \"primaryCreditorInstitution\": \"PA_FISCAL_CODE_1\",\n            \"transferList\": [\n                {\n                    \"creditorInstitution\": \"PA_FISCAL_CODE_1\",\n                    \"transferCategory\": \"TAX\",\n                    \"digitalStamp\": false\n                }\n            ]\n        }\n    ],\n    \"allCCp\": false\n }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/payment-methods",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"payment-methods"
+					]
+				},
+				"description": "GET with request body, no resource will be created: API for retrieve payment method using the request query parameter filters"
+			},
+			"response": []
+		},
+		{
+			"name": "Retrieve all Payment Methods (by filter) Safari User Agent",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200 OK\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response is a valid JSON\", function () {",
+							"    pm.response.to.be.json;",
+							"});",
+							"",
+							"const responseJson = pm.response.json();",
+							"",
+							"pm.test(\"Response contains 'paymentMethods' array\", function () {",
+							"    pm.expect(responseJson).to.have.property('paymentMethods');",
+							"    pm.expect(responseJson.paymentMethods).to.be.an('array');",
+							"});",
+							"",
+							"pm.test(\"Payment methods array is not empty\", function () {",
+							"    pm.expect(responseJson.paymentMethods).to.not.be.empty;",
+							"});",
+							"",
+							"pm.test(\"Each payment method has correct structure and data types\", function () {",
+							"    if (responseJson.paymentMethods.length > 0) {",
+							"        responseJson.paymentMethods.forEach(function(method) {",
+							"            pm.expect(method).to.have.property('id').and.is.a('string');",
+							"            pm.expect(method).to.have.property('name').and.is.an('object');",
+							"            pm.expect(method).to.have.property('description').and.is.an('object');",
+							"            pm.expect(method).to.have.property('status').and.is.a('string');",
+							"            pm.expect(method).to.have.property('paymentTypeCode').and.is.a('string');",
+							"            pm.expect(method).to.have.property('paymentMethodTypes').and.is.an('array');",
+							"            pm.expect(method).to.have.property('paymentMethodAsset').and.is.a('string');",
+							"            pm.expect(method).to.have.property('methodManagement').and.is.a('string');",
+							"            ",
+							"            pm.expect(method.paymentMethodAsset).to.match(/^https?:\\/\\//);",
+							"            pm.collectionVariables.set(\"paymentMethodId\", method.id);",
+							"        });",
+							"    }",
+							"});",
+							"",
+							"pm.test(\"Disabled methods must have a valid 'disabledReason'\", function () {",
+							"    responseJson.paymentMethods.forEach(function(method) {",
+							"        if (method.status === \"DISABLED\") {",
+							"            pm.expect(method.disabledReason, `Method ${method.id} is DISABLED but disabledReason is null or missing`).to.not.be.null;",
+							"            pm.expect(method.disabledReason).to.be.a('string');",
+							"        }",
+							"    });",
+							"});",
+							"",
+							"pm.test(\"If 'feeRange' exists, it must contain min and max numbers\", function() {",
+							"    responseJson.paymentMethods.forEach(function(method) {",
+							"        if (method.feeRange) {",
+							"            pm.expect(method.feeRange).to.be.an('object');",
+							"            pm.expect(method.feeRange).to.have.property('min').and.is.a('number');",
+							"            pm.expect(method.feeRange).to.have.property('max').and.is.a('number');",
+							"            ",
+							"            pm.expect(method.feeRange.min).to.be.at.most(method.feeRange.max, `For method ${method.id}, min fee cannot be greater than max fee`);",
+							"        }",
+							"    });",
+							"});",
+							"",
+							"pm.test(\"Must contain applepay payment method and not googlepay\", function() {",
+							"    pm.expect(responseJson.paymentMethods.filter(p => p.paymentTypeCode === \"APPL\")).to.not.be.empty;",
+							"    pm.expect(responseJson.paymentMethods.filter(p => p.paymentTypeCode === \"GOOG\")).to.be.empty;",
+							"});",
+							"",
+							"pm.test(\"The 'validityDateFrom' property should be in YYYY-MM-DD format\", function() {",
+							"    const dateRegex = /^\\d{4}-\\d{2}-\\d{2}$/;  ",
+							"    responseJson.paymentMethods.forEach(function(method) {",
+							"        if (method.validityDateFrom) { ",
+							"           pm.expect(method.validityDateFrom).to.match(dateRegex, `Method ${method.id} has an invalid date format`);",
+							"        }",
+							"    });",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"userTouchpoint\": \"CHECKOUT\",\n    \"userDevice\": \"SAFARI\",\n    \"totalAmount\": 15050,\n    \"paymentNotice\": [\n        {\n            \"paymentAmount\": 15050,\n            \"primaryCreditorInstitution\": \"PA_FISCAL_CODE_1\",\n            \"transferList\": [\n                {\n                    \"creditorInstitution\": \"PA_FISCAL_CODE_1\",\n                    \"transferCategory\": \"TAX\",\n                    \"digitalStamp\": false\n                }\n            ]\n        }\n    ],\n    \"allCCp\": false\n }",
 					"options": {
 						"raw": {
 							"language": "json"
