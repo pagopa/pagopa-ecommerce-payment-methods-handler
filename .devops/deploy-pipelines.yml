@@ -117,7 +117,6 @@ stages:
 
   - stage: "API_Test_DEV"
     displayName: 'API test on DEV green app'
-    # --- dependsOn: Deploy_for_DEV --- #
     jobs:
       - job: newman_dev_api_test_for_checkout
         displayName: 'Running API test with api key related to CHECKOUT client'
