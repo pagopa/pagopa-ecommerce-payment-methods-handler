@@ -125,7 +125,7 @@ stages:
           - template: azure-templates/api-tests.yml
             parameters:
               API_TEST_FILE: api-tests/ecommerce-payment-handler-for-checkout.postman-collection.json
-              ENV_FILE: api-tests/ecommerce-dev.env.json
+              ENV_FILE: api-tests/checkout-dev.env.json
               TEST_FILE_PREFIX: "dev"
               USE_NEWMAN_DOCKER_IMAGE: true
               SERVICE_API_KEY: $(CHECKOUT_PAYMENT_HANDLER_API_KEY_DEV)
@@ -135,10 +135,20 @@ stages:
           - template: azure-templates/api-tests.yml
             parameters:
               API_TEST_FILE: api-tests/ecommerce-payment-handler-for-io.postman-collection.json
-              ENV_FILE: api-tests/ecommerce-dev.env.json
+              ENV_FILE: api-tests/io-dev.env.json
               TEST_FILE_PREFIX: "dev"
               USE_NEWMAN_DOCKER_IMAGE: true
               SERVICE_API_KEY: $(IO_PAYMENT_HANDLER_API_KEY_DEV)
+      - job: newman_dev_api_test_for_payment_method_handler
+        displayName: 'Running API test with api key related to IO client'
+        steps:
+          - template: azure-templates/api-tests.yml
+            parameters:
+              API_TEST_FILE: api-tests/ecommerce-payment-handler-for-io.postman-collection.json
+              ENV_FILE: api-tests/ecommerce-dev.env.json
+              TEST_FILE_PREFIX: "dev"
+              USE_NEWMAN_DOCKER_IMAGE: true
+              SERVICE_API_KEY: $(CHECKOUT_PAYMENT_HANDLER_API_KEY_DEV)
   # --- END Deploy DEV --- #
 
   # --- START Deploy UAT --- #
