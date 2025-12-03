@@ -5,7 +5,7 @@
 		"description": "This microservice handles payment methods.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "23305473",
-		"_collection_link": "https://solar-shuttle-72092.postman.co/workspace/Payment-method-handler~bb874c13-68a1-4c46-bb8b-fbeb1d5d454c/collection/23305473-2eb4fa30-7f2c-4f43-aff8-0b58b90c36ea?action=share&source=collection_link&creator=23305473"
+		"_collection_link": "https://solar-shuttle-72092.postman.co/workspace/bb874c13-68a1-4c46-bb8b-fbeb1d5d454c/collection/23305473-2eb4fa30-7f2c-4f43-aff8-0b58b90c36ea?action=share&source=collection_link&creator=23305473"
 	},
 	"item": [
 		{
@@ -83,7 +83,8 @@
 							"});"
 						],
 						"type": "text/javascript",
-						"packages": {}
+						"packages": {},
+						"requests": {}
 					}
 				}
 			],
@@ -92,7 +93,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"userTouchpoint\": \"IO\",\n    \"userDevice\": \"WEB\",\n    \"totalAmount\": 15050,\n    \"paymentNotice\": [\n        {\n            \"paymentAmount\": 15050,\n            \"primaryCreditorInstitution\": \"PA_FISCAL_CODE_1\",\n            \"transferList\": [\n                {\n                    \"creditorInstitution\": \"PA_FISCAL_CODE_1\",\n                    \"transferCategory\": \"TAX\",\n                    \"digitalStamp\": false\n                }\n            ]\n        }\n    ],\n    \"allCCp\": false\n }",
+					"raw": "{\n    \"userTouchpoint\": \"{{CLIENT_ID}}\",\n    \"userDevice\": \"WEB\",\n    \"totalAmount\": 15050,\n    \"paymentNotice\": [\n        {\n            \"paymentAmount\": 15050,\n            \"primaryCreditorInstitution\": \"PA_FISCAL_CODE_1\",\n            \"transferList\": [\n                {\n                    \"creditorInstitution\": \"PA_FISCAL_CODE_1\",\n                    \"transferCategory\": \"TAX\",\n                    \"digitalStamp\": false\n                }\n            ]\n        }\n    ],\n    \"allCCp\": false\n }",
 					"options": {
 						"raw": {
 							"language": "json"
