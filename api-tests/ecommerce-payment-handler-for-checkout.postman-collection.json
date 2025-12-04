@@ -311,14 +311,6 @@
 				"description": "Tests the 404 Not Found response for a non-existent payment method ID."
 			},
 			"response": []
-		},
-		{
-			"name": "New Request",
-			"request": {
-				"method": "GET",
-				"header": []
-			},
-			"response": []
 		}
 	],
 	"event": [
