@@ -5,7 +5,7 @@
 		"description": "This microservice handles payment methods.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "23305473",
-		"_collection_link": "https://solar-shuttle-72092.postman.co/workspace/bb874c13-68a1-4c46-bb8b-fbeb1d5d454c/collection/23305473-2eb4fa30-7f2c-4f43-aff8-0b58b90c36ea?action=share&source=collection_link&creator=23305473"
+		"_collection_link": "https://solar-shuttle-72092.postman.co/workspace/Payment-method-handler~bb874c13-68a1-4c46-bb8b-fbeb1d5d454c/collection/23305473-2eb4fa30-7f2c-4f43-aff8-0b58b90c36ea?action=share&source=collection_link&creator=23305473"
 	},
 	"item": [
 		{
@@ -45,7 +45,8 @@
 							"            pm.expect(method).to.have.property('paymentMethodTypes').and.is.an('array');",
 							"            pm.expect(method).to.have.property('paymentMethodAsset').and.is.a('string');",
 							"            pm.expect(method).to.have.property('methodManagement').and.is.a('string');",
-							"            ",
+							"            pm.expect(method).to.not.have.property('feeRange');",
+							"",
 							"            pm.expect(method.paymentMethodAsset).to.match(/^https?:\\/\\//);",
 							"            pm.collectionVariables.set(\"paymentMethodId\", method.id);",
 							"        });",
@@ -60,7 +61,7 @@
 							"        }",
 							"    });",
 							"});",
-							"",
+							"/*",
 							"pm.test(\"If 'feeRange' exists, it must contain min and max numbers\", function() {",
 							"    responseJson.paymentMethods.forEach(function(method) {",
 							"        if (method.feeRange) {",
@@ -72,7 +73,7 @@
 							"        }",
 							"    });",
 							"});",
-							"",
+							"*/",
 							"pm.test(\"The 'validityDateFrom' property should be in YYYY-MM-DD format\", function() {",
 							"    const dateRegex = /^\\d{4}-\\d{2}-\\d{2}$/;  ",
 							"    responseJson.paymentMethods.forEach(function(method) {",

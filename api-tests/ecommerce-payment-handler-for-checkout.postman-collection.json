@@ -45,7 +45,7 @@
 							"            pm.expect(method).to.have.property('paymentMethodTypes').and.is.an('array');",
 							"            pm.expect(method).to.have.property('paymentMethodAsset').and.is.a('string');",
 							"            pm.expect(method).to.have.property('methodManagement').and.is.a('string');",
-							"            ",
+							"            pm.expect(method).to.not.have.property('feeRange');",
 							"            pm.expect(method.paymentMethodAsset).to.match(/^https?:\\/\\//);",
 							"            pm.collectionVariables.set(\"paymentMethodId\", method.id);",
 							"        });",
@@ -60,7 +60,7 @@
 							"        }",
 							"    });",
 							"});",
-							"",
+							"/*",
 							"pm.test(\"If 'feeRange' exists, it must contain min and max numbers\", function() {",
 							"    responseJson.paymentMethods.forEach(function(method) {",
 							"        if (method.feeRange) {",
@@ -72,7 +72,7 @@
 							"        }",
 							"    });",
 							"});",
-							"",
+							"*/",
 							"pm.test(\"Must contain applepay payment method and not googlepay\", function() {",
 							"    pm.expect(responseJson.paymentMethods.filter(p => p.paymentTypeCode === \"APPL\")).to.be.empty;",
 							"    pm.expect(responseJson.paymentMethods.filter(p => p.paymentTypeCode === \"GOOG\")).to.not.be.empty;",
@@ -155,7 +155,8 @@
 							"            pm.expect(method).to.have.property('paymentMethodTypes').and.is.an('array');",
 							"            pm.expect(method).to.have.property('paymentMethodAsset').and.is.a('string');",
 							"            pm.expect(method).to.have.property('methodManagement').and.is.a('string');",
-							"            ",
+							"            pm.expect(method).to.not.have.property('feeRange');",
+							"",
 							"            pm.expect(method.paymentMethodAsset).to.match(/^https?:\\/\\//);",
 							"            pm.collectionVariables.set(\"paymentMethodId\", method.id);",
 							"        });",
@@ -170,7 +171,7 @@
 							"        }",
 							"    });",
 							"});",
-							"",
+							"/*",
 							"pm.test(\"If 'feeRange' exists, it must contain min and max numbers\", function() {",
 							"    responseJson.paymentMethods.forEach(function(method) {",
 							"        if (method.feeRange) {",
@@ -182,7 +183,7 @@
 							"        }",
 							"    });",
 							"});",
-							"",
+							"*/",
 							"pm.test(\"Must contain applepay payment method and not googlepay\", function() {",
 							"    pm.expect(responseJson.paymentMethods.filter(p => p.paymentTypeCode === \"APPL\")).to.not.be.empty;",
 							"    pm.expect(responseJson.paymentMethods.filter(p => p.paymentTypeCode === \"GOOG\")).to.be.empty;",
@@ -310,29 +311,23 @@
 				"description": "Tests the 404 Not Found response for a non-existent payment method ID."
 			},
 			"response": []
+		},
+		{
+			"name": "New Request",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
 		}
 	],
-	"auth": {
-		"type": "apikey",
-		"apikey": [
-			{
-				"key": "value",
-				"value": "{{API_KEY}}",
-				"type": "string"
-			},
-			{
-				"key": "key",
-				"value": "ocp-apim-subscription-key",
-				"type": "string"
-			}
-		]
-	},
 	"event": [
 		{
 			"listen": "prerequest",
 			"script": {
 				"type": "text/javascript",
 				"packages": {},
+				"requests": {},
 				"exec": [
 					""
 				]
@@ -343,6 +338,7 @@
 			"script": {
 				"type": "text/javascript",
 				"packages": {},
+				"requests": {},
 				"exec": [
 					""
 				]
@@ -355,16 +351,8 @@
 			"value": "{{PROTOCOL}}{{HOST}}{{BASE_PATH}}"
 		},
 		{
-			"key": "ocp-apim-subscription-key",
-			"value": "{{API_KEY}}"
-		},
-		{
 			"key": "paymentMethodId",
 			"value": "ID_METODO"
-		},
-		{
-			"key": "ocp-apim-subscription-key",
-			"value": "{{API_KEY}}"
 		}
 	]
 }
