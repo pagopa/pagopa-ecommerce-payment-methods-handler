@@ -17,7 +17,7 @@ externalDocs:
 servers:
   - url: https://api.platform.pagopa.it/
 security:
-  - ApiKeyAuth: []
+  - ApiKeyAuth: [ ]
 paths:
   /payment-methods:
     post:
@@ -145,6 +145,9 @@ components:
           type: boolean
         targetKey:
           type: string
+        deviceVersion:
+          type: string
+          description: "The user device version"
     PaymentNoticeItem:
       required:
         - paymentAmount

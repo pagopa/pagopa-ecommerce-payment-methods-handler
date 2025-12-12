@@ -25,6 +25,7 @@ class PaymentMethodServiceImpl @Inject constructor(private val restClient: Payme
         return restClient
             .searchPaymentMethods(paymentMethodsRequest.toPaymentMethodRequestDto(), xRequestId)
             .map { dto -> dto.toPaymentMethodsResponse() }
+            .map { dto -> filterMethods(paymentMethodsRequest, dto) }
             .onFailure()
             .invoke { exception ->
                 log.error("Exception during request with id $xRequestId", exception)
@@ -34,6 +35,41 @@ class PaymentMethodServiceImpl @Inject constructor(private val restClient: Payme
                 log.info("Payment methods retrieved successfully for request with id $xRequestId")
             }
             .subscribeAsCompletionStage()
+    }
+
+    fun filterMethods(
+        paymentMethodRequest: PaymentMethodsRequest,
+        paymentMethodsResponse: PaymentMethodsResponse,
+    ): PaymentMethodsResponse {
+        val deviceVersion = paymentMethodRequest.deviceVersion
+        val userTouchpoint = paymentMethodRequest.userTouchpoint
+        return when (userTouchpoint) {
+            /*
+            payment methods filtering logic:
+            we should not return CARDS payment method with ONBOARDABLE for old app version that will not handle this payment method
+            Actually we identify IO app using user touchpoint field
+            and old app version based on the fact that deviceVersion parameter is not valued.
+            For those versions method management for card method is overridden to ONBOARDABLE_ONLY
+            */
+            PaymentMethodsRequest.UserTouchpointEnum.IO ->
+                if (deviceVersion == null) {
+                    paymentMethodsResponse.paymentMethods(
+                        paymentMethodsResponse.paymentMethods.map {
+                            if (
+                                it.paymentTypeCode == PaymentMethodResponse.PaymentTypeCodeEnum.CP
+                            ) {
+                                it.methodManagement =
+                                    PaymentMethodResponse.MethodManagementEnum.ONBOARDABLE_ONLY
+                            }
+                            it
+                        }
+                    )
+                } else {
+                    paymentMethodsResponse
+                }
+
+            else -> paymentMethodsResponse
+        }
     }
 
     override fun getPaymentMethod(
