@@ -9,6 +9,7 @@ import it.pagopa.generated.ecommerce.client.model.PaymentMethodsItemDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodsResponseDto
 import it.pagopa.generated.ecommerce.client.model.PaymentNoticeItemOptionalTransferListDto
 import it.pagopa.generated.ecommerce.client.model.TransferListItemDto
+import java.util.Optional
 
 fun PaymentMethodsItemDto.toPaymentMethodResponse(): PaymentMethodResponse {
     val paymentHandlerPaymentMethod = PaymentMethodResponse()
@@ -118,7 +119,12 @@ fun PaymentMethodsRequest.toPaymentMethodRequestDto(): PaymentMethodRequestDto {
     afmRequest.targetKey = this.targetKey
     afmRequest.sortBy = PaymentMethodRequestDto.SortByEnum.DESCRIPTION
     afmRequest.sortOrder = PaymentMethodRequestDto.SortOrderEnum.ASC
-    afmRequest.language = PaymentMethodRequestDto.LanguageEnum.IT
+    afmRequest.language =
+        PaymentMethodRequestDto.LanguageEnum.valueOf(
+            Optional.ofNullable(this.language)
+                .orElse(PaymentMethodsRequest.LanguageEnum.IT)
+                .toString()
+        )
     afmRequest.priorityGroups = listOf(PaymentMethodRequestDto.PriorityGroupsEnum.CP)
 
     return afmRequest

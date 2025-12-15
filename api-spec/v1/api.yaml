@@ -148,6 +148,15 @@ components:
         deviceVersion:
           type: string
           description: "The user device version"
+        language:
+          type: string
+          description: "The user language"
+          enum:
+            - IT
+            - EN
+            - FR
+            - DE
+            - SL
     PaymentNoticeItem:
       required:
         - paymentAmount
