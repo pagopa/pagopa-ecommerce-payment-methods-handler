@@ -117,6 +117,7 @@ fun PaymentMethodsRequest.toPaymentMethodRequestDto(): PaymentMethodRequestDto {
     afmRequest.allCCp = this.allCCp
     afmRequest.targetKey = this.targetKey
     afmRequest.sortBy = PaymentMethodRequestDto.SortByEnum.DESCRIPTION
+    afmRequest.sortOrder = PaymentMethodRequestDto.SortOrderEnum.ASC
     afmRequest.language = PaymentMethodRequestDto.LanguageEnum.IT
     afmRequest.priorityGroups = listOf(PaymentMethodRequestDto.PriorityGroupsEnum.CP)
 
