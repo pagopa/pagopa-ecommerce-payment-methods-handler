@@ -10,7 +10,6 @@ import it.pagopa.generated.ecommerce.client.model.PaymentMethodsResponseDto
 import it.pagopa.generated.ecommerce.client.model.PaymentNoticeItemOptionalTransferListDto
 import it.pagopa.generated.ecommerce.client.model.TransferListItemDto
 import java.util.Optional
-import kotlin.streams.toList
 
 fun PaymentMethodsItemDto.toPaymentMethodResponse(): PaymentMethodResponse {
     val paymentHandlerPaymentMethod = PaymentMethodResponse()
