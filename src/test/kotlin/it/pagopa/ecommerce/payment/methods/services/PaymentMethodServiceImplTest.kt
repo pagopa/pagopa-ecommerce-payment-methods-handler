@@ -20,6 +20,7 @@ import org.jboss.resteasy.reactive.ClientWebApplicationException
 import org.jboss.resteasy.reactive.client.impl.ClientResponseImpl
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.NullSource
@@ -202,6 +203,140 @@ class PaymentMethodsClientTest {
         assertThrows<PaymentMethodNotFoundException> {
             client.getPaymentMethod(methodId, "test-id", "IO").await().indefinitely()
         }
+    }
+
+    @Test
+    fun `should accept request without any info about language, sortOrder, sortKey and priority groups`() {
+        val requestDto =
+            PaymentMethodsRequest().apply {
+                userTouchpoint = PaymentMethodsRequest.UserTouchpointEnum.IO
+                userDevice = PaymentMethodsRequest.UserDeviceEnum.ANDROID
+                totalAmount = 2500
+                allCCp = true
+                targetKey = "TAX_2025_RENDE"
+                deviceVersion = null
+            }
+
+        assertDoesNotThrow { service.searchPaymentMethods(requestDto, "test-id") }
+    }
+
+    @Test
+    fun `should accept request without any info about sortOrder, sortKey and priority groups`() {
+        val requestDto =
+            PaymentMethodsRequest().apply {
+                userTouchpoint = PaymentMethodsRequest.UserTouchpointEnum.IO
+                userDevice = PaymentMethodsRequest.UserDeviceEnum.ANDROID
+                totalAmount = 2500
+                allCCp = true
+                targetKey = "TAX_2025_RENDE"
+                deviceVersion = null
+                language = PaymentMethodsRequest.LanguageEnum.IT
+            }
+
+        assertDoesNotThrow { service.searchPaymentMethods(requestDto, "test-id") }
+    }
+
+    @Test
+    fun `should accept request without any info about sortOrder and priority groups`() {
+        val requestDto =
+            PaymentMethodsRequest().apply {
+                userTouchpoint = PaymentMethodsRequest.UserTouchpointEnum.IO
+                userDevice = PaymentMethodsRequest.UserDeviceEnum.ANDROID
+                totalAmount = 2500
+                allCCp = true
+                targetKey = "TAX_2025_RENDE"
+                deviceVersion = null
+                language = PaymentMethodsRequest.LanguageEnum.IT
+                sortBy = PaymentMethodsRequest.SortByEnum.DESCRIPTION
+            }
+
+        assertDoesNotThrow { service.searchPaymentMethods(requestDto, "test-id") }
+    }
+
+    @Test
+    fun `should accept request without any info priority groups`() {
+        val requestDto =
+            PaymentMethodsRequest().apply {
+                userTouchpoint = PaymentMethodsRequest.UserTouchpointEnum.IO
+                userDevice = PaymentMethodsRequest.UserDeviceEnum.ANDROID
+                totalAmount = 2500
+                allCCp = true
+                targetKey = "TAX_2025_RENDE"
+                deviceVersion = null
+                language = PaymentMethodsRequest.LanguageEnum.IT
+                sortBy = PaymentMethodsRequest.SortByEnum.DESCRIPTION
+                sortOrder = PaymentMethodsRequest.SortOrderEnum.ASC
+            }
+
+        assertDoesNotThrow { service.searchPaymentMethods(requestDto, "test-id") }
+    }
+
+    @Test
+    fun `should accept request with info priority groups as empty list`() {
+        val requestDto =
+            PaymentMethodsRequest().apply {
+                userTouchpoint = PaymentMethodsRequest.UserTouchpointEnum.IO
+                userDevice = PaymentMethodsRequest.UserDeviceEnum.ANDROID
+                totalAmount = 2500
+                allCCp = true
+                targetKey = "TAX_2025_RENDE"
+                deviceVersion = null
+                language = PaymentMethodsRequest.LanguageEnum.IT
+                sortBy = PaymentMethodsRequest.SortByEnum.DESCRIPTION
+                sortOrder = PaymentMethodsRequest.SortOrderEnum.ASC
+                priorityGroups = listOf()
+            }
+
+        assertDoesNotThrow { service.searchPaymentMethods(requestDto, "test-id") }
+    }
+
+    @Test
+    fun `should accept request with complete info about priority group as one element list`() {
+        val requestDto =
+            PaymentMethodsRequest().apply {
+                userTouchpoint = PaymentMethodsRequest.UserTouchpointEnum.IO
+                userDevice = PaymentMethodsRequest.UserDeviceEnum.ANDROID
+                totalAmount = 2500
+                allCCp = true
+                targetKey = "TAX_2025_RENDE"
+                deviceVersion = null
+                language = PaymentMethodsRequest.LanguageEnum.IT
+                sortBy = PaymentMethodsRequest.SortByEnum.DESCRIPTION
+                sortOrder = PaymentMethodsRequest.SortOrderEnum.ASC
+                priorityGroups = listOf(PaymentMethodsRequest.PriorityGroupsEnum.CP)
+            }
+
+        assertDoesNotThrow { service.searchPaymentMethods(requestDto, "test-id") }
+    }
+
+    @Test
+    fun `should accept request with complete info about priority group as more element list`() {
+        val requestDto =
+            PaymentMethodsRequest().apply {
+                userTouchpoint = PaymentMethodsRequest.UserTouchpointEnum.IO
+                userDevice = PaymentMethodsRequest.UserDeviceEnum.ANDROID
+                totalAmount = 2500
+                allCCp = true
+                targetKey = "TAX_2025_RENDE"
+                deviceVersion = null
+                language = PaymentMethodsRequest.LanguageEnum.IT
+                sortBy = PaymentMethodsRequest.SortByEnum.DESCRIPTION
+                sortOrder = PaymentMethodsRequest.SortOrderEnum.ASC
+                priorityGroups =
+                    listOf(
+                        PaymentMethodsRequest.PriorityGroupsEnum.CP,
+                        PaymentMethodsRequest.PriorityGroupsEnum.PPAL,
+                    )
+            }
+
+        assertDoesNotThrow { service.searchPaymentMethods(requestDto, "test-id") }
+    }
+
+    @Test
+    fun `should not accept request with empty body`() {
+        val requestDto = PaymentMethodsRequest()
+
+        assertThrows<NullPointerException> { service.searchPaymentMethods(requestDto, "test-id") }
     }
 
     @Test
