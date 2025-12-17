@@ -9,6 +9,7 @@ import it.pagopa.generated.ecommerce.client.model.PaymentMethodsItemDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodsResponseDto
 import it.pagopa.generated.ecommerce.client.model.PaymentNoticeItemOptionalTransferListDto
 import it.pagopa.generated.ecommerce.client.model.TransferListItemDto
+import java.util.Optional
 
 fun PaymentMethodsItemDto.toPaymentMethodResponse(): PaymentMethodResponse {
     val paymentHandlerPaymentMethod = PaymentMethodResponse()
@@ -116,6 +117,21 @@ fun PaymentMethodsRequest.toPaymentMethodRequestDto(): PaymentMethodRequestDto {
     }
     afmRequest.allCCp = this.allCCp
     afmRequest.targetKey = this.targetKey
+    if (this.sortBy != null) {
+        afmRequest.sortBy = PaymentMethodRequestDto.SortByEnum.valueOf(this.sortBy.value())
+    }
+    if (this.sortOrder != null) {
+        afmRequest.sortOrder = PaymentMethodRequestDto.SortOrderEnum.valueOf(this.sortOrder.value())
+    }
+    if (this.language != null) {
+        afmRequest.language = PaymentMethodRequestDto.LanguageEnum.valueOf(this.language.value())
+    }
+    afmRequest.priorityGroups =
+        Optional.ofNullable(this.priorityGroups)
+            .orElse(emptyList<PaymentMethodsRequest.PriorityGroupsEnum>())
+            .stream()
+            .map { g -> PaymentMethodRequestDto.PriorityGroupsEnum.valueOf(g.value()) }
+            .toList()
 
     return afmRequest
 }
