@@ -127,6 +127,12 @@
 							"pm.test(\"Must contain applepay payment method and not googlepay\", function() {",
 							"    pm.expect(responseJson.paymentMethods.filter(p => p.paymentTypeCode === \"APPL\")).to.not.be.empty;",
 							"    pm.expect(responseJson.paymentMethods.filter(p => p.paymentTypeCode === \"GOOG\")).to.be.empty;",
+							"});",
+							"",
+							"pm.test(\"First payment method is card\", function () {",
+							"    if (responseJson.paymentMethods.length > 0) {",
+							"        pm.expect(responseJson.paymentMethods[\"0\"].paymentTypeCode).eql(\"CP\");",
+							"    }",
 							"});"
 						],
 						"type": "text/javascript",
@@ -150,7 +156,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"userTouchpoint\": \"IO\",\n    \"userDevice\": \"IOS\",\n    \"totalAmount\": 15050,\n    \"paymentNotice\": [\n        {\n            \"paymentAmount\": 15050,\n            \"primaryCreditorInstitution\": \"PA_FISCAL_CODE_1\",\n            \"transferList\": [\n                {\n                    \"creditorInstitution\": \"PA_FISCAL_CODE_1\",\n                    \"transferCategory\": \"TAX\",\n                    \"digitalStamp\": false\n                }\n            ]\n        }\n    ],\n    \"allCCp\": false\n }",
+					"raw": "{\n    \"userTouchpoint\": \"IO\",\n    \"userDevice\": \"IOS\",\n    \"totalAmount\": 15050,\n    \"language\": \"IT\",\n    \"sortBy\": \"DESCRIPTION\",\n    \"sortOrder\": \"ASC\",\n    \"priorityGroups\": [\"CP\"],\n    \"paymentNotice\": [\n        {\n            \"paymentAmount\": 15050,\n            \"primaryCreditorInstitution\": \"PA_FISCAL_CODE_1\",\n            \"transferList\": [\n                {\n                    \"creditorInstitution\": \"PA_FISCAL_CODE_1\",\n                    \"transferCategory\": \"TAX\",\n                    \"digitalStamp\": false\n                }\n            ]\n        }\n    ],\n    \"allCCp\": false\n }",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -248,6 +254,12 @@
 							"pm.test(\"Must contain applepay payment method and not googlepay\", function() {",
 							"    pm.expect(responseJson.paymentMethods.filter(p => p.paymentTypeCode === \"APPL\")).to.be.empty;",
 							"    pm.expect(responseJson.paymentMethods.filter(p => p.paymentTypeCode === \"GOOG\")).to.not.be.empty;",
+							"});",
+							"",
+							"pm.test(\"First payment method is card\", function () {",
+							"    if (responseJson.paymentMethods.length > 0) {",
+							"        pm.expect(responseJson.paymentMethods[\"0\"].paymentTypeCode).eql(\"CP\");",
+							"    }",
 							"});"
 						],
 						"type": "text/javascript",
@@ -271,7 +283,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"userTouchpoint\": \"IO\",\n    \"userDevice\": \"WEB\",\n    \"totalAmount\": 15050,\n    \"paymentNotice\": [\n        {\n            \"paymentAmount\": 15050,\n            \"primaryCreditorInstitution\": \"PA_FISCAL_CODE_1\",\n            \"transferList\": [\n                {\n                    \"creditorInstitution\": \"PA_FISCAL_CODE_1\",\n                    \"transferCategory\": \"TAX\",\n                    \"digitalStamp\": false\n                }\n            ]\n        }\n    ],\n    \"allCCp\": false\n }",
+					"raw": "{\n    \"userTouchpoint\": \"IO\",\n    \"userDevice\": \"WEB\",\n    \"totalAmount\": 15050,\n    \"language\": \"IT\",\n    \"sortBy\": \"DESCRIPTION\",\n    \"sortOrder\": \"ASC\",\n    \"priorityGroups\": [\"CP\"],\n    \"paymentNotice\": [\n        {\n            \"paymentAmount\": 15050,\n            \"primaryCreditorInstitution\": \"PA_FISCAL_CODE_1\",\n            \"transferList\": [\n                {\n                    \"creditorInstitution\": \"PA_FISCAL_CODE_1\",\n                    \"transferCategory\": \"TAX\",\n                    \"digitalStamp\": false\n                }\n            ]\n        }\n    ],\n    \"allCCp\": false\n }",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -380,6 +392,95 @@
 							"key": "amount",
 							"value": "12000"
 						}
+					]
+				},
+				"description": "GET with request body, no resource will be created: API for retrieve payment method using the request query parameter filters"
+			},
+			"response": []
+		},
+		{
+			"name": "Retrieve all Payment Methods V2 (no amount)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200 OK\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response is a valid JSON\", function () {",
+							"    pm.response.to.be.json;",
+							"});",
+							"",
+							"const responseJson = pm.response.json();",
+							"",
+							"pm.test(\"Response contains 'paymentMethods' array\", function () {",
+							"    pm.expect(responseJson).to.have.property('paymentMethods');",
+							"    pm.expect(responseJson.paymentMethods).to.be.an('array');",
+							"});",
+							"",
+							"pm.test(\"Payment methods array is not empty\", function () {",
+							"    pm.expect(responseJson.paymentMethods).to.not.be.empty;",
+							"});",
+							"",
+							"pm.test(\"Each payment method has correct structure and data types\", function () {",
+							"    if (responseJson.paymentMethods.length > 0) {",
+							"",
+							"        responseJson.paymentMethods.forEach(function(method) {",
+							"            pm.expect(method).to.have.property('asset').and.is.a('string');",
+							"            pm.expect(method).to.have.property('description').and.is.an('string');",
+							"            pm.expect(method).to.have.property('id').and.is.an('string');",
+							"            pm.expect(method).to.have.property('name').and.is.a('string');",
+							"            pm.expect(method).to.have.property('paymentTypeCode').and.is.a('string');",
+							"            pm.expect(method).to.have.property('ranges').and.is.an('array');",
+							"            pm.expect(method).to.have.property('status').and.is.a('string');",
+							"            pm.expect(method).to.have.property('methodManagement').and.is.a('string');",
+							"            ",
+							"            pm.expect(method.asset).to.match(/^https?:\\/\\//);",
+							"            pm.collectionVariables.set(\"paymentMethodId\", method.id);",
+							"        });",
+							"    }",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{SESSION_TOKEN}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"userTouchpoint\": \"IO\",\n    \"userDevice\": \"WEB\",\n    \"totalAmount\": 15050,\n    \"paymentNotice\": [\n        {\n            \"paymentAmount\": 15050,\n            \"primaryCreditorInstitution\": \"PA_FISCAL_CODE_1\",\n            \"transferList\": [\n                {\n                    \"creditorInstitution\": \"PA_FISCAL_CODE_1\",\n                    \"transferCategory\": \"TAX\",\n                    \"digitalStamp\": false\n                }\n            ]\n        }\n    ],\n    \"allCCp\": false\n }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrlV2}}/payment-methods",
+					"host": [
+						"{{baseUrlV2}}"
+					],
+					"path": [
+						"payment-methods"
 					]
 				},
 				"description": "GET with request body, no resource will be created: API for retrieve payment method using the request query parameter filters"

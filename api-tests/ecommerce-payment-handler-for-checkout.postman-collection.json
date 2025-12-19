@@ -85,6 +85,12 @@
 							"           pm.expect(method.validityDateFrom).to.match(dateRegex, `Method ${method.id} has an invalid date format`);",
 							"        }",
 							"    });",
+							"});",
+							"",
+							"pm.test(\"First payment method is card\", function () {",
+							"    if (responseJson.paymentMethods.length > 0) {",
+							"        pm.expect(responseJson.paymentMethods[\"0\"].paymentTypeCode).eql(\"CP\");",
+							"    }",
 							"});"
 						],
 						"type": "text/javascript",
@@ -98,7 +104,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"userTouchpoint\": \"CHECKOUT\",\n    \"userDevice\": \"WEB\",\n    \"totalAmount\": 15050,\n    \"paymentNotice\": [\n        {\n            \"paymentAmount\": 15050,\n            \"primaryCreditorInstitution\": \"PA_FISCAL_CODE_1\",\n            \"transferList\": [\n                {\n                    \"creditorInstitution\": \"PA_FISCAL_CODE_1\",\n                    \"transferCategory\": \"TAX\",\n                    \"digitalStamp\": false\n                }\n            ]\n        }\n    ],\n    \"allCCp\": false\n }",
+					"raw": "{\n    \"userTouchpoint\": \"CHECKOUT\",\n    \"userDevice\": \"WEB\",\n    \"totalAmount\": 15050,\n    \"language\": \"IT\",\n    \"sortBy\": \"DESCRIPTION\",\n    \"sortOrder\": \"ASC\",\n    \"priorityGroups\": [\"CP\"],\n    \"paymentNotice\": [\n        {\n            \"paymentAmount\": 15050,\n            \"primaryCreditorInstitution\": \"PA_FISCAL_CODE_1\",\n            \"transferList\": [\n                {\n                    \"creditorInstitution\": \"PA_FISCAL_CODE_1\",\n                    \"transferCategory\": \"TAX\",\n                    \"digitalStamp\": false\n                }\n            ]\n        }\n    ],\n    \"allCCp\": false\n }",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -196,6 +202,12 @@
 							"           pm.expect(method.validityDateFrom).to.match(dateRegex, `Method ${method.id} has an invalid date format`);",
 							"        }",
 							"    });",
+							"});",
+							"",
+							"pm.test(\"First payment method is card\", function () {",
+							"    if (responseJson.paymentMethods.length > 0) {",
+							"        pm.expect(responseJson.paymentMethods[\"0\"].paymentTypeCode).eql(\"CP\");",
+							"    }",
 							"});"
 						],
 						"type": "text/javascript",
@@ -209,7 +221,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"userTouchpoint\": \"CHECKOUT\",\n    \"userDevice\": \"SAFARI\",\n    \"totalAmount\": 15050,\n    \"paymentNotice\": [\n        {\n            \"paymentAmount\": 15050,\n            \"primaryCreditorInstitution\": \"PA_FISCAL_CODE_1\",\n            \"transferList\": [\n                {\n                    \"creditorInstitution\": \"PA_FISCAL_CODE_1\",\n                    \"transferCategory\": \"TAX\",\n                    \"digitalStamp\": false\n                }\n            ]\n        }\n    ],\n    \"allCCp\": false\n }",
+					"raw": "{\n    \"userTouchpoint\": \"CHECKOUT\",\n    \"userDevice\": \"SAFARI\",\n    \"totalAmount\": 15050,\n    \"language\": \"IT\",\n    \"sortBy\": \"DESCRIPTION\",\n    \"sortOrder\": \"ASC\",\n    \"priorityGroups\": [\"CP\"],\n    \"paymentNotice\": [\n        {\n            \"paymentAmount\": 15050,\n            \"primaryCreditorInstitution\": \"PA_FISCAL_CODE_1\",\n            \"transferList\": [\n                {\n                    \"creditorInstitution\": \"PA_FISCAL_CODE_1\",\n                    \"transferCategory\": \"TAX\",\n                    \"digitalStamp\": false\n                }\n            ]\n        }\n    ],\n    \"allCCp\": false\n }",
 					"options": {
 						"raw": {
 							"language": "json"
