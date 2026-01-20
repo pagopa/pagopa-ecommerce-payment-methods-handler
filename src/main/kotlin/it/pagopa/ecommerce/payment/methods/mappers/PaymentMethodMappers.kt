@@ -60,7 +60,7 @@ fun PaymentMethodResponseDto.toPaymentMethodResponse(): PaymentMethodResponse {
      * future re-enablement when AFM provides fee ranges. this.rangeAmount?.let {
      * afmResponseFeeRange -> FeeRange().max(afmResponseFeeRange.max).min(afmResponseFeeRange.min) }
      */
-    paymentHandlerPaymentMethod.paymentTypeCode = this.group.toString()
+    paymentHandlerPaymentMethod.paymentTypeCode = this.group
     paymentHandlerPaymentMethod.paymentMethodAsset = this.paymentMethodAsset
     paymentHandlerPaymentMethod.methodManagement =
         PaymentMethodResponse.MethodManagementEnum.valueOf(this.methodManagement.toString())
