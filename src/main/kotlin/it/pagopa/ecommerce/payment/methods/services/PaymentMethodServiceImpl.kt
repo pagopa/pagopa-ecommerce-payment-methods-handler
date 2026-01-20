@@ -55,7 +55,7 @@ class PaymentMethodServiceImpl @Inject constructor(private val restClient: Payme
                 if (deviceVersion == null) {
                     paymentMethodsResponse.paymentMethods(
                         paymentMethodsResponse.paymentMethods.map {
-                            if (it.paymentTypeCode.equals("CP")) {
+                            if (it.paymentTypeCode == "CP") {
                                 it.methodManagement =
                                     PaymentMethodResponse.MethodManagementEnum.ONBOARDABLE_ONLY
                             }
