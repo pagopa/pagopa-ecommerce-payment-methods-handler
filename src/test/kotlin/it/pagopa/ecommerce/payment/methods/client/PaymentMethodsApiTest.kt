@@ -60,7 +60,7 @@ class PaymentMethodsApiTest {
                     mapOf("it" to "Pagamento con carta di credito", "en" to "Credit card payment")
                 status = PaymentMethodsItemDto.StatusEnum.ENABLED
                 validityDateFrom = LocalDate.of(2025, 1, 1)
-                group = PaymentMethodsItemDto.GroupEnum.CP
+                group = "CP"
                 paymentMethodTypes = listOf(PaymentMethodsItemDto.PaymentMethodTypesEnum.CARTE)
                 paymentMethodAsset = "visa.png"
                 methodManagement = PaymentMethodsItemDto.MethodManagementEnum.ONBOARDABLE
@@ -76,7 +76,7 @@ class PaymentMethodsApiTest {
                 description = mapOf("it" to "Pagamento con PayPal", "en" to "Pay with PayPal")
                 status = PaymentMethodsItemDto.StatusEnum.ENABLED
                 validityDateFrom = LocalDate.of(2025, 1, 1)
-                group = PaymentMethodsItemDto.GroupEnum.PPAL
+                group = "PPAL"
                 paymentMethodTypes = listOf(PaymentMethodsItemDto.PaymentMethodTypesEnum.APP)
                 paymentMethodAsset = "paypal.png"
                 methodManagement = PaymentMethodsItemDto.MethodManagementEnum.REDIRECT
@@ -115,7 +115,7 @@ class PaymentMethodsApiTest {
                 name = mapOf("it" to "Carta Visa")
                 status = PaymentMethodResponseDto.StatusEnum.ENABLED
                 validityDateFrom = LocalDate.of(2025, 1, 1)
-                group = PaymentMethodResponseDto.GroupEnum.CP
+                group = "CP"
                 paymentMethodTypes = listOf(PaymentMethodResponseDto.PaymentMethodTypesEnum.CARTE)
                 methodManagement = PaymentMethodResponseDto.MethodManagementEnum.ONBOARDABLE
                 validityDateFrom = LocalDate.now()

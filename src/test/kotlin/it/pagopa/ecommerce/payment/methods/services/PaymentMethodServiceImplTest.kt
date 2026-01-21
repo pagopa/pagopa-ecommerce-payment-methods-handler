@@ -59,7 +59,7 @@ class PaymentMethodsClientTest {
                             name = mapOf("it" to "Carta Visa")
                             status = PaymentMethodsItemDto.StatusEnum.ENABLED
                             validityDateFrom = LocalDate.of(2025, 1, 1)
-                            group = PaymentMethodsItemDto.GroupEnum.CP
+                            group = "CP"
                             paymentMethodTypes =
                                 listOf(PaymentMethodsItemDto.PaymentMethodTypesEnum.CARTE)
                             methodManagement =
@@ -106,7 +106,7 @@ class PaymentMethodsClientTest {
                 name = mapOf("it" to "Carta Visa")
                 status = PaymentMethodResponseDto.StatusEnum.ENABLED
                 validityDateFrom = LocalDate.of(2025, 1, 1)
-                group = PaymentMethodResponseDto.GroupEnum.CP
+                group = "CP"
                 paymentMethodTypes = listOf(PaymentMethodResponseDto.PaymentMethodTypesEnum.CARTE)
                 userTouchpoint = listOf(PaymentMethodResponseDto.UserTouchpointEnum.CHECKOUT)
                 methodManagement = PaymentMethodResponseDto.MethodManagementEnum.ONBOARDABLE
@@ -188,7 +188,7 @@ class PaymentMethodsClientTest {
                 name = mapOf("it" to "Carta Visa")
                 status = PaymentMethodResponseDto.StatusEnum.ENABLED
                 validityDateFrom = LocalDate.of(2025, 1, 1)
-                group = PaymentMethodResponseDto.GroupEnum.CP
+                group = "CP"
                 paymentMethodTypes = listOf(PaymentMethodResponseDto.PaymentMethodTypesEnum.CARTE)
                 userTouchpoint = listOf(PaymentMethodResponseDto.UserTouchpointEnum.CHECKOUT)
                 methodManagement = PaymentMethodResponseDto.MethodManagementEnum.ONBOARDABLE
@@ -360,7 +360,7 @@ class PaymentMethodsClientTest {
                             name = mapOf("it" to "Carta")
                             status = PaymentMethodsItemDto.StatusEnum.ENABLED
                             validityDateFrom = LocalDate.of(2025, 1, 1)
-                            group = PaymentMethodsItemDto.GroupEnum.CP
+                            group = "CP"
                             paymentMethodTypes =
                                 listOf(PaymentMethodsItemDto.PaymentMethodTypesEnum.CARTE)
                             methodManagement =
@@ -374,7 +374,7 @@ class PaymentMethodsClientTest {
                             name = mapOf("it" to "paypal")
                             status = PaymentMethodsItemDto.StatusEnum.ENABLED
                             validityDateFrom = LocalDate.of(2025, 1, 1)
-                            group = PaymentMethodsItemDto.GroupEnum.PPAL
+                            group = "PPAL"
                             paymentMethodTypes =
                                 listOf(PaymentMethodsItemDto.PaymentMethodTypesEnum.APP)
                             methodManagement =
@@ -393,14 +393,8 @@ class PaymentMethodsClientTest {
             service.searchPaymentMethods(requestDto, "test-id").toCompletableFuture().get()
 
         assertEquals(2, response.paymentMethods?.size)
-        val cardPaymentMethod =
-            response.paymentMethods.first {
-                it.paymentTypeCode == PaymentMethodResponse.PaymentTypeCodeEnum.CP
-            }
-        val paypalPaymentMethod =
-            response.paymentMethods.first {
-                it.paymentTypeCode == PaymentMethodResponse.PaymentTypeCodeEnum.PPAL
-            }
+        val cardPaymentMethod = response.paymentMethods.first { it.paymentTypeCode == "CP" }
+        val paypalPaymentMethod = response.paymentMethods.first { it.paymentTypeCode == "PPAL" }
         assertEquals(
             PaymentMethodResponse.MethodManagementEnum.ONBOARDABLE_ONLY,
             cardPaymentMethod.methodManagement,
@@ -432,7 +426,7 @@ class PaymentMethodsClientTest {
                             name = mapOf("it" to "Carta")
                             status = PaymentMethodsItemDto.StatusEnum.ENABLED
                             validityDateFrom = LocalDate.of(2025, 1, 1)
-                            group = PaymentMethodsItemDto.GroupEnum.CP
+                            group = "CP"
                             paymentMethodTypes =
                                 listOf(PaymentMethodsItemDto.PaymentMethodTypesEnum.CARTE)
                             methodManagement =
@@ -446,7 +440,7 @@ class PaymentMethodsClientTest {
                             name = mapOf("it" to "paypal")
                             status = PaymentMethodsItemDto.StatusEnum.ENABLED
                             validityDateFrom = LocalDate.of(2025, 1, 1)
-                            group = PaymentMethodsItemDto.GroupEnum.PPAL
+                            group = "PPAL"
                             paymentMethodTypes =
                                 listOf(PaymentMethodsItemDto.PaymentMethodTypesEnum.APP)
                             methodManagement =
@@ -465,14 +459,8 @@ class PaymentMethodsClientTest {
             service.searchPaymentMethods(requestDto, "test-id").toCompletableFuture().get()
 
         assertEquals(2, response.paymentMethods?.size)
-        val cardPaymentMethod =
-            response.paymentMethods.first {
-                it.paymentTypeCode == PaymentMethodResponse.PaymentTypeCodeEnum.CP
-            }
-        val paypalPaymentMethod =
-            response.paymentMethods.first {
-                it.paymentTypeCode == PaymentMethodResponse.PaymentTypeCodeEnum.PPAL
-            }
+        val cardPaymentMethod = response.paymentMethods.first { it.paymentTypeCode == "CP" }
+        val paypalPaymentMethod = response.paymentMethods.first { it.paymentTypeCode == "PPAL" }
         assertEquals(
             PaymentMethodResponse.MethodManagementEnum.ONBOARDABLE,
             cardPaymentMethod.methodManagement,
@@ -508,7 +496,7 @@ class PaymentMethodsClientTest {
                             name = mapOf("it" to "Carta")
                             status = PaymentMethodsItemDto.StatusEnum.ENABLED
                             validityDateFrom = LocalDate.of(2025, 1, 1)
-                            group = PaymentMethodsItemDto.GroupEnum.CP
+                            group = "CP"
                             paymentMethodTypes =
                                 listOf(PaymentMethodsItemDto.PaymentMethodTypesEnum.CARTE)
                             methodManagement =
@@ -522,7 +510,7 @@ class PaymentMethodsClientTest {
                             name = mapOf("it" to "paypal")
                             status = PaymentMethodsItemDto.StatusEnum.ENABLED
                             validityDateFrom = LocalDate.of(2025, 1, 1)
-                            group = PaymentMethodsItemDto.GroupEnum.PPAL
+                            group = "PPAL"
                             paymentMethodTypes =
                                 listOf(PaymentMethodsItemDto.PaymentMethodTypesEnum.APP)
                             methodManagement =
@@ -541,14 +529,8 @@ class PaymentMethodsClientTest {
             service.searchPaymentMethods(requestDto, "test-id").toCompletableFuture().get()
 
         assertEquals(2, response.paymentMethods?.size)
-        val cardPaymentMethod =
-            response.paymentMethods.first {
-                it.paymentTypeCode == PaymentMethodResponse.PaymentTypeCodeEnum.CP
-            }
-        val paypalPaymentMethod =
-            response.paymentMethods.first {
-                it.paymentTypeCode == PaymentMethodResponse.PaymentTypeCodeEnum.PPAL
-            }
+        val cardPaymentMethod = response.paymentMethods.first { it.paymentTypeCode == "CP" }
+        val paypalPaymentMethod = response.paymentMethods.first { it.paymentTypeCode == "PPAL" }
         assertEquals(
             PaymentMethodResponse.MethodManagementEnum.ONBOARDABLE,
             cardPaymentMethod.methodManagement,

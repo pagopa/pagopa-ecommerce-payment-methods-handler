@@ -727,21 +727,6 @@ components:
           format: date
         group:
           type: string
-          enum:
-            - CP
-            - MYBK
-            - BPAY
-            - PPAL
-            - RPIC
-            - RBPS
-            - SATY
-            - APPL
-            - RICO
-            - RBPB
-            - RBPP
-            - RBPR
-            - GOOG
-            - KLRN
         paymentMethodTypes:
           type: array
           items:
@@ -847,21 +832,6 @@ components:
           type: string
         group:
           type: string
-          enum:
-            - CP
-            - MYBK
-            - BPAY
-            - PPAL
-            - RPIC
-            - RBPS
-            - SATY
-            - APPL
-            - RICO
-            - RBPB
-            - RBPP
-            - RBPR
-            - GOOG
-            - KLRN
         name:
           type: object
           additionalProperties:
