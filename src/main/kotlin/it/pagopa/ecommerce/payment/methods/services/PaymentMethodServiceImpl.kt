@@ -4,6 +4,8 @@ import it.pagopa.ecommerce.payment.methods.client.PaymentMethodsClient
 import it.pagopa.ecommerce.payment.methods.mappers.toPaymentMethodRequestDto
 import it.pagopa.ecommerce.payment.methods.mappers.toPaymentMethodResponse
 import it.pagopa.ecommerce.payment.methods.mappers.toPaymentMethodsResponse
+import it.pagopa.ecommerce.payment.methods.v1.server.model.CalculateFeeRequest
+import it.pagopa.ecommerce.payment.methods.v1.server.model.CalculateFeeResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
@@ -89,6 +91,38 @@ class PaymentMethodServiceImpl @Inject constructor(private val restClient: Payme
             .invoke { _ ->
                 log.info(
                     "Payment method retrieved successfully for request with id $xRequestId and client id $xClientId"
+                )
+            }
+            .subscribeAsCompletionStage()
+    }
+
+    override fun calculateFees(
+        paymentMethodsId: String,
+        calculateFeeRequest: CalculateFeeRequest,
+        xRequestId: String,
+        xClientId: String,
+        xLanguage: String,
+    ): CompletionStage<CalculateFeeResponse> {
+        return restClient
+            .calculateFees(
+                paymentMethodsId,
+                calculateFeeRequest,
+                Int.MAX_VALUE,
+                xRequestId,
+                xClientId,
+                xLanguage,
+            )
+            .onFailure()
+            .invoke { exception ->
+                log.error(
+                    "Exception during request with id $xRequestId and client id $xClientId",
+                    exception,
+                )
+            }
+            .onItem()
+            .invoke { _ ->
+                log.info(
+                    "Bundles retrieved successfully for request with id $xRequestId and client id $xClientId"
                 )
             }
             .subscribeAsCompletionStage()

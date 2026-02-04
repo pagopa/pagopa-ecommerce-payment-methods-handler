@@ -9,6 +9,7 @@ import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodsClientExcepti
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
+import it.pagopa.generated.ecommerce.client.api.CalculatorApi
 import it.pagopa.generated.ecommerce.client.api.PaymentMethodsApi
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodRequestDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodResponseDto
@@ -37,7 +38,8 @@ class PaymentMethodsClientTest {
     private val service = PaymentMethodServiceImpl(mockClient)
 
     private val mockApi = Mockito.mock(PaymentMethodsApi::class.java)
-    private val client = PaymentMethodsClient(mockApi)
+    private val calculatorMockApi = Mockito.mock(CalculatorApi::class.java)
+    private val client = PaymentMethodsClient(mockApi, calculatorMockApi)
 
     @Test
     fun `should return response from PaymentMethodsApi get all methods`() {

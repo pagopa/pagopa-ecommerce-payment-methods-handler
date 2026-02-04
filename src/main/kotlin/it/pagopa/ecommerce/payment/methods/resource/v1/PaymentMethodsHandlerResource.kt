@@ -4,10 +4,7 @@ import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodNotFoundExcept
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodsClientException
 import it.pagopa.ecommerce.payment.methods.services.PaymentMethodService
 import it.pagopa.ecommerce.payment.methods.v1.server.api.PaymentMethodsApi
-import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodResponse
-import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsRequest
-import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
-import it.pagopa.ecommerce.payment.methods.v1.server.model.ProblemJson
+import it.pagopa.ecommerce.payment.methods.v1.server.model.*
 import jakarta.inject.Inject
 import jakarta.validation.Valid
 import jakarta.validation.ValidationException
@@ -23,6 +20,34 @@ class PaymentMethodsHandlerResource
 @Inject
 constructor(private val paymentMethodService: PaymentMethodService) : PaymentMethodsApi {
     private val log = LoggerFactory.getLogger(PaymentMethodsHandlerResource::class.java)
+
+    override fun calculateFees(
+        paymentMethodId: String,
+        xClientId: @NotNull String,
+        xLanguage: @NotNull String,
+        calculateFeeRequest: @Valid @NotNull CalculateFeeRequest,
+        maxOccurrences: Int,
+    ): CompletionStage<CalculateFeeResponse> {
+        log.info(
+            "[Payment Method] Retrieve bundles for client [{}] list for payment method: [{}], allCcp: [{}], isMulti: [{}] and payment notice amounts: {}",
+            xClientId,
+            paymentMethodId,
+            calculateFeeRequest.isAllCCP,
+            calculateFeeRequest.paymentNotices.size > 1,
+            calculateFeeRequest.paymentNotices
+                .stream()
+                .map { paymentNotice -> paymentNotice.paymentAmount }
+                .toList(),
+        )
+        val xRequestId = UUID.randomUUID().toString()
+        return paymentMethodService.calculateFees(
+            paymentMethodId,
+            calculateFeeRequest,
+            xRequestId,
+            xClientId,
+            xLanguage,
+        )
+    }
 
     override fun getAllPaymentMethods(
         paymentMethodsRequest: @Valid @NotNull PaymentMethodsRequest
