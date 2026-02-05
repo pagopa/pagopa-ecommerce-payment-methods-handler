@@ -14,7 +14,10 @@ import it.pagopa.generated.ecommerce.client.model.BundleOptionDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodRequestDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodResponseDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodsResponseDto
-import it.pagopa.generated.ecommerce.client.model.PaymentOptionDto
+import it.pagopa.generated.ecommerce.client.model.PaymentNoticeItemDto
+import it.pagopa.generated.ecommerce.client.model.PaymentOptionMultiDto
+import it.pagopa.generated.ecommerce.client.model.PspSearchCriteriaDto
+import it.pagopa.generated.ecommerce.client.model.TransferListItemDto
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.ws.rs.core.Response
 import org.eclipse.microprofile.rest.client.inject.RestClient
@@ -46,10 +49,37 @@ class PaymentMethodsClient(
     }
 
     private fun createGecFeeRequest(
-        paymentMethodsResponseDto: PaymentMethodResponseDto,
-        requestDto: CalculateFeeRequest,
-    ): PaymentOptionDto {
-        return PaymentOptionDto()
+        paymentMethodResponse: PaymentMethodResponseDto,
+        feeRequestDto: CalculateFeeRequest,
+    ): PaymentOptionMultiDto {
+
+        val paymentNotices =
+            feeRequestDto.paymentNotices
+                .map { notice ->
+                    PaymentNoticeItemDto().apply {
+                        paymentAmount = notice.paymentAmount
+                        primaryCreditorInstitution = notice.primaryCreditorInstitution
+                        transferList =
+                            notice.transferList.map { t ->
+                                TransferListItemDto().apply {
+                                    creditorInstitution = t.creditorInstitution
+                                    digitalStamp = t.digitalStamp
+                                    transferCategory = t.transferCategory
+                                }
+                            }
+                    }
+                }
+                .toList()
+
+        return PaymentOptionMultiDto().apply {
+            bin = feeRequestDto.bin
+            idPspList =
+                feeRequestDto.idPspList?.map { PspSearchCriteriaDto().apply { idPsp = it } }
+                    ?: emptyList()
+            paymentMethod = paymentMethodResponse.group
+            touchpoint = feeRequestDto.touchpoint
+            paymentNotice = paymentNotices
+        }
     }
 
     private fun removeDuplicatePspV2(bundle: BundleOptionDto): BundleOptionDto {
@@ -152,11 +182,13 @@ class PaymentMethodsClient(
             }
             .flatMap {
                 calculatorApi
-                    .getFees(
+                    .getFeesMulti(
                         createGecFeeRequest(it, requestDto),
                         xRequestId,
                         maxOccurrences,
                         requestDto.isAllCCP.toString(),
+                        null,
+                        null,
                     )
                     .map { bundle -> it to bundle }
             }
