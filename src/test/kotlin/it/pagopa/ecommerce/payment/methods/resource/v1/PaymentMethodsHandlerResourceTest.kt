@@ -9,6 +9,7 @@ import it.pagopa.ecommerce.payment.methods.TestUtils
 import it.pagopa.ecommerce.payment.methods.client.PaymentMethodsClient
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodNotFoundException
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodsClientException
+import it.pagopa.ecommerce.payment.methods.v1.server.model.CalculateFeeResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
@@ -248,5 +249,205 @@ class PaymentMethodsHandlerResourceTest {
                 .`as`(ProblemJson::class.java)
 
         assertEquals(expectedProblem, result)
+    }
+
+    @Test
+    fun `should return 200 with fee response for valid request`() {
+        val paymentMethodId = "test-id"
+        val mockResponse = TestUtils.buildCalculateFeeResponse()
+
+        whenever(
+                mockClient.calculateFees(
+                    eq(paymentMethodId),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                )
+            )
+            .thenReturn(Uni.createFrom().item { mockResponse })
+
+        val result =
+            RestAssured.given()
+                .header("x-api-key", "test-primary")
+                .header("x-client-id", "CHECKOUT")
+                .header("x-language", "IT")
+                .queryParam("maxOccurrences", 10)
+                .contentType(ContentType.JSON)
+                .body(TestUtils.buildCalculateFeeRequest())
+                .`when`()
+                .post("/payment-methods/$paymentMethodId/fees")
+                .then()
+                .statusCode(200)
+                .extract()
+                .`as`(CalculateFeeResponse::class.java)
+
+        assertEquals(mockResponse, result)
+    }
+
+    @Test
+    fun `should return 200 with fee response for multi notice request`() {
+        val paymentMethodId = "test-id"
+        val mockResponse = TestUtils.buildCalculateFeeResponse()
+
+        whenever(
+                mockClient.calculateFees(
+                    eq(paymentMethodId),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                )
+            )
+            .thenReturn(Uni.createFrom().item { mockResponse })
+
+        RestAssured.given()
+            .header("x-api-key", "test-primary")
+            .header("x-client-id", "CHECKOUT")
+            .header("x-language", "IT")
+            .queryParam("maxOccurrences", 10)
+            .contentType(ContentType.JSON)
+            .body(TestUtils.buildCalculateFeeRequestMultiNotice())
+            .`when`()
+            .post("/payment-methods/$paymentMethodId/fees")
+            .then()
+            .statusCode(200)
+    }
+
+    @Test
+    fun `should return 404 when payment method not found during calculate fees`() {
+        val paymentMethodId = "not-existing-id"
+
+        whenever(
+                mockClient.calculateFees(
+                    eq(paymentMethodId),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                )
+            )
+            .thenReturn(Uni.createFrom().failure(PaymentMethodNotFoundException(paymentMethodId)))
+
+        RestAssured.given()
+            .header("x-api-key", "test-primary")
+            .header("x-client-id", "CHECKOUT")
+            .header("x-language", "IT")
+            .queryParam("maxOccurrences", 10)
+            .contentType(ContentType.JSON)
+            .body(TestUtils.buildCalculateFeeRequest())
+            .`when`()
+            .post("/payment-methods/$paymentMethodId/fees")
+            .then()
+            .statusCode(404)
+    }
+
+    @Test
+    fun `should return 500 when PaymentMethodsClientException during calculate fees`() {
+        val paymentMethodId = "test-id"
+
+        whenever(
+                mockClient.calculateFees(
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                )
+            )
+            .thenReturn(Uni.createFrom().failure(PaymentMethodsClientException("gmp error")))
+
+        val expectedProblem = ProblemJson()
+        expectedProblem.status = Response.Status.INTERNAL_SERVER_ERROR.statusCode
+        expectedProblem.title = "Unexpected Exception"
+        expectedProblem.detail = "Error during GMP communication"
+
+        val result =
+            RestAssured.given()
+                .header("x-api-key", "test-primary")
+                .header("x-client-id", "CHECKOUT")
+                .header("x-language", "IT")
+                .queryParam("maxOccurrences", 10)
+                .contentType(ContentType.JSON)
+                .body(TestUtils.buildCalculateFeeRequest())
+                .`when`()
+                .post("/payment-methods/$paymentMethodId/fees")
+                .then()
+                .statusCode(500)
+                .extract()
+                .`as`(ProblemJson::class.java)
+
+        assertEquals(expectedProblem, result)
+    }
+
+    @Test
+    fun `should return 500 on generic exception during calculate fees`() {
+        val paymentMethodId = "test-id"
+
+        whenever(
+                mockClient.calculateFees(
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                )
+            )
+            .thenReturn(Uni.createFrom().failure(Exception("unexpected")))
+
+        val expectedProblem = ProblemJson()
+        expectedProblem.status = Response.Status.INTERNAL_SERVER_ERROR.statusCode
+        expectedProblem.title = "Unexpected Exception"
+        expectedProblem.detail = "Generic Error"
+
+        val result =
+            RestAssured.given()
+                .header("x-api-key", "test-primary")
+                .header("x-client-id", "CHECKOUT")
+                .header("x-language", "IT")
+                .queryParam("maxOccurrences", 10)
+                .contentType(ContentType.JSON)
+                .body(TestUtils.buildCalculateFeeRequest())
+                .`when`()
+                .post("/payment-methods/$paymentMethodId/fees")
+                .then()
+                .statusCode(500)
+                .extract()
+                .`as`(ProblemJson::class.java)
+
+        assertEquals(expectedProblem, result)
+    }
+
+    @Test
+    fun `should return 400 when x-client-id header is missing for calculate fees`() {
+        RestAssured.given()
+            .header("x-api-key", "test-primary")
+            .header("x-language", "IT")
+            .queryParam("maxOccurrences", 10)
+            .contentType(ContentType.JSON)
+            .body(TestUtils.buildCalculateFeeRequest())
+            .`when`()
+            .post("/payment-methods/test-id/fees")
+            .then()
+            .statusCode(400)
+    }
+
+    @Test
+    fun `should return 400 when x-language header is missing for calculate fees`() {
+        RestAssured.given()
+            .header("x-api-key", "test-primary")
+            .header("x-client-id", "CHECKOUT")
+            .queryParam("maxOccurrences", 10)
+            .contentType(ContentType.JSON)
+            .body(TestUtils.buildCalculateFeeRequest())
+            .`when`()
+            .post("/payment-methods/test-id/fees")
+            .then()
+            .statusCode(400)
     }
 }
