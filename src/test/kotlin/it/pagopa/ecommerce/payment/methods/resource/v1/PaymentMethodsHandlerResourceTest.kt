@@ -148,19 +148,6 @@ class PaymentMethodsHandlerResourceTest {
     @Test
     fun `should return NOT_FOUND response for get payment method by id not found`() {
         val methodId = "test-id"
-        val mockResponseDto =
-            PaymentMethodResponseDto()
-                .paymentMethodId("test-id")
-                .status(PaymentMethodResponseDto.StatusEnum.ENABLED)
-                .group("CP")
-                .methodManagement(PaymentMethodResponseDto.MethodManagementEnum.ONBOARDABLE)
-                .rangeAmount(FeeRangeDto().min(1).max(10))
-                .name(mapOf(Pair("IT", "Carte")))
-                .description(mapOf(Pair("IT", "Carte")))
-                .paymentMethodAsset("asset")
-                .paymentMethodsBrandAssets(mapOf(Pair("first", "asset")))
-                .paymentMethodTypes(listOf(PaymentMethodResponseDto.PaymentMethodTypesEnum.CARTE))
-                .metadata(mapOf("test" to "test"))
 
         whenever(mockClient.getPaymentMethod(eq(methodId), anyOrNull(), anyOrNull()))
             .thenReturn(Uni.createFrom().failure(PaymentMethodNotFoundException("not_found_test")))
