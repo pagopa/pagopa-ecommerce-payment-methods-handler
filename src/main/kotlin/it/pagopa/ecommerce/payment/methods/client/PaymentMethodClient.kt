@@ -149,6 +149,10 @@ class PaymentMethodsClient(
         xClientId: String,
         language: String,
     ): Uni<CalculateFeeResponse> {
+        log.info(
+            "calculateFees called for paymentMethodId: [$paymentMethodsId], xClientId: [$xClientId], requestDto: [$requestDto]"
+        )
+
         return paymentMethodsApi
             .getPaymentMethod(paymentMethodsId, xRequestId)
             .onFailure()
@@ -170,6 +174,10 @@ class PaymentMethodsClient(
             }
             .onItem()
             .invoke { res ->
+                log.info(
+                    "getPaymentMethod response: group=[${res.group}], userTouchpoint=[${res.userTouchpoint}]"
+                )
+
                 if (
                     !res.userTouchpoint.contains(
                         PaymentMethodResponseDto.UserTouchpointEnum.valueOf(xClientId)
@@ -181,15 +189,30 @@ class PaymentMethodsClient(
                 }
             }
             .flatMap {
+                val gecRequest = createGecFeeRequest(it, requestDto)
+                log.info(
+                    "Calling getFeesMulti with request: [$gecRequest], maxOccurrences: [$maxOccurrences], isAllCCP: [${requestDto.isAllCCP}]"
+                )
                 calculatorApi
                     .getFeesMulti(
-                        createGecFeeRequest(it, requestDto),
+                        gecRequest,
                         xRequestId,
                         maxOccurrences,
                         requestDto.isAllCCP.toString(),
                         null,
                         null,
                     )
+                    .onFailure()
+                    .invoke { exception ->
+                        log.error(
+                            "getFeesMulti failed with exception: [${exception.message}], gecRequest was: [$gecRequest]"
+                        )
+                        if (exception is ClientWebApplicationException) {
+                            log.error(
+                                "getFeesMulti response status: [${exception.response.status}], body: [${exception.response.readEntity(String::class.java)}]"
+                            )
+                        }
+                    }
                     .map { bundle -> it to bundle }
             }
             .map { (p, b) ->
