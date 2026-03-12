@@ -56,18 +56,30 @@ class PaymentMethodsClient(
         val paymentNotices =
             feeRequestDto.paymentNotices
                 .map { notice ->
-                    PaymentNoticeItemDto().apply {
-                        paymentAmount = notice.paymentAmount
-                        primaryCreditorInstitution = notice.primaryCreditorInstitution
-                        transferList =
-                            notice.transferList.map { t ->
-                                TransferListItemDto().apply {
-                                    creditorInstitution = t.creditorInstitution
-                                    digitalStamp = t.digitalStamp
-                                    transferCategory = t.transferCategory
+                    val item =
+                        PaymentNoticeItemDto().apply {
+                            paymentAmount = notice.paymentAmount
+                            primaryCreditorInstitution = notice.primaryCreditorInstitution
+                            transferList =
+                                notice.transferList.map { t ->
+                                    TransferListItemDto().apply {
+                                        creditorInstitution = t.creditorInstitution
+                                        digitalStamp = t.digitalStamp
+                                        transferCategory = t.transferCategory
+                                    }
                                 }
-                            }
-                    }
+                        }
+                    log.info(
+                        "Built PaymentNoticeItemDto: paymentAmount=[${item.paymentAmount}], " +
+                            "primaryCreditorInstitution=[${item.primaryCreditorInstitution}], " +
+                            "transferList size=[${item.transferList?.size}], " +
+                            "transferList=[${item.transferList?.map {
+                                "creditorInstitution=${it.creditorInstitution}, " +
+                                        "transferCategory=${it.transferCategory}, " +
+                                        "digitalStamp=${it.digitalStamp}"
+                            }}]"
+                    )
+                    item
                 }
                 .toList()
 
