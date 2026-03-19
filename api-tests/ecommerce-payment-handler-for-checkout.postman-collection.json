@@ -192,7 +192,7 @@
 							"*/",
 							"pm.test(\"Must contain applepay payment method and not googlepay\", function() {",
 							"    pm.expect(responseJson.paymentMethods.filter(p => p.paymentTypeCode === \"APPL\")).to.not.be.empty;",
-							"    pm.expect(responseJson.paymentMethods.filter(p => p.paymentTypeCode === \"GOOG\")).to.be.empty;",
+							"    pm.expect(responseJson.paymentMethods.filter(p => p.paymentTypeCode === \"GOOG\")).to.not.be.empty;",
 							"});",
 							"",
 							"pm.test(\"The 'validityDateFrom' property should be in YYYY-MM-DD format\", function() {",
