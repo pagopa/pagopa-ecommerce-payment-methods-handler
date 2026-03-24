@@ -170,8 +170,8 @@ class PaymentMethodsClient(
                         xRequestId,
                         maxOccurrences,
                         requestDto.isAllCCP.toString(),
-                        null,
-                        null,
+                        "true",
+                        "feerandom",
                     )
                     .map { bundle -> it to bundle }
             }
