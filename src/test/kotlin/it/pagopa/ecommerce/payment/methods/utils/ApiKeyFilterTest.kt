@@ -68,4 +68,87 @@ class ApiKeyFilterTest {
             .then()
             .statusCode(200)
     }
+
+    @Test
+    fun `testCalculateFeesWithoutApiKeyShouldReturnUnauthorized`() {
+        RestAssured.given()
+            .contentType(ContentType.JSON)
+            .header("x-client-id", "CHECKOUT")
+            .header("x-language", "IT")
+            .queryParam("maxOccurrences", 10)
+            .body(TestUtils.buildCalculateFeeRequest())
+            .`when`()
+            .post("/payment-methods/test-id/fees")
+            .then()
+            .statusCode(401)
+    }
+
+    @Test
+    fun `testCalculateFeesWithValidPrimaryApiKeyShouldReturnOk`() {
+        whenever(
+                mockClient.calculateFees(
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                )
+            )
+            .then { Uni.createFrom().item { TestUtils.buildCalculateFeeResponse() } }
+
+        RestAssured.given()
+            .contentType(ContentType.JSON)
+            .header("x-api-key", "test-primary")
+            .header("x-client-id", "CHECKOUT")
+            .header("x-language", "IT")
+            .queryParam("maxOccurrences", 10)
+            .body(TestUtils.buildCalculateFeeRequest())
+            .`when`()
+            .post("/payment-methods/test-id/fees")
+            .then()
+            .statusCode(200)
+    }
+
+    @Test
+    fun `testCalculateFeesWithInvalidApiKeyShouldReturnUnauthorized`() {
+        RestAssured.given()
+            .contentType(ContentType.JSON)
+            .header("x-api-key", "invalid-key")
+            .header("x-client-id", "CHECKOUT")
+            .header("x-language", "IT")
+            .queryParam("maxOccurrences", 10)
+            .body(TestUtils.buildCalculateFeeRequest())
+            .`when`()
+            .post("/payment-methods/test-id/fees")
+            .then()
+            .statusCode(401)
+    }
+
+    @Test
+    fun `testCalculateFeesWithValidSecondaryApiKeyShouldReturnOk`() {
+        whenever(
+                mockClient.calculateFees(
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                )
+            )
+            .then { Uni.createFrom().item { TestUtils.buildCalculateFeeResponse() } }
+
+        RestAssured.given()
+            .contentType(ContentType.JSON)
+            .header("x-api-key", "test-secondary")
+            .header("x-client-id", "CHECKOUT")
+            .header("x-language", "IT")
+            .queryParam("maxOccurrences", 10)
+            .body(TestUtils.buildCalculateFeeRequest())
+            .`when`()
+            .post("/payment-methods/test-id/fees")
+            .then()
+            .statusCode(200)
+    }
 }
