@@ -118,27 +118,10 @@ class PaymentMethodsClient(
                 CalculateFeeResponse.PaymentMethodStatusEnum.valueOf(
                     paymentMethodResponse.status.name
                 )
-            this.bundles = sortAndShuffleBundleList(bundles)
+            this.bundles = bundles
             asset = paymentMethodResponse.paymentMethodAsset
             brandAssets = paymentMethodResponse.paymentMethodsBrandAssets
         }
-    }
-
-    private fun sortAndShuffleBundleList(bundles: List<Bundle>): List<Bundle> {
-        // Separiamo il bundle onUs (se presente)
-        val onUsBundle = bundles.firstOrNull { it.onUs == true }
-
-        // Filtriamo gli altri, raggruppiamo per fee e mescoliamo
-        val otherBundles =
-            bundles
-                .filter { it.onUs != true }
-                .groupBy { it.taxPayerFee }
-                .toSortedMap() // Mantiene l'ordinamento per fee (equivalente a TreeMap)
-                .values
-                .flatMap { bundlesPerFee -> bundlesPerFee.shuffled() }
-
-        // Ritorna la lista con onUs in testa (se esistente) seguito dagli altri ordinati
-        return listOfNotNull(onUsBundle) + otherBundles
     }
 
     fun calculateFees(
@@ -187,8 +170,8 @@ class PaymentMethodsClient(
                         xRequestId,
                         maxOccurrences,
                         requestDto.isAllCCP.toString(),
-                        null,
-                        null,
+                        "true",
+                        "feerandom",
                     )
                     .map { bundle -> it to bundle }
             }
