@@ -47,68 +47,24 @@ paths:
       responses:
         '200':
           description: Payment method successfully retrieved
-          headers:
-            X-RateLimit-Limit:
-              schema:
-                type: integer
-            X-RateLimit-Remaining:
-              schema:
-                type: integer
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaymentMethodsResponse'
         '400':
           description: Bad request
-          headers:
-            X-RateLimit-Limit:
-              schema:
-                type: integer
-            X-RateLimit-Remaining:
-              schema:
-                type: integer
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemJson'
         '401':
           description: Unauthorized
-          headers:
-            X-RateLimit-Limit:
-              schema:
-                type: integer
-            X-RateLimit-Remaining:
-              schema:
-                type: integer
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProblemJson'
-        '429':
-          description: Too Many Requests
-          headers:
-            X-RateLimit-Limit:
-              schema:
-                type: integer
-            X-RateLimit-Remaining:
-              schema:
-                type: integer
-            Retry-After:
-              schema:
-                type: integer
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemJson'
         '500':
           description: Service unavailable
-          headers:
-            X-RateLimit-Limit:
-              schema:
-                type: integer
-            X-RateLimit-Remaining:
-              schema:
-                type: integer
           content:
             application/json:
               schema:
@@ -141,209 +97,30 @@ paths:
       responses:
         '200':
           description: Payment method successfully retrieved
-          headers:
-            X-RateLimit-Limit:
-              schema:
-                type: integer
-            X-RateLimit-Remaining:
-              schema:
-                type: integer
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaymentMethodResponse'
         '400':
           description: Bad request
-          headers:
-            X-RateLimit-Limit:
-              schema:
-                type: integer
-            X-RateLimit-Remaining:
-              schema:
-                type: integer
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemJson'
         '401':
           description: Unauthorized
-          headers:
-            X-RateLimit-Limit:
-              schema:
-                type: integer
-            X-RateLimit-Remaining:
-              schema:
-                type: integer
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemJson'
         '404':
           description: Payment method not found
-          headers:
-            X-RateLimit-Limit:
-              schema:
-                type: integer
-            X-RateLimit-Remaining:
-              schema:
-                type: integer
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProblemJson'
-        '429':
-          description: Too Many Requests
-          headers:
-            X-RateLimit-Limit:
-              schema:
-                type: integer
-            X-RateLimit-Remaining:
-              schema:
-                type: integer
-            Retry-After:
-              schema:
-                type: integer
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemJson'
         '500':
           description: Service unavailable
-          headers:
-            X-RateLimit-Limit:
-              schema:
-                type: integer
-            X-RateLimit-Remaining:
-              schema:
-                type: integer
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProblemJson'
-  /payment-methods/{id}/fees:
-    post:
-      tags:
-        - payment-methods
-      operationId: calculateFees
-      summary: Calculate payment method fees
-      description: >
-        GET with body payload - no resources created:
-        Return the fees for the choosen payment method based on transaction amount etc.
-      parameters:
-        - name: id
-          in: path
-          description: Payment Method ID
-          required: true
-          schema:
-            type: string
-        - name: maxOccurrences
-          in: query
-          description: max occurrences
-          required: false
-          schema:
-            type: integer
-        - name: x-client-id
-          in: header
-          description: client id related to a given touchpoint
-          required: true
-          schema:
-            type: string
-            enum:
-              - IO
-              - CHECKOUT
-              - CHECKOUT_CART
-        - name: x-language
-          in: header
-          description: "The user language"
-          required: true
-          schema:
-            type: string
-            enum:
-             - IT
-             - EN
-             - FR
-             - DE
-             - SL
-      requestBody:
-        $ref: "#/components/requestBodies/PostPaymentMethodPSP"
-      responses:
-        '200':
-          description: Return list of psp ordered by fee.
-          headers:
-            X-RateLimit-Limit:
-              schema:
-                type: integer
-            X-RateLimit-Remaining:
-              schema:
-                type: integer
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CalculateFeeResponse'
-        '400':
-          description: Bad request
-          headers:
-            X-RateLimit-Limit:
-              schema:
-                type: integer
-            X-RateLimit-Remaining:
-              schema:
-                type: integer
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProblemJson'
-        '401':
-          description: Unauthorized
-          headers:
-            X-RateLimit-Limit:
-              schema:
-                type: integer
-            X-RateLimit-Remaining:
-              schema:
-                type: integer
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProblemJson'
-        '404':
-          description: Resource not found
-          headers:
-            X-RateLimit-Limit:
-              schema:
-                type: integer
-            X-RateLimit-Remaining:
-              schema:
-                type: integer
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProblemJson'
-        '429':
-          description: Too Many Requests
-          headers:
-            X-RateLimit-Limit:
-              schema:
-                type: integer
-            X-RateLimit-Remaining:
-              schema:
-                type: integer
-            Retry-After:
-              schema:
-                type: integer
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProblemJson'
-        '500':
-          description: Service unavailable
-          headers:
-            X-RateLimit-Limit:
-              schema:
-                type: integer
-            X-RateLimit-Remaining:
-              schema:
-                type: integer
           content:
             application/json:
               schema:
