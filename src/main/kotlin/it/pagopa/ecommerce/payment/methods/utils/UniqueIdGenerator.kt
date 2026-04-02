@@ -9,14 +9,16 @@ import java.security.SecureRandom
 import org.slf4j.LoggerFactory
 
 /**
- * Generates unique IDs using Redis SETNX to guarantee uniqueness.
- * Replicates the behavior of ecommerce-commons ReactiveUniqueIdUtils:
+ * Generates unique IDs using Redis SETNX to guarantee uniqueness. Replicates the behavior of
+ * ecommerce-commons ReactiveUniqueIdUtils:
  * - ID format: "E" + timestamp millis + random alphanumeric suffix (total 18 chars)
  * - Uses Redis SET NX (set if not exists) with 60s TTL to detect collisions
  * - Retries up to 3 times on collision
  */
 @ApplicationScoped
-class UniqueIdGenerator @Inject constructor(private val uniqueIdRedisWrapper: UniqueIdRedisWrapper) {
+class UniqueIdGenerator
+@Inject
+constructor(private val uniqueIdRedisWrapper: UniqueIdRedisWrapper) {
 
     private val log = LoggerFactory.getLogger(UniqueIdGenerator::class.java)
 

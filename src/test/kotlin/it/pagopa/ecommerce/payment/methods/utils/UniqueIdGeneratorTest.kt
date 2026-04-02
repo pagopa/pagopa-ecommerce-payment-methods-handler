@@ -22,8 +22,7 @@ class UniqueIdGeneratorTest {
 
     @Test
     fun `should generate unique id without retry`() {
-        doReturn(Uni.createFrom().item(true))
-            .whenever(uniqueIdRedisWrapper).saveIfAbsent(any())
+        doReturn(Uni.createFrom().item(true)).whenever(uniqueIdRedisWrapper).saveIfAbsent(any())
 
         val result = uniqueIdGenerator.generateUniqueId().await().indefinitely()
 
@@ -53,8 +52,7 @@ class UniqueIdGeneratorTest {
 
     @Test
     fun `should throw UniqueIdGenerationException when all attempts are exhausted`() {
-        doReturn(Uni.createFrom().item(false))
-            .whenever(uniqueIdRedisWrapper).saveIfAbsent(any())
+        doReturn(Uni.createFrom().item(false)).whenever(uniqueIdRedisWrapper).saveIfAbsent(any())
 
         assertThrows<UniqueIdGenerationException> {
             uniqueIdGenerator.generateUniqueId().await().indefinitely()
@@ -68,7 +66,8 @@ class UniqueIdGeneratorTest {
         val captor = argumentCaptor<String>()
 
         doReturn(Uni.createFrom().item(false))
-            .whenever(uniqueIdRedisWrapper).saveIfAbsent(captor.capture())
+            .whenever(uniqueIdRedisWrapper)
+            .saveIfAbsent(captor.capture())
 
         assertThrows<UniqueIdGenerationException> {
             uniqueIdGenerator.generateUniqueId().await().indefinitely()

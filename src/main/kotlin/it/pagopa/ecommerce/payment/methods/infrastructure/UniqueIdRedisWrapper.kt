@@ -6,11 +6,13 @@ import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Inject
 
 /**
- * Redis wrapper for unique ID generation.
- * Encapsulates SETNX + EXPIRE operations, making the UniqueIdGenerator easily testable.
+ * Redis wrapper for unique ID generation. Encapsulates SETNX + EXPIRE operations, making the
+ * UniqueIdGenerator easily testable.
  */
 @ApplicationScoped
-class UniqueIdRedisWrapper @Inject constructor(private val redisDataSource: ReactiveRedisDataSource) {
+class UniqueIdRedisWrapper
+@Inject
+constructor(private val redisDataSource: ReactiveRedisDataSource) {
 
     companion object {
         private const val KEYSPACE = "uniqueId"
@@ -18,9 +20,8 @@ class UniqueIdRedisWrapper @Inject constructor(private val redisDataSource: Reac
     }
 
     /**
-     * Attempts to save the unique ID using SETNX (set if not exists).
-     * If the key does not exist, sets it with a TTL and returns true.
-     * If the key already exists, returns false (collision).
+     * Attempts to save the unique ID using SETNX (set if not exists). If the key does not exist,
+     * sets it with a TTL and returns true. If the key already exists, returns false (collision).
      */
     fun saveIfAbsent(uniqueId: String): Uni<Boolean> {
         val redisKey = "$KEYSPACE:$uniqueId"
