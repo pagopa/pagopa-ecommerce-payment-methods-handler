@@ -102,12 +102,13 @@ class PaymentMethodServiceImpl @Inject constructor(private val restClient: Payme
         xRequestId: String,
         xClientId: String,
         xLanguage: String,
+        maxOccurrences: Int,
     ): CompletionStage<CalculateFeeResponse> {
         return restClient
             .calculateFees(
                 paymentMethodsId,
                 calculateFeeRequest,
-                Int.MAX_VALUE,
+                maxOccurrences,
                 xRequestId,
                 xClientId,
                 xLanguage,

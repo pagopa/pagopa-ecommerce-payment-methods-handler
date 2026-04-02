@@ -25,5 +25,6 @@ interface PaymentMethodService {
         xRequestId: String,
         xClientId: String,
         xLanguage: String,
+        maxOccurrences: Int,
     ): CompletionStage<CalculateFeeResponse>
 }

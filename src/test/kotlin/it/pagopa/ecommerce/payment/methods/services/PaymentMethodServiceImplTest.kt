@@ -574,6 +574,7 @@ class PaymentMethodsClientTest {
                     "req-id",
                     "CHECKOUT",
                     "IT",
+                    Int.MAX_VALUE,
                 )
                 .toCompletableFuture()
                 .get()
@@ -605,6 +606,7 @@ class PaymentMethodsClientTest {
                     "req-id",
                     "CHECKOUT",
                     "IT",
+                    Int.MAX_VALUE,
                 )
                 .toCompletableFuture()
                 .get()
@@ -635,6 +637,7 @@ class PaymentMethodsClientTest {
                 "req-id",
                 "CHECKOUT",
                 "IT",
+                Int.MAX_VALUE,
             )
             .toCompletableFuture()
             .get()
@@ -691,8 +694,6 @@ class PaymentMethodsClientTest {
     @Test
     fun `should remove duplicate psp bundles and return response`() {
         val methodId = "test-id"
-        val cause = RuntimeException("original cause")
-
         whenever(mockApi.getPaymentMethod(methodId, "test-id"))
             .thenReturn(
                 Uni.createFrom().item {
@@ -785,8 +786,6 @@ class PaymentMethodsClientTest {
     @Test
     fun `should throw NoBundleFoundException with cause when no bundles are returned`() {
         val methodId = "test-id"
-        val cause = RuntimeException("original cause")
-
         whenever(mockApi.getPaymentMethod(methodId, "test-id"))
             .thenReturn(
                 Uni.createFrom().item {

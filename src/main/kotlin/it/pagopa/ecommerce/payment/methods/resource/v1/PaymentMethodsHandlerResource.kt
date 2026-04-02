@@ -1,10 +1,16 @@
 package it.pagopa.ecommerce.payment.methods.resource.v1
 
+import it.pagopa.ecommerce.payment.methods.exception.NoBundleFoundException
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodNotFoundException
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodsClientException
 import it.pagopa.ecommerce.payment.methods.services.PaymentMethodService
 import it.pagopa.ecommerce.payment.methods.v1.server.api.PaymentMethodsApi
-import it.pagopa.ecommerce.payment.methods.v1.server.model.*
+import it.pagopa.ecommerce.payment.methods.v1.server.model.CalculateFeeRequest
+import it.pagopa.ecommerce.payment.methods.v1.server.model.CalculateFeeResponse
+import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodResponse
+import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsRequest
+import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
+import it.pagopa.ecommerce.payment.methods.v1.server.model.ProblemJson
 import jakarta.inject.Inject
 import jakarta.validation.Valid
 import jakarta.validation.ValidationException
@@ -26,7 +32,7 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
         xClientId: @NotNull String,
         xLanguage: @NotNull String,
         calculateFeeRequest: @Valid @NotNull CalculateFeeRequest,
-        maxOccurrences: Int,
+        maxOccurrences: Int?,
     ): CompletionStage<CalculateFeeResponse> {
         log.info(
             "[Payment Method] Retrieve bundles for client [{}] list for payment method: [{}], allCcp: [{}], isMulti: [{}] and payment notice amounts: {}",
@@ -46,6 +52,7 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
             xRequestId,
             xClientId,
             xLanguage,
+            maxOccurrences ?: Int.MAX_VALUE,
         )
     }
 
@@ -100,6 +107,15 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
             Response.Status.NOT_FOUND,
             "Not Found",
             "The requested payment method does not exist or could not be found.",
+        )
+    }
+
+    @ServerExceptionMapper
+    fun mapNoBundleFoundException(exception: NoBundleFoundException): RestResponse<ProblemJson> {
+        return problemResponse(
+            Response.Status.NOT_FOUND,
+            "Not Found",
+            "No bundle found for the requested payment method.",
         )
     }
 
