@@ -62,6 +62,22 @@ class UniqueIdGeneratorTest {
     }
 
     @Test
+    fun `should log error and propagate failure when Redis throws unexpected exception`() {
+        val redisError = RuntimeException("Redis connection refused")
+
+        whenever(uniqueIdRedisWrapper.saveIfAbsent(any()))
+            .thenReturn(Uni.createFrom().failure(redisError))
+
+        val thrown =
+            assertThrows<RuntimeException> {
+                uniqueIdGenerator.generateUniqueId().await().indefinitely()
+            }
+
+        assertEquals("Redis connection refused", thrown.message)
+        verify(uniqueIdRedisWrapper, times(1)).saveIfAbsent(any())
+    }
+
+    @Test
     fun `should generate different ids on each attempt when exhausted`() {
         val captor = argumentCaptor<String>()
 
