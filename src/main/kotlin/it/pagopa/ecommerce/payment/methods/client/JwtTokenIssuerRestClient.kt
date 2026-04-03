@@ -18,7 +18,7 @@ data class CreateTokenRequest(
 data class CreateTokenResponse(val token: String)
 
 @RegisterRestClient(configKey = "jwt-issuer-api")
-interface JwtTokenIssuerRestClient {
+fun interface JwtTokenIssuerRestClient {
 
     @POST
     @Path("/tokens")
