@@ -164,3 +164,11 @@ configure<com.diffplug.gradle.spotless.SpotlessExtension> {
     endWithNewline()
   }
 }
+
+tasks.jacocoTestReport {
+  dependsOn(tasks.test) // Fa in modo che il report richieda i test
+  reports {
+    xml.required.set(true) // Questo è quello che serve a Coverage Gutters!
+    html.required.set(true)
+  }
+}

@@ -36,9 +36,7 @@ class UniqueIdRedisWrapperTest {
             .whenever(valueCommands)
             .setnx(eq(expectedKey), eq(uniqueId))
 
-        doReturn(Uni.createFrom().item(true))
-            .whenever(keyCommands)
-            .expire(eq(expectedKey), eq(60L))
+        doReturn(Uni.createFrom().item(true)).whenever(keyCommands).expire(eq(expectedKey), eq(60L))
 
         val result = wrapper.saveIfAbsent(uniqueId).await().indefinitely()
 

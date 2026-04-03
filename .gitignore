@@ -161,3 +161,6 @@ gradle-app.setting
 /.env
 /checkouts/*
 /mock-server/*
+
+# pagopa-ecommerce-payment-methods-service
+src/pagopa-ecommerce-payment-methods-service/
