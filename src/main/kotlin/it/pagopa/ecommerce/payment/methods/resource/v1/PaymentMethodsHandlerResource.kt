@@ -59,7 +59,7 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
         return problemResponse(
             Response.Status.BAD_GATEWAY,
             "Bad Gateway",
-            exception.message ?: "Error communicating with payment gateway",
+            exception.message.orEmpty(),
         )
     }
 
@@ -83,7 +83,7 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
         return problemResponse(
             Response.Status.INTERNAL_SERVER_ERROR,
             "Internal Server Error",
-            exception.message ?: "Unable to generate unique order id",
+            exception.message.orEmpty(),
         )
     }
 
