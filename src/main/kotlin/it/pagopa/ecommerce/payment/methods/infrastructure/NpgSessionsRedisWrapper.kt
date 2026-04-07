@@ -34,7 +34,7 @@ constructor(
     fun findById(orderId: String): Uni<NpgSessionDocument?> {
         val key = keyPrefix + orderId
         val commands = redisDataSource.value(String::class.java, String::class.java)
-        return commands.get(key).onItem().ifNotNull().transform { json ->
+        return commands[key].onItem().ifNotNull().transform { json ->
             objectMapper.readValue<NpgSessionDocument>(json)
         }
     }
