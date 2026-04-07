@@ -10,6 +10,21 @@ import org.eclipse.microprofile.config.inject.ConfigProperty
 import org.eclipse.microprofile.rest.client.inject.RestClient
 import org.slf4j.LoggerFactory
 
+data class NpgBuildFormParams(
+    val correlationId: UUID,
+    val urls: NpgSessionUrls,
+    val orderId: String,
+    val paymentMethod: NpgPaymentMethod,
+    val language: String?,
+)
+
+data class NpgSessionUrls(
+    val merchantUrl: URI,
+    val resultUrl: URI,
+    val notificationUrl: URI,
+    val cancelUrl: URI,
+)
+
 @ApplicationScoped
 class NpgClientWrapper
 @Inject
@@ -19,37 +34,28 @@ constructor(
 ) {
     private val log = LoggerFactory.getLogger(NpgClientWrapper::class.java)
 
-    fun buildForm(
-        correlationId: UUID,
-        merchantUrl: URI,
-        resultUrl: URI,
-        notificationUrl: URI,
-        cancelUrl: URI,
-        orderId: String,
-        paymentMethod: NpgPaymentMethod,
-        language: String?,
-    ): Uni<NpgFieldsDto> {
+    fun buildForm(params: NpgBuildFormParams): Uni<NpgFieldsDto> {
         log.info(
             "Calling NPG buildForm with correlationId={}, orderId={}, paymentMethod={}",
-            correlationId,
-            orderId,
-            paymentMethod.serviceName,
+            params.correlationId,
+            params.orderId,
+            params.paymentMethod.serviceName,
         )
 
         val request =
             NpgBuildRequest(
-                merchantUrl = merchantUrl.toString(),
-                resultUrl = resultUrl.toString(),
-                notificationUrl = notificationUrl.toString(),
-                cancelUrl = cancelUrl.toString(),
-                orderId = orderId,
-                paymentService = paymentMethod.serviceName,
-                language = language,
+                merchantUrl = params.urls.merchantUrl.toString(),
+                resultUrl = params.urls.resultUrl.toString(),
+                notificationUrl = params.urls.notificationUrl.toString(),
+                cancelUrl = params.urls.cancelUrl.toString(),
+                orderId = params.orderId,
+                paymentService = params.paymentMethod.serviceName,
+                language = params.language,
             )
 
         return npgRestClient
             .buildForm(
-                correlationId = correlationId.toString(),
+                correlationId = params.correlationId.toString(),
                 apiKey = "Bearer $npgDefaultApiKey",
                 request = request,
             )
@@ -73,6 +79,8 @@ constructor(
                 )
             }
             .onFailure()
-            .invoke { e -> log.error("Error calling NPG buildForm for orderId=$orderId", e) }
+            .invoke { e ->
+                log.error("Error calling NPG buildForm for orderId=${params.orderId}", e)
+            }
     }
 }

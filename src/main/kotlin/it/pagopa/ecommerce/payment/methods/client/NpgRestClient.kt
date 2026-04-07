@@ -11,6 +11,7 @@ import org.eclipse.microprofile.rest.client.inject.RegisterRestClient
 
 @RegisterRestClient(configKey = "npg-api")
 @Path("/api/v1")
+@Suppress("kotlin:S6517")
 interface NpgRestClient {
 
     @POST

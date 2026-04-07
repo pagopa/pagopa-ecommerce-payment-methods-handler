@@ -3,8 +3,10 @@ package it.pagopa.ecommerce.payment.methods.services
 import io.smallrye.mutiny.Uni
 import it.pagopa.ecommerce.payment.methods.client.CreateTokenRequest
 import it.pagopa.ecommerce.payment.methods.client.JwtTokenIssuerClient
+import it.pagopa.ecommerce.payment.methods.client.NpgBuildFormParams
 import it.pagopa.ecommerce.payment.methods.client.NpgClientWrapper
 import it.pagopa.ecommerce.payment.methods.client.NpgPaymentMethod
+import it.pagopa.ecommerce.payment.methods.client.NpgSessionUrls
 import it.pagopa.ecommerce.payment.methods.client.PaymentMethodsClient
 import it.pagopa.ecommerce.payment.methods.config.SessionUrlConfig
 import it.pagopa.ecommerce.payment.methods.domain.NpgSessionDocument
@@ -179,14 +181,19 @@ constructor(
 
                 npgClient
                     .buildForm(
-                        correlationId = correlationId,
-                        merchantUrl = returnUrlBasePath,
-                        resultUrl = resultUrl,
-                        notificationUrl = notificationUrl,
-                        cancelUrl = cancelUrl,
-                        orderId = orderId,
-                        paymentMethod = paymentMethod,
-                        language = language,
+                        NpgBuildFormParams(
+                            correlationId = correlationId,
+                            urls =
+                                NpgSessionUrls(
+                                    merchantUrl = returnUrlBasePath,
+                                    resultUrl = resultUrl,
+                                    notificationUrl = notificationUrl,
+                                    cancelUrl = cancelUrl,
+                                ),
+                            orderId = orderId,
+                            paymentMethod = paymentMethod,
+                            language = language,
+                        )
                     )
                     .map { fields ->
                         SessionBuildData(fields, paymentMethod, orderId, correlationId)

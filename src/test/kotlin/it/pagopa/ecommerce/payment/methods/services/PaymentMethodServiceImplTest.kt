@@ -642,18 +642,7 @@ class PaymentMethodsClientTest {
                 "https://api.pagopa.it/sessions/{orderId}/outcomes?sessionToken={sessionToken}"
             )
 
-        whenever(
-                mockNpgClient.buildForm(
-                    any(),
-                    any(),
-                    any(),
-                    any(),
-                    any(),
-                    any(),
-                    any(),
-                    anyOrNull(),
-                )
-            )
+        whenever(mockNpgClient.buildForm(any()))
             .thenReturn(Uni.createFrom().item(buildNpgFieldsDto()))
 
         whenever(mockNpgSessionsRedis.save(any()))
@@ -684,8 +673,7 @@ class PaymentMethodsClientTest {
         verify(mockClient).getPaymentMethod(any(), any(), any())
         verify(mockUniqueIdGenerator).generateUniqueId()
         verify(mockJwtClient).createJWTToken(any())
-        verify(mockNpgClient)
-            .buildForm(any(), any(), any(), any(), any(), any(), any(), anyOrNull())
+        verify(mockNpgClient).buildForm(any())
         verify(mockNpgSessionsRedis).save(any())
     }
 
@@ -738,8 +726,7 @@ class PaymentMethodsClientTest {
             service.createSessionForPaymentMethod("pm-001", null, "CHECKOUT").await().indefinitely()
         }
 
-        verify(mockNpgClient, times(0))
-            .buildForm(any(), any(), any(), any(), any(), any(), any(), anyOrNull())
+        verify(mockNpgClient, times(0)).buildForm(any())
         verify(mockNpgSessionsRedis, times(0)).save(any())
     }
 
@@ -789,8 +776,7 @@ class PaymentMethodsClientTest {
 
         service.createSessionForPaymentMethod("pm-001", "it", "CHECKOUT").await().indefinitely()
 
-        verify(mockNpgClient)
-            .buildForm(any(), any(), any(), any(), any(), any(), any(), org.mockito.kotlin.eq("it"))
+        verify(mockNpgClient).buildForm(org.mockito.kotlin.argThat { this.language == "it" })
     }
 
     @Test
@@ -808,5 +794,89 @@ class PaymentMethodsClientTest {
                         this.duration == 900
                 }
             )
+    }
+
+    @Test
+    fun `should handle null name map in payment method response`() {
+        val pmResponse =
+            PaymentMethodResponseDto().apply {
+                paymentMethodId = "pm-001"
+                name = null
+                status = PaymentMethodResponseDto.StatusEnum.ENABLED
+                group = "CP"
+                methodManagement = PaymentMethodResponseDto.MethodManagementEnum.ONBOARDABLE
+                paymentMethodAsset = "asset.png"
+                userTouchpoint = listOf(PaymentMethodResponseDto.UserTouchpointEnum.CHECKOUT)
+                paymentMethodTypes = listOf(PaymentMethodResponseDto.PaymentMethodTypesEnum.CARTE)
+                validityDateFrom = LocalDate.now()
+            }
+
+        whenever(mockClient.getPaymentMethod(any(), any(), any()))
+            .thenReturn(Uni.createFrom().item(pmResponse))
+
+        whenever(mockUniqueIdGenerator.generateUniqueId())
+            .thenReturn(Uni.createFrom().item(testOrderId))
+
+        assertThrows<IllegalArgumentException> {
+            service.createSessionForPaymentMethod("pm-001", null, "CHECKOUT").await().indefinitely()
+        }
+    }
+
+    @Test
+    fun `should handle empty name map in payment method response`() {
+        val pmResponse =
+            PaymentMethodResponseDto().apply {
+                paymentMethodId = "pm-001"
+                name = emptyMap()
+                status = PaymentMethodResponseDto.StatusEnum.ENABLED
+                group = "CP"
+                methodManagement = PaymentMethodResponseDto.MethodManagementEnum.ONBOARDABLE
+                paymentMethodAsset = "asset.png"
+                userTouchpoint = listOf(PaymentMethodResponseDto.UserTouchpointEnum.CHECKOUT)
+                paymentMethodTypes = listOf(PaymentMethodResponseDto.PaymentMethodTypesEnum.CARTE)
+                validityDateFrom = LocalDate.now()
+            }
+
+        whenever(mockClient.getPaymentMethod(any(), any(), any()))
+            .thenReturn(Uni.createFrom().item(pmResponse))
+
+        whenever(mockUniqueIdGenerator.generateUniqueId())
+            .thenReturn(Uni.createFrom().item(testOrderId))
+
+        assertThrows<IllegalArgumentException> {
+            service.createSessionForPaymentMethod("pm-001", null, "CHECKOUT").await().indefinitely()
+        }
+    }
+
+    @Test
+    fun `should handle field with null src`() {
+        setupCreateSessionMocks()
+
+        // Override NPG response with a field that has null src
+        whenever(mockNpgClient.buildForm(any()))
+            .thenReturn(
+                Uni.createFrom()
+                    .item(
+                        it.pagopa.ecommerce.payment.methods.client.NpgFieldsDto(
+                            sessionId = "npg-session-123",
+                            securityToken = "npg-sec-token",
+                            fields =
+                                listOf(
+                                    it.pagopa.ecommerce.payment.methods.client.NpgFieldDto(
+                                        id = "cardholderName",
+                                        type = "text",
+                                        propertyClass = "cardData",
+                                        src = null,
+                                    )
+                                ),
+                        )
+                    )
+            )
+
+        val result =
+            service.createSessionForPaymentMethod("pm-001", null, "CHECKOUT").await().indefinitely()
+
+        assertEquals(1, result.paymentMethodData.form.size)
+        assertEquals(null, result.paymentMethodData.form[0].src)
     }
 }

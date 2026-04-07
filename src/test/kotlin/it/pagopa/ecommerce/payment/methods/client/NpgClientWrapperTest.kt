@@ -22,11 +22,25 @@ class NpgClientWrapperTest {
     private val npgClientWrapper = NpgClientWrapper(npgRestClient, apiKey)
 
     private val correlationId = UUID.randomUUID()
-    private val merchantUrl = URI.create("https://checkout.pagopa.it")
-    private val resultUrl = URI.create("https://checkout.pagopa.it/esito")
-    private val notificationUrl = URI.create("https://api.pagopa.it/notifications/order1/token1")
-    private val cancelUrl = URI.create("https://checkout.pagopa.it/annulla")
+
+    private val defaultUrls =
+        NpgSessionUrls(
+            merchantUrl = URI.create("https://checkout.pagopa.it"),
+            resultUrl = URI.create("https://checkout.pagopa.it/esito"),
+            notificationUrl = URI.create("https://api.pagopa.it/notifications/order1/token1"),
+            cancelUrl = URI.create("https://checkout.pagopa.it/annulla"),
+        )
+
     private val orderId = "E1234567890123abcd"
+
+    private fun buildParams(language: String? = "it") =
+        NpgBuildFormParams(
+            correlationId = correlationId,
+            urls = defaultUrls,
+            orderId = orderId,
+            paymentMethod = NpgPaymentMethod.CARDS,
+            language = language,
+        )
 
     @Test
     fun `should build form successfully`() {
@@ -37,16 +51,16 @@ class NpgClientWrapperTest {
                 fields =
                     listOf(
                         NpgBuildFieldResponse(
-                            id = "cardholderName",
-                            type = "text",
-                            propertyClass = "cardData",
-                            src = "https://fe.npg.it/field.html?id=CARDHOLDER_NAME",
+                            "cardholderName",
+                            "text",
+                            "cardData",
+                            "https://fe.npg.it/field.html?id=CARDHOLDER_NAME",
                         ),
                         NpgBuildFieldResponse(
-                            id = "cardNumber",
-                            type = "text",
-                            propertyClass = "cardData",
-                            src = "https://fe.npg.it/field.html?id=CARD_NUMBER",
+                            "cardNumber",
+                            "text",
+                            "cardData",
+                            "https://fe.npg.it/field.html?id=CARD_NUMBER",
                         ),
                     ),
                 state = "GDI_VERIFICATION",
@@ -56,20 +70,7 @@ class NpgClientWrapperTest {
             .whenever(npgRestClient)
             .buildForm(any(), any(), any())
 
-        val result =
-            npgClientWrapper
-                .buildForm(
-                    correlationId = correlationId,
-                    merchantUrl = merchantUrl,
-                    resultUrl = resultUrl,
-                    notificationUrl = notificationUrl,
-                    cancelUrl = cancelUrl,
-                    orderId = orderId,
-                    paymentMethod = NpgPaymentMethod.CARDS,
-                    language = "it",
-                )
-                .await()
-                .indefinitely()
+        val result = npgClientWrapper.buildForm(buildParams()).await().indefinitely()
 
         assertEquals("session-123", result.sessionId)
         assertEquals("sec-token-456", result.securityToken)
@@ -92,19 +93,7 @@ class NpgClientWrapperTest {
             .whenever(npgRestClient)
             .buildForm(any(), any(), any())
 
-        npgClientWrapper
-            .buildForm(
-                correlationId = correlationId,
-                merchantUrl = merchantUrl,
-                resultUrl = resultUrl,
-                notificationUrl = notificationUrl,
-                cancelUrl = cancelUrl,
-                orderId = orderId,
-                paymentMethod = NpgPaymentMethod.CARDS,
-                language = null,
-            )
-            .await()
-            .indefinitely()
+        npgClientWrapper.buildForm(buildParams(language = null)).await().indefinitely()
 
         verify(npgRestClient).buildForm(eq(correlationId.toString()), eq("Bearer $apiKey"), any())
     }
@@ -125,19 +114,7 @@ class NpgClientWrapperTest {
 
         val thrown =
             assertThrows<NpgResponseException> {
-                npgClientWrapper
-                    .buildForm(
-                        correlationId = correlationId,
-                        merchantUrl = merchantUrl,
-                        resultUrl = resultUrl,
-                        notificationUrl = notificationUrl,
-                        cancelUrl = cancelUrl,
-                        orderId = orderId,
-                        paymentMethod = NpgPaymentMethod.CARDS,
-                        language = null,
-                    )
-                    .await()
-                    .indefinitely()
+                npgClientWrapper.buildForm(buildParams(language = null)).await().indefinitely()
             }
 
         assertEquals("Missing sessionId in NPG response", thrown.message)
@@ -159,19 +136,7 @@ class NpgClientWrapperTest {
 
         val thrown =
             assertThrows<NpgResponseException> {
-                npgClientWrapper
-                    .buildForm(
-                        correlationId = correlationId,
-                        merchantUrl = merchantUrl,
-                        resultUrl = resultUrl,
-                        notificationUrl = notificationUrl,
-                        cancelUrl = cancelUrl,
-                        orderId = orderId,
-                        paymentMethod = NpgPaymentMethod.CARDS,
-                        language = null,
-                    )
-                    .await()
-                    .indefinitely()
+                npgClientWrapper.buildForm(buildParams(language = null)).await().indefinitely()
             }
 
         assertEquals("Missing securityToken in NPG response", thrown.message)
@@ -191,20 +156,7 @@ class NpgClientWrapperTest {
             .whenever(npgRestClient)
             .buildForm(any(), any(), any())
 
-        val result =
-            npgClientWrapper
-                .buildForm(
-                    correlationId = correlationId,
-                    merchantUrl = merchantUrl,
-                    resultUrl = resultUrl,
-                    notificationUrl = notificationUrl,
-                    cancelUrl = cancelUrl,
-                    orderId = orderId,
-                    paymentMethod = NpgPaymentMethod.CARDS,
-                    language = null,
-                )
-                .await()
-                .indefinitely()
+        val result = npgClientWrapper.buildForm(buildParams(language = null)).await().indefinitely()
 
         assertTrue(result.fields.isEmpty())
     }
@@ -219,19 +171,7 @@ class NpgClientWrapperTest {
 
         val thrown =
             assertThrows<RuntimeException> {
-                npgClientWrapper
-                    .buildForm(
-                        correlationId = correlationId,
-                        merchantUrl = merchantUrl,
-                        resultUrl = resultUrl,
-                        notificationUrl = notificationUrl,
-                        cancelUrl = cancelUrl,
-                        orderId = orderId,
-                        paymentMethod = NpgPaymentMethod.CARDS,
-                        language = null,
-                    )
-                    .await()
-                    .indefinitely()
+                npgClientWrapper.buildForm(buildParams(language = null)).await().indefinitely()
             }
 
         assertEquals("NPG connection timeout", thrown.message)
