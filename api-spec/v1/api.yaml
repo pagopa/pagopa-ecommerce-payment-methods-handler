@@ -6,6 +6,7 @@ info:
   contact:
     name: pagoPA - Touchpoints team
     url: https://www.pagopa.it/
+    email: touchpoints@pagopa.it
   license:
     name: EUPL-1.2
     url: https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
@@ -47,18 +48,54 @@ paths:
       responses:
         '200':
           description: Payment method successfully retrieved
+          headers:
+            X-Rate-Limit-Limit:
+              $ref: '#/components/headers/X-Rate-Limit-Limit'
+            X-Rate-Limit-Remaining:
+              $ref: '#/components/headers/X-Rate-Limit-Remaining'
+            X-Rate-Limit-Reset:
+              $ref: '#/components/headers/X-Rate-Limit-Reset'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaymentMethodsResponse'
         '400':
           description: Bad request
+          headers:
+            X-Rate-Limit-Limit:
+              $ref: '#/components/headers/X-Rate-Limit-Limit'
+            X-Rate-Limit-Remaining:
+              $ref: '#/components/headers/X-Rate-Limit-Remaining'
+            X-Rate-Limit-Reset:
+              $ref: '#/components/headers/X-Rate-Limit-Reset'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemJson'
         '401':
           description: Unauthorized
+          headers:
+            X-Rate-Limit-Limit:
+              $ref: '#/components/headers/X-Rate-Limit-Limit'
+            X-Rate-Limit-Remaining:
+              $ref: '#/components/headers/X-Rate-Limit-Remaining'
+            X-Rate-Limit-Reset:
+              $ref: '#/components/headers/X-Rate-Limit-Reset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+        '429':
+          description: Too many requests
+          headers:
+            Retry-After:
+              $ref: '#/components/headers/Retry-After'
+            X-Rate-Limit-Limit:
+              $ref: '#/components/headers/X-Rate-Limit-Limit'
+            X-Rate-Limit-Remaining:
+              $ref: '#/components/headers/X-Rate-Limit-Remaining'
+            X-Rate-Limit-Reset:
+              $ref: '#/components/headers/X-Rate-Limit-Reset'
           content:
             application/json:
               schema:
@@ -82,38 +119,77 @@ paths:
           description: Payment Method ID
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/PaymentMethodId'
         - name: x-client-id
           in: header
           description: client id related to a given touchpoint
           required: true
           schema:
-            type: string
-            enum:
-              - IO
-              - CHECKOUT
-              - CHECKOUT_CART
+            $ref: '#/components/schemas/ClientId'
       responses:
         '200':
           description: Payment method successfully retrieved
+          headers:
+            X-Rate-Limit-Limit:
+              $ref: '#/components/headers/X-Rate-Limit-Limit'
+            X-Rate-Limit-Remaining:
+              $ref: '#/components/headers/X-Rate-Limit-Remaining'
+            X-Rate-Limit-Reset:
+              $ref: '#/components/headers/X-Rate-Limit-Reset'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaymentMethodResponse'
         '400':
           description: Bad request
+          headers:
+            X-Rate-Limit-Limit:
+              $ref: '#/components/headers/X-Rate-Limit-Limit'
+            X-Rate-Limit-Remaining:
+              $ref: '#/components/headers/X-Rate-Limit-Remaining'
+            X-Rate-Limit-Reset:
+              $ref: '#/components/headers/X-Rate-Limit-Reset'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemJson'
         '401':
           description: Unauthorized
+          headers:
+            X-Rate-Limit-Limit:
+              $ref: '#/components/headers/X-Rate-Limit-Limit'
+            X-Rate-Limit-Remaining:
+              $ref: '#/components/headers/X-Rate-Limit-Remaining'
+            X-Rate-Limit-Reset:
+              $ref: '#/components/headers/X-Rate-Limit-Reset'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemJson'
         '404':
           description: Payment method not found
+          headers:
+            X-Rate-Limit-Limit:
+              $ref: '#/components/headers/X-Rate-Limit-Limit'
+            X-Rate-Limit-Remaining:
+              $ref: '#/components/headers/X-Rate-Limit-Remaining'
+            X-Rate-Limit-Reset:
+              $ref: '#/components/headers/X-Rate-Limit-Reset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+        '429':
+          description: Too many requests
+          headers:
+            Retry-After:
+              $ref: '#/components/headers/Retry-After'
+            X-Rate-Limit-Limit:
+              $ref: '#/components/headers/X-Rate-Limit-Limit'
+            X-Rate-Limit-Remaining:
+              $ref: '#/components/headers/X-Rate-Limit-Remaining'
+            X-Rate-Limit-Reset:
+              $ref: '#/components/headers/X-Rate-Limit-Reset'
           content:
             application/json:
               schema:
@@ -197,6 +273,8 @@ paths:
         '429':
           description: Too many requests
           headers:
+            Retry-After:
+              $ref: '#/components/headers/Retry-After'
             X-Rate-Limit-Limit:
               $ref: '#/components/headers/X-Rate-Limit-Limit'
             X-Rate-Limit-Remaining:
@@ -233,10 +311,21 @@ components:
       description: The number of seconds left in the current period
       schema:
         type: integer
+    Retry-After:
+      description: The number of seconds to wait before retrying
+      schema:
+        type: integer
   schemas:
     PaymentMethodId:
       type: string
       description: Payment Method identifier
+    ClientId:
+      type: string
+      description: Client identifier related to a given touchpoint
+      enum:
+        - IO
+        - CHECKOUT
+        - CHECKOUT_CART
     Lang:
       type: string
       description: Language selection header
