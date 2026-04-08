@@ -797,13 +797,13 @@ class PaymentMethodsClientTest {
     }
 
     @Test
-    fun `should handle null name map in payment method response`() {
+    fun `should handle null group in payment method response`() {
         val pmResponse =
             PaymentMethodResponseDto().apply {
                 paymentMethodId = "pm-001"
-                name = null
+                name = mapOf("it" to "CARDS")
                 status = PaymentMethodResponseDto.StatusEnum.ENABLED
-                group = "CP"
+                group = null
                 methodManagement = PaymentMethodResponseDto.MethodManagementEnum.ONBOARDABLE
                 paymentMethodAsset = "asset.png"
                 userTouchpoint = listOf(PaymentMethodResponseDto.UserTouchpointEnum.CHECKOUT)
@@ -813,9 +813,6 @@ class PaymentMethodsClientTest {
 
         whenever(mockClient.getPaymentMethod(any(), any(), any()))
             .thenReturn(Uni.createFrom().item(pmResponse))
-
-        whenever(mockUniqueIdGenerator.generateUniqueId())
-            .thenReturn(Uni.createFrom().item(testOrderId))
 
         assertThrows<IllegalArgumentException> {
             service.createSessionForPaymentMethod("pm-001", null, "CHECKOUT").await().indefinitely()
@@ -823,13 +820,13 @@ class PaymentMethodsClientTest {
     }
 
     @Test
-    fun `should handle empty name map in payment method response`() {
+    fun `should handle invalid group in payment method response`() {
         val pmResponse =
             PaymentMethodResponseDto().apply {
                 paymentMethodId = "pm-001"
-                name = emptyMap()
+                name = mapOf("it" to "CARDS")
                 status = PaymentMethodResponseDto.StatusEnum.ENABLED
-                group = "CP"
+                group = "UNKNOWN"
                 methodManagement = PaymentMethodResponseDto.MethodManagementEnum.ONBOARDABLE
                 paymentMethodAsset = "asset.png"
                 userTouchpoint = listOf(PaymentMethodResponseDto.UserTouchpointEnum.CHECKOUT)
@@ -839,9 +836,6 @@ class PaymentMethodsClientTest {
 
         whenever(mockClient.getPaymentMethod(any(), any(), any()))
             .thenReturn(Uni.createFrom().item(pmResponse))
-
-        whenever(mockUniqueIdGenerator.generateUniqueId())
-            .thenReturn(Uni.createFrom().item(testOrderId))
 
         assertThrows<IllegalArgumentException> {
             service.createSessionForPaymentMethod("pm-001", null, "CHECKOUT").await().indefinitely()
