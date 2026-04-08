@@ -136,12 +136,7 @@ constructor(
 
         return restClient
             .getPaymentMethod(paymentMethodId, xRequestId, xClientId ?: "CHECKOUT")
-            .map { response ->
-                val nameMap = response.name
-                val paymentMethodName =
-                    if (!nameMap.isNullOrEmpty()) nameMap.values.first() else null
-                NpgPaymentMethod.fromServiceName(paymentMethodName)
-            }
+            .map { response -> NpgPaymentMethod.fromPaymentTypeCode(response.group) }
             .flatMap { paymentMethod ->
                 uniqueIdGenerator.generateUniqueId().map { orderId -> Pair(orderId, paymentMethod) }
             }

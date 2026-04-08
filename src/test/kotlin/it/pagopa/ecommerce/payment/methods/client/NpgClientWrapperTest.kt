@@ -95,7 +95,7 @@ class NpgClientWrapperTest {
 
         npgClientWrapper.buildForm(buildParams(language = null)).await().indefinitely()
 
-        verify(npgRestClient).buildForm(eq(correlationId.toString()), eq("Bearer $apiKey"), any())
+        verify(npgRestClient).buildForm(eq(correlationId.toString()), eq(apiKey), any())
     }
 
     @Test

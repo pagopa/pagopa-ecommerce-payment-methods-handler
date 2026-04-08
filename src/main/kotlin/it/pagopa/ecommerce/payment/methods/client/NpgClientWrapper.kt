@@ -34,6 +34,10 @@ constructor(
 ) {
     private val log = LoggerFactory.getLogger(NpgClientWrapper::class.java)
 
+    private val langMap =
+        mapOf("it" to "ITA", "fr" to "FRA", "de" to "DEU", "sl" to "SLV", "en" to "ENG")
+    private val defaultLanguage = "ITA"
+
     fun buildForm(params: NpgBuildFormParams): Uni<NpgFieldsDto> {
         log.info(
             "Calling NPG buildForm with correlationId={}, orderId={}, paymentMethod={}",
@@ -42,21 +46,27 @@ constructor(
             params.paymentMethod.serviceName,
         )
 
+        val npgLanguage =
+            params.language?.let { langMap.getOrDefault(it, defaultLanguage) } ?: defaultLanguage
+
         val request =
             NpgBuildRequest(
                 merchantUrl = params.urls.merchantUrl.toString(),
-                resultUrl = params.urls.resultUrl.toString(),
-                notificationUrl = params.urls.notificationUrl.toString(),
-                cancelUrl = params.urls.cancelUrl.toString(),
-                orderId = params.orderId,
-                paymentService = params.paymentMethod.serviceName,
-                language = params.language,
+                order = NpgOrderDto(orderId = params.orderId),
+                paymentSession =
+                    NpgPaymentSessionDto(
+                        paymentService = params.paymentMethod.serviceName,
+                        resultUrl = params.urls.resultUrl.toString(),
+                        cancelUrl = params.urls.cancelUrl.toString(),
+                        notificationUrl = params.urls.notificationUrl.toString(),
+                        language = npgLanguage,
+                    ),
             )
 
         return npgRestClient
             .buildForm(
                 correlationId = params.correlationId.toString(),
-                apiKey = "Bearer $npgDefaultApiKey",
+                apiKey = npgDefaultApiKey,
                 request = request,
             )
             .map { response ->

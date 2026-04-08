@@ -10,17 +10,16 @@ import jakarta.ws.rs.core.MediaType
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient
 
 @RegisterRestClient(configKey = "npg-api")
-@Path("/api/v1")
 @Suppress("kotlin:S6517")
 interface NpgRestClient {
 
     @POST
-    @Path("/build/order/build")
+    @Path("/psp/api/v1/orders/build")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     fun buildForm(
         @HeaderParam("Correlation-Id") correlationId: String,
-        @HeaderParam("Authorization") apiKey: String,
+        @HeaderParam("apikey") apiKey: String,
         request: NpgBuildRequest,
     ): Uni<NpgBuildResponse>
 }
