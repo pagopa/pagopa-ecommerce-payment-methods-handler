@@ -1,5 +1,7 @@
 package it.pagopa.ecommerce.payment.methods.client
 
+import com.fasterxml.jackson.annotation.JsonProperty
+
 /**
  * Enum representing NPG payment methods. Maps the payment method name (as known by AFM/GMP) to the
  * NPG service name.
@@ -72,6 +74,6 @@ data class NpgBuildResponse(
 data class NpgBuildFieldResponse(
     val id: String?,
     val type: String?,
-    val propertyClass: String?,
+    @JsonProperty("class") val propertyClass: String?,
     val src: String?,
 )

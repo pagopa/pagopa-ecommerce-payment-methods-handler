@@ -92,5 +92,15 @@ constructor(
             .invoke { e ->
                 log.error("Error calling NPG buildForm for orderId=${params.orderId}", e)
             }
+            .onFailure()
+            .transform { e ->
+                if (e is NpgResponseException) {
+                    e
+                } else {
+                    NpgResponseException(
+                        "Error during NPG buildForm for orderId=${params.orderId}: ${e.message}"
+                    )
+                }
+            }
     }
 }

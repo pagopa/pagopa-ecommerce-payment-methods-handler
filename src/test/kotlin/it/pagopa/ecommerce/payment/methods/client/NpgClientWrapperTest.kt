@@ -170,10 +170,10 @@ class NpgClientWrapperTest {
             .buildForm(any(), any(), any())
 
         val thrown =
-            assertThrows<RuntimeException> {
+            assertThrows<NpgResponseException> {
                 npgClientWrapper.buildForm(buildParams(language = null)).await().indefinitely()
             }
 
-        assertEquals("NPG connection timeout", thrown.message)
+        assertTrue(thrown.message!!.contains("NPG connection timeout"))
     }
 }

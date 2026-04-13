@@ -29,14 +29,15 @@ class UniqueIdRedisWrapperTest {
         val uniqueId = "E1234567890123abcd"
         val expectedKey = "uniqueId:$uniqueId"
 
-        doReturn(Uni.createFrom().item("OK"))
+        // setGet returns null when key was newly set (no previous value)
+        doReturn(Uni.createFrom().nullItem<String>())
             .whenever(valueCommands)
-            .set(eq(expectedKey), eq(uniqueId), any<SetArgs>())
+            .setGet(eq(expectedKey), eq(uniqueId), any<SetArgs>())
 
         val result = wrapper.saveIfAbsent(uniqueId).await().indefinitely()
 
         assertTrue(result)
-        verify(valueCommands).set(eq(expectedKey), eq(uniqueId), any<SetArgs>())
+        verify(valueCommands).setGet(eq(expectedKey), eq(uniqueId), any<SetArgs>())
     }
 
     @Test
@@ -44,9 +45,10 @@ class UniqueIdRedisWrapperTest {
         val uniqueId = "E1234567890123abcd"
         val expectedKey = "uniqueId:$uniqueId"
 
-        doReturn(Uni.createFrom().nullItem<String>())
+        // setGet returns the existing value when key already exists
+        doReturn(Uni.createFrom().item(uniqueId))
             .whenever(valueCommands)
-            .set(eq(expectedKey), eq(uniqueId), any<SetArgs>())
+            .setGet(eq(expectedKey), eq(uniqueId), any<SetArgs>())
 
         val result = wrapper.saveIfAbsent(uniqueId).await().indefinitely()
 
@@ -54,14 +56,14 @@ class UniqueIdRedisWrapperTest {
     }
 
     @Test
-    fun `should propagate error when set fails`() {
+    fun `should propagate error when Redis fails`() {
         val uniqueId = "E1234567890123abcd"
         val expectedKey = "uniqueId:$uniqueId"
         val redisError = RuntimeException("Redis connection error")
 
         doReturn(Uni.createFrom().failure<String>(redisError))
             .whenever(valueCommands)
-            .set(eq(expectedKey), eq(uniqueId), any<SetArgs>())
+            .setGet(eq(expectedKey), eq(uniqueId), any<SetArgs>())
 
         val thrown =
             org.junit.jupiter.api.assertThrows<RuntimeException> {
