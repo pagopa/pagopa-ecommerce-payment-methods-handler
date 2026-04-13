@@ -1,13 +1,15 @@
 package it.pagopa.ecommerce.payment.methods.infrastructure
 
 import io.quarkus.redis.datasource.ReactiveRedisDataSource
+import io.quarkus.redis.datasource.value.SetArgs
 import io.smallrye.mutiny.Uni
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Inject
 
 /**
- * Redis wrapper for unique ID generation. Encapsulates SETNX + EXPIRE operations, making the
- * UniqueIdGenerator easily testable.
+ * Redis wrapper for unique ID generation. Uses atomic SET NX EX to guarantee uniqueness, matching
+ * the behavior of ecommerce-commons RedisTemplateWrapper.saveIfAbsent which maps to Spring's
+ * ValueOperations.setIfAbsent(key, value, Duration).
  */
 @ApplicationScoped
 class UniqueIdRedisWrapper
@@ -20,18 +22,12 @@ constructor(private val redisDataSource: ReactiveRedisDataSource) {
     }
 
     /**
-     * Attempts to save the unique ID using SETNX (set if not exists). If the key does not exist,
-     * sets it with a TTL and returns true. If the key already exists, returns false (collision).
+     * Atomically sets the unique ID using SET NX EX (set if not exists with expiry). Returns true
+     * if the key was set, false if it already existed.
      */
     fun saveIfAbsent(uniqueId: String): Uni<Boolean> {
         val redisKey = "$KEYSPACE:$uniqueId"
         val commands = redisDataSource.value(String::class.java, String::class.java)
-        return commands.setnx(redisKey, uniqueId).flatMap { wasSet ->
-            if (wasSet) {
-                redisDataSource.key().expire(redisKey, TTL_SECONDS).replaceWith(true)
-            } else {
-                Uni.createFrom().item(false)
-            }
-        }
+        return commands.set(redisKey, uniqueId, SetArgs().nx().ex(TTL_SECONDS)).map { it != null }
     }
 }

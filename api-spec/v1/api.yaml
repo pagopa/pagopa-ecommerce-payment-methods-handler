@@ -60,7 +60,6 @@ paths:
                 $ref: '#/components/schemas/ProblemJson'
         '401':
           description: Unauthorized
-          headers:
           content:
             application/json:
               schema:
