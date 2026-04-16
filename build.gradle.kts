@@ -40,6 +40,8 @@ dependencies {
   )
   implementation("io.quarkus:quarkus-hibernate-validator")
   implementation("io.quarkus:quarkus-smallrye-openapi")
+  implementation("io.quarkus:quarkus-redis-client")
+  implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
   testImplementation("io.quarkus:quarkus-junit5")
   testImplementation("io.quarkus:quarkus-junit5-mockito")
   testImplementation(kotlin("test"))
