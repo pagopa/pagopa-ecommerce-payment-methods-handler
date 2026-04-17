@@ -87,6 +87,7 @@ microservice-chart:
     ECS_SERVICE_ENVIRONMENT: prod
     SECURITY_API_KEY_SECURED_PATHS: "/payment-methods"
     AFM_URI_V1: "https://api.platform.pagopa.it/afm/calculator-service/v1"
+    AFM_URI_V2: "https://api.platform.pagopa.it/afm/calculator-service/v2"
     AFM_CONNECTION_TIMEOUT: "10000"
     AFM_READ_TIMEOUT: "10000"
   envSecret:
