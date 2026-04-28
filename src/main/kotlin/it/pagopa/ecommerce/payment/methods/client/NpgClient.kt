@@ -60,8 +60,32 @@ data class NpgPaymentSessionDto(
     val resultUrl: String,
     val cancelUrl: String,
     val notificationUrl: String,
-    val recurrence: Any? = null,
+    val recurrence: RecurringSettingsDto? = null,
 )
+
+/** DTO representing NPG recurring payment settings. */
+data class RecurringSettingsDto(
+    val action: RecurringAction? = null,
+    val contractId: String? = null,
+    val contractType: RecurringContractType? = null,
+    val contractExpiryDate: String? = null,
+    val contractFrequency: String? = null,
+)
+
+/** Enum representing NPG recurring action types. */
+enum class RecurringAction {
+    NO_RECURRING,
+    SUBSEQUENT_PAYMENT,
+    CONTRACT_CREATION,
+    CARD_SUBSTITUTION,
+}
+
+/** Enum representing NPG recurring contract types. */
+enum class RecurringContractType {
+    MIT_UNSCHEDULED,
+    MIT_SCHEDULED,
+    CIT,
+}
 
 /** Response from NPG order/build endpoint. */
 data class NpgBuildResponse(
