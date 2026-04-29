@@ -162,6 +162,25 @@ class NpgClientWrapperTest {
     }
 
     @Test
+    fun `should use default language when language is not in langMap`() {
+        val npgResponse =
+            NpgBuildResponse(
+                sessionId = "session-123",
+                securityToken = "sec-token-456",
+                fields = emptyList(),
+                state = null,
+            )
+
+        doReturn(Uni.createFrom().item(npgResponse))
+            .whenever(npgRestClient)
+            .buildForm(any(), any(), any())
+
+        val result = npgClientWrapper.buildForm(buildParams(language = "xx")).await().indefinitely()
+
+        assertEquals("session-123", result.sessionId)
+    }
+
+    @Test
     fun `should propagate error when NPG rest client fails`() {
         val restError = RuntimeException("NPG connection timeout")
 

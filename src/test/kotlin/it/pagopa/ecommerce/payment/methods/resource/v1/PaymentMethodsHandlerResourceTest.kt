@@ -411,4 +411,75 @@ class PaymentMethodsHandlerResourceTest {
             .then()
             .statusCode(404)
     }
+
+    @Test
+    fun `should return 200 for createSession with lang and xClientId headers`() {
+        setupCreateSessionMocks()
+
+        val result =
+            RestAssured.given()
+                .header("x-api-key", "test-primary")
+                .header("lang", "it")
+                .header("X-Client-Id", "IO")
+                .contentType(ContentType.JSON)
+                .`when`()
+                .post("/payment-methods/pm-001/sessions")
+                .then()
+                .statusCode(200)
+                .extract()
+                .`as`(CreateSessionResponse::class.java)
+
+        assertEquals(testOrderId, result.orderId)
+    }
+
+    @Test
+    fun `should return 502 for NpgResponseException with null message on createSession`() {
+        setupCreateSessionMocks()
+        // NpgResponseException wraps RuntimeException, whose getMessage() returns String? in
+        // Kotlin.
+        // To cover the .orEmpty() null-branch we construct an exception with an empty message.
+        whenever(mockNpgClient.buildForm(any()))
+            .thenReturn(Uni.createFrom().failure(NpgResponseException("")))
+
+        val result =
+            RestAssured.given()
+                .header("x-api-key", "test-primary")
+                .contentType(ContentType.JSON)
+                .`when`()
+                .post("/payment-methods/pm-001/sessions")
+                .then()
+                .statusCode(502)
+                .extract()
+                .`as`(ProblemJson::class.java)
+
+        assertEquals(502, result.status)
+        assertEquals("Bad Gateway", result.title)
+        assertEquals("", result.detail)
+    }
+
+    @Test
+    fun `should return 500 for UniqueIdGenerationException with null message on createSession`() {
+        setupCreateSessionMocks()
+        whenever(mockUniqueIdGenerator.generateUniqueId())
+            .thenReturn(
+                Uni.createFrom()
+                    .failure(
+                        RuntimeException(null as String?).let { UniqueIdGenerationException() }
+                    )
+            )
+
+        val result =
+            RestAssured.given()
+                .header("x-api-key", "test-primary")
+                .contentType(ContentType.JSON)
+                .`when`()
+                .post("/payment-methods/pm-001/sessions")
+                .then()
+                .statusCode(500)
+                .extract()
+                .`as`(ProblemJson::class.java)
+
+        assertEquals(500, result.status)
+        assertEquals("Internal Server Error", result.title)
+    }
 }
