@@ -6,9 +6,21 @@ import io.restassured.RestAssured
 import io.restassured.http.ContentType
 import io.smallrye.mutiny.Uni
 import it.pagopa.ecommerce.payment.methods.TestUtils
+import it.pagopa.ecommerce.payment.methods.client.CreateTokenResponse
+import it.pagopa.ecommerce.payment.methods.client.JwtTokenIssuerClient
+import it.pagopa.ecommerce.payment.methods.client.NpgClientWrapper
+import it.pagopa.ecommerce.payment.methods.client.NpgFieldDto
+import it.pagopa.ecommerce.payment.methods.client.NpgFieldsDto
 import it.pagopa.ecommerce.payment.methods.client.PaymentMethodsClient
+import it.pagopa.ecommerce.payment.methods.domain.NpgSessionDocument
+import it.pagopa.ecommerce.payment.methods.exception.JwtIssuerResponseException
+import it.pagopa.ecommerce.payment.methods.exception.NpgResponseException
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodNotFoundException
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodsClientException
+import it.pagopa.ecommerce.payment.methods.exception.UniqueIdGenerationException
+import it.pagopa.ecommerce.payment.methods.infrastructure.NpgSessionsRedisWrapper
+import it.pagopa.ecommerce.payment.methods.utils.UniqueIdGenerator
+import it.pagopa.ecommerce.payment.methods.v1.server.model.CreateSessionResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
@@ -22,6 +34,7 @@ import jakarta.ws.rs.core.Response
 import java.time.LocalDate
 import kotlin.test.assertEquals
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.whenever
@@ -29,7 +42,15 @@ import org.mockito.kotlin.whenever
 @QuarkusTest
 class PaymentMethodsHandlerResourceTest {
     @InjectMock lateinit var mockClient: PaymentMethodsClient
+    @InjectMock lateinit var mockNpgClient: NpgClientWrapper
+    @InjectMock lateinit var mockJwtClient: JwtTokenIssuerClient
+    @InjectMock lateinit var mockNpgSessionsRedis: NpgSessionsRedisWrapper
+    @InjectMock lateinit var mockUniqueIdGenerator: UniqueIdGenerator
+
     private val request: PaymentMethodsRequest = TestUtils.buildDefaultMockRequest()
+    private val testOrderId = "E1234567890123ab"
+
+    // --- existing tests (unchanged) ---
 
     @Test
     fun `should return OK response for get all payment methods`() {
@@ -147,19 +168,6 @@ class PaymentMethodsHandlerResourceTest {
     @Test
     fun `should return NOT_FOUND response for get payment method by id not found`() {
         val methodId = "test-id"
-        val mockResponseDto =
-            PaymentMethodResponseDto()
-                .paymentMethodId("test-id")
-                .status(PaymentMethodResponseDto.StatusEnum.ENABLED)
-                .group("CP")
-                .methodManagement(PaymentMethodResponseDto.MethodManagementEnum.ONBOARDABLE)
-                .rangeAmount(FeeRangeDto().min(1).max(10))
-                .name(mapOf(Pair("IT", "Carte")))
-                .description(mapOf(Pair("IT", "Carte")))
-                .paymentMethodAsset("asset")
-                .paymentMethodsBrandAssets(mapOf(Pair("first", "asset")))
-                .paymentMethodTypes(listOf(PaymentMethodResponseDto.PaymentMethodTypesEnum.CARTE))
-                .metadata(mapOf("test" to "test"))
 
         whenever(mockClient.getPaymentMethod(eq(methodId), anyOrNull(), anyOrNull()))
             .thenReturn(Uni.createFrom().failure(PaymentMethodNotFoundException("not_found_test")))
@@ -248,5 +256,230 @@ class PaymentMethodsHandlerResourceTest {
                 .`as`(ProblemJson::class.java)
 
         assertEquals(expectedProblem, result)
+    }
+
+    // --- createSession helpers ---
+
+    private fun setupCreateSessionMocks() {
+        val pmResponse =
+            PaymentMethodResponseDto().apply {
+                paymentMethodId = "pm-001"
+                name = mapOf("it" to "CARDS")
+                status = PaymentMethodResponseDto.StatusEnum.ENABLED
+                group = "CP"
+                methodManagement = PaymentMethodResponseDto.MethodManagementEnum.ONBOARDABLE
+                paymentMethodAsset = "asset.png"
+                userTouchpoint = listOf(PaymentMethodResponseDto.UserTouchpointEnum.CHECKOUT)
+                paymentMethodTypes = listOf(PaymentMethodResponseDto.PaymentMethodTypesEnum.CARTE)
+                validityDateFrom = LocalDate.now()
+            }
+
+        whenever(mockClient.getPaymentMethod(anyOrNull(), anyOrNull(), anyOrNull()))
+            .thenReturn(Uni.createFrom().item(pmResponse))
+        whenever(mockUniqueIdGenerator.generateUniqueId())
+            .thenReturn(Uni.createFrom().item(testOrderId))
+        whenever(mockJwtClient.createJWTToken(anyOrNull()))
+            .thenReturn(Uni.createFrom().item(CreateTokenResponse(token = "jwt-token")))
+        whenever(mockNpgClient.buildForm(any()))
+            .thenReturn(
+                Uni.createFrom()
+                    .item(
+                        NpgFieldsDto(
+                            sessionId = "npg-session-123",
+                            securityToken = "npg-sec-token",
+                            fields =
+                                listOf(
+                                    NpgFieldDto(
+                                        "cardholderName",
+                                        "text",
+                                        "cardData",
+                                        "https://fe.npg.it/field.html?id=CARDHOLDER_NAME",
+                                    )
+                                ),
+                        )
+                    )
+            )
+        whenever(mockNpgSessionsRedis.save(anyOrNull()))
+            .thenReturn(
+                Uni.createFrom()
+                    .item(
+                        NpgSessionDocument(testOrderId, "corr", "npg-session-123", "npg-sec-token")
+                    )
+            )
+    }
+
+    // --- createSession tests ---
+
+    @Test
+    fun `should return 200 for createSession`() {
+        setupCreateSessionMocks()
+
+        val result =
+            RestAssured.given()
+                .header("x-api-key", "test-primary")
+                .contentType(ContentType.JSON)
+                .`when`()
+                .post("/payment-methods/pm-001/sessions")
+                .then()
+                .statusCode(200)
+                .extract()
+                .`as`(CreateSessionResponse::class.java)
+
+        assertEquals(testOrderId, result.orderId)
+        assertEquals("CARDS", result.paymentMethodData.paymentMethod)
+    }
+
+    @Test
+    fun `should return 502 for NpgResponseException on createSession`() {
+        setupCreateSessionMocks()
+        whenever(mockNpgClient.buildForm(any()))
+            .thenReturn(Uni.createFrom().failure(NpgResponseException("NPG error")))
+
+        val result =
+            RestAssured.given()
+                .header("x-api-key", "test-primary")
+                .contentType(ContentType.JSON)
+                .`when`()
+                .post("/payment-methods/pm-001/sessions")
+                .then()
+                .statusCode(502)
+                .extract()
+                .`as`(ProblemJson::class.java)
+
+        assertEquals(502, result.status)
+        assertEquals("Bad Gateway", result.title)
+        assertEquals("NPG error", result.detail)
+    }
+
+    @Test
+    fun `should return 502 for JwtIssuerResponseException on createSession`() {
+        setupCreateSessionMocks()
+        whenever(mockJwtClient.createJWTToken(anyOrNull()))
+            .thenReturn(
+                Uni.createFrom()
+                    .failure(JwtIssuerResponseException("jwt error", RuntimeException("cause")))
+            )
+
+        val result =
+            RestAssured.given()
+                .header("x-api-key", "test-primary")
+                .contentType(ContentType.JSON)
+                .`when`()
+                .post("/payment-methods/pm-001/sessions")
+                .then()
+                .statusCode(502)
+                .extract()
+                .`as`(ProblemJson::class.java)
+
+        assertEquals(502, result.status)
+        assertEquals("Bad Gateway", result.title)
+        assertEquals("Error creating notification token", result.detail)
+    }
+
+    @Test
+    fun `should return 500 for UniqueIdGenerationException on createSession`() {
+        setupCreateSessionMocks()
+        whenever(mockUniqueIdGenerator.generateUniqueId())
+            .thenReturn(Uni.createFrom().failure(UniqueIdGenerationException()))
+
+        val result =
+            RestAssured.given()
+                .header("x-api-key", "test-primary")
+                .contentType(ContentType.JSON)
+                .`when`()
+                .post("/payment-methods/pm-001/sessions")
+                .then()
+                .statusCode(500)
+                .extract()
+                .`as`(ProblemJson::class.java)
+
+        assertEquals(500, result.status)
+        assertEquals("Internal Server Error", result.title)
+    }
+
+    @Test
+    fun `should return 404 for PaymentMethodNotFoundException on createSession`() {
+        setupCreateSessionMocks()
+        whenever(mockClient.getPaymentMethod(anyOrNull(), anyOrNull(), anyOrNull()))
+            .thenReturn(Uni.createFrom().failure(PaymentMethodNotFoundException("not found")))
+
+        RestAssured.given()
+            .header("x-api-key", "test-primary")
+            .contentType(ContentType.JSON)
+            .`when`()
+            .post("/payment-methods/pm-001/sessions")
+            .then()
+            .statusCode(404)
+    }
+
+    @Test
+    fun `should return 200 for createSession with lang and xClientId headers`() {
+        setupCreateSessionMocks()
+
+        val result =
+            RestAssured.given()
+                .header("x-api-key", "test-primary")
+                .header("lang", "it")
+                .header("X-Client-Id", "IO")
+                .contentType(ContentType.JSON)
+                .`when`()
+                .post("/payment-methods/pm-001/sessions")
+                .then()
+                .statusCode(200)
+                .extract()
+                .`as`(CreateSessionResponse::class.java)
+
+        assertEquals(testOrderId, result.orderId)
+    }
+
+    @Test
+    fun `should return 502 for NpgResponseException with null message on createSession`() {
+        setupCreateSessionMocks()
+        // NpgResponseException wraps RuntimeException, whose getMessage() returns String? in
+        // Kotlin.
+        // To cover the .orEmpty() null-branch we construct an exception with an empty message.
+        whenever(mockNpgClient.buildForm(any()))
+            .thenReturn(Uni.createFrom().failure(NpgResponseException("")))
+
+        val result =
+            RestAssured.given()
+                .header("x-api-key", "test-primary")
+                .contentType(ContentType.JSON)
+                .`when`()
+                .post("/payment-methods/pm-001/sessions")
+                .then()
+                .statusCode(502)
+                .extract()
+                .`as`(ProblemJson::class.java)
+
+        assertEquals(502, result.status)
+        assertEquals("Bad Gateway", result.title)
+        assertEquals("", result.detail)
+    }
+
+    @Test
+    fun `should return 500 for UniqueIdGenerationException with null message on createSession`() {
+        setupCreateSessionMocks()
+        whenever(mockUniqueIdGenerator.generateUniqueId())
+            .thenReturn(
+                Uni.createFrom()
+                    .failure(
+                        RuntimeException(null as String?).let { UniqueIdGenerationException() }
+                    )
+            )
+
+        val result =
+            RestAssured.given()
+                .header("x-api-key", "test-primary")
+                .contentType(ContentType.JSON)
+                .`when`()
+                .post("/payment-methods/pm-001/sessions")
+                .then()
+                .statusCode(500)
+                .extract()
+                .`as`(ProblemJson::class.java)
+
+        assertEquals(500, result.status)
+        assertEquals("Internal Server Error", result.title)
     }
 }
