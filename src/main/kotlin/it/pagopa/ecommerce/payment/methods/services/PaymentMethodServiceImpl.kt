@@ -9,7 +9,9 @@ import it.pagopa.ecommerce.payment.methods.client.NpgPaymentMethod
 import it.pagopa.ecommerce.payment.methods.client.NpgSessionUrls
 import it.pagopa.ecommerce.payment.methods.client.PaymentMethodsClient
 import it.pagopa.ecommerce.payment.methods.config.SessionUrlConfig
+import it.pagopa.ecommerce.payment.methods.domain.CardDataDocument
 import it.pagopa.ecommerce.payment.methods.domain.NpgSessionDocument
+import it.pagopa.ecommerce.payment.methods.exception.OrderIdNotFoundException
 import it.pagopa.ecommerce.payment.methods.infrastructure.NpgSessionsRedisWrapper
 import it.pagopa.ecommerce.payment.methods.mappers.toPaymentMethodRequestDto
 import it.pagopa.ecommerce.payment.methods.mappers.toPaymentMethodResponse
@@ -21,6 +23,7 @@ import it.pagopa.ecommerce.payment.methods.v1.server.model.Field
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
+import it.pagopa.ecommerce.payment.methods.v1.server.model.SessionPaymentMethodResponse
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Inject
 import java.net.URI
@@ -222,6 +225,75 @@ constructor(
                                         src = field.src?.let { URI.create(it) }
                                     }
                                 }
+                        }
+                }
+            }
+    }
+
+    override fun getCardDataInformation(
+        paymentMethodId: String,
+        orderId: String,
+    ): Uni<SessionPaymentMethodResponse> {
+        log.info(
+            "[Payment Method service] Retrieve card data from NPG using paymentMethodId: {} and orderId: {}",
+            paymentMethodId,
+            orderId,
+        )
+
+        val xRequestId = UUID.randomUUID().toString()
+
+        return restClient
+            .getPaymentMethod(paymentMethodId, xRequestId, "CHECKOUT")
+            .flatMap { npgSessionsRedisWrapper.findById(orderId) }
+            .onItem()
+            .ifNull()
+            .failWith { OrderIdNotFoundException(orderId) }
+            .flatMap { session ->
+                if (session!!.cardData != null) {
+                    log.info("Cache hit for orderId: {}", orderId)
+                    Uni.createFrom()
+                        .item(
+                            SessionPaymentMethodResponse().apply {
+                                sessionId = session.sessionId
+                                bin = session.cardData.bin
+                                lastFourDigits = session.cardData.lastFourDigits
+                                expiringDate = session.cardData.expiringDate
+                                brand = session.cardData.circuit
+                            }
+                        )
+                } else {
+                    log.info("Cache miss for orderId: {}", orderId)
+                    val correlationId = UUID.fromString(session.correlationId)
+                    npgClient
+                        .getCardData(correlationId, session.sessionId)
+                        .flatMap { cardData ->
+                            npgSessionsRedisWrapper
+                                .save(
+                                    NpgSessionDocument(
+                                        orderId = session.orderId,
+                                        correlationId = session.correlationId,
+                                        sessionId = session.sessionId,
+                                        securityToken = session.securityToken,
+                                        cardData =
+                                            CardDataDocument(
+                                                bin = cardData.bin ?: "",
+                                                lastFourDigits = cardData.lastFourDigits ?: "",
+                                                expiringDate = cardData.expiringDate ?: "",
+                                                circuit = cardData.circuit ?: "",
+                                            ),
+                                        transactionId = session.transactionId,
+                                    )
+                                )
+                                .replaceWith(cardData)
+                        }
+                        .map { cardData ->
+                            SessionPaymentMethodResponse().apply {
+                                sessionId = session.sessionId
+                                bin = cardData.bin
+                                lastFourDigits = cardData.lastFourDigits
+                                expiringDate = cardData.expiringDate
+                                brand = cardData.circuit
+                            }
                         }
                 }
             }

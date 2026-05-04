@@ -2,16 +2,20 @@ package it.pagopa.ecommerce.payment.methods.resource.v1
 
 import it.pagopa.ecommerce.payment.methods.exception.JwtIssuerResponseException
 import it.pagopa.ecommerce.payment.methods.exception.NpgResponseException
+import it.pagopa.ecommerce.payment.methods.exception.OrderIdNotFoundException
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodNotFoundException
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodsClientException
 import it.pagopa.ecommerce.payment.methods.exception.UniqueIdGenerationException
 import it.pagopa.ecommerce.payment.methods.services.PaymentMethodService
 import it.pagopa.ecommerce.payment.methods.v1.server.api.PaymentMethodsApi
+import it.pagopa.ecommerce.payment.methods.v1.server.model.ClientId
 import it.pagopa.ecommerce.payment.methods.v1.server.model.CreateSessionResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.ProblemJson
+import it.pagopa.ecommerce.payment.methods.v1.server.model.SessionClientId
+import it.pagopa.ecommerce.payment.methods.v1.server.model.SessionPaymentMethodResponse
 import jakarta.inject.Inject
 import jakarta.validation.Valid
 import jakarta.validation.ValidationException
@@ -29,7 +33,7 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
     private val log = LoggerFactory.getLogger(PaymentMethodsHandlerResource::class.java)
 
     override fun getAllPaymentMethods(
-        paymentMethodsRequest: @Valid @NotNull PaymentMethodsRequest
+        @Valid @NotNull paymentMethodsRequest: PaymentMethodsRequest
     ): CompletionStage<PaymentMethodsResponse> {
         val xRequestId = UUID.randomUUID().toString()
         return paymentMethodService.searchPaymentMethods(paymentMethodsRequest, xRequestId)
@@ -37,7 +41,7 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
 
     override fun getPaymentMethod(
         id: String,
-        xClientId: @NotNull it.pagopa.ecommerce.payment.methods.v1.server.model.ClientId,
+        @NotNull xClientId: ClientId,
     ): CompletionStage<PaymentMethodResponse> {
         val xRequestId = UUID.randomUUID().toString()
         return paymentMethodService.getPaymentMethod(id, xRequestId, xClientId.toString())
@@ -46,11 +50,18 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
     override fun createSession(
         id: String,
         lang: String?,
-        xClientId: it.pagopa.ecommerce.payment.methods.v1.server.model.SessionClientId?,
+        xClientId: SessionClientId?,
     ): CompletionStage<CreateSessionResponse> {
         return paymentMethodService
             .createSessionForPaymentMethod(id, lang, xClientId?.toString())
             .subscribeAsCompletionStage()
+    }
+
+    override fun getSessionPaymentMethod(
+        id: String,
+        orderId: String,
+    ): CompletionStage<SessionPaymentMethodResponse> {
+        return paymentMethodService.getCardDataInformation(id, orderId).subscribeAsCompletionStage()
     }
 
     @ServerExceptionMapper
@@ -88,12 +99,16 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
     }
 
     @ServerExceptionMapper
-    fun mapPaymentMethodsClientException(exception: PaymentMethodsClientException) =
-        problemResponse(
+    fun mapPaymentMethodsClientException(
+        exception: PaymentMethodsClientException
+    ): RestResponse<ProblemJson> {
+        log.error("Payment Methods Client Exception", exception)
+        return problemResponse(
             Response.Status.INTERNAL_SERVER_ERROR,
             "Unexpected Exception",
             "Error during GMP communication",
         )
+    }
 
     @ServerExceptionMapper
     fun mapException(exception: Exception): RestResponse<ProblemJson> {
@@ -119,11 +134,20 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
     fun mapMethodNotFoundException(
         exception: PaymentMethodNotFoundException
     ): RestResponse<ProblemJson> {
+        log.info("Payment Method Not Found: {}", exception.message)
         return problemResponse(
             Response.Status.NOT_FOUND,
             "Not Found",
             "The requested payment method does not exist or could not be found.",
         )
+    }
+
+    @ServerExceptionMapper
+    fun mapOrderIdNotFoundException(
+        exception: OrderIdNotFoundException
+    ): RestResponse<ProblemJson> {
+        log.info("Order ID Not Found: {}", exception.message)
+        return problemResponse(Response.Status.NOT_FOUND, "Not Found", exception.message.orEmpty())
     }
 
     private fun problemResponse(

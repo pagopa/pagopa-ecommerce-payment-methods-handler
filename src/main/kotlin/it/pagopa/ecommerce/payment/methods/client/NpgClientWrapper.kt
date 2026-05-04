@@ -103,4 +103,31 @@ constructor(
                 }
             }
     }
+
+    fun getCardData(correlationId: UUID, sessionId: String): Uni<NpgCardDataResponse> {
+        log.info(
+            "Calling NPG getCardData with correlationId={}, sessionId={}",
+            correlationId,
+            sessionId,
+        )
+
+        return npgRestClient
+            .getCardData(
+                correlationId = correlationId.toString(),
+                apiKey = npgDefaultApiKey,
+                sessionId = sessionId,
+            )
+            .onFailure()
+            .invoke { e -> log.error("Error calling NPG getCardData for sessionId=$sessionId", e) }
+            .onFailure()
+            .transform { e ->
+                if (e is NpgResponseException) {
+                    e
+                } else {
+                    NpgResponseException(
+                        "Error during NPG getCardData for sessionId=$sessionId: ${e.message}"
+                    )
+                }
+            }
+    }
 }

@@ -200,6 +200,57 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemJson'
+  /payment-methods/{id}/sessions/{orderId}:
+    get:
+      tags:
+        - payment-methods
+      operationId: getSessionPaymentMethod
+      summary: Get session payment method by ID
+      description: API for retrieve card data information for a given payment method session
+      parameters:
+        - name: id
+          in: path
+          description: Payment Method ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/PaymentMethodId'
+        - name: orderId
+          in: path
+          description: Order id related to NPG session
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Session payment method successfully retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionPaymentMethodResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+        '404':
+          description: Session or payment method not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+        '500':
+          description: Service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+        '502':
+          description: Payment gateway did return error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
 components:
   schemas:
     PaymentMethodId:
@@ -476,6 +527,32 @@ components:
         title:
           description: Problem title
           type: string
+    SessionPaymentMethodResponse:
+      type: object
+      description: Session Payment method Response
+      properties:
+        sessionId:
+          type: string
+          description: Session Payment method ID
+        bin:
+          type: string
+          description: Bin of user card
+        lastFourDigits:
+          type: string
+          description: Last four digits of user card
+        expiringDate:
+          type: string
+          pattern: ^[0-9]{4,6}$
+          description: Expiring date of user card
+        brand:
+          description: The card brand name
+          type: string
+      required:
+        - sessionId
+        - bin
+        - lastFourDigits
+        - expiringDate
+        - brand
   requestBodies:
     PaymentMethodsRequest:
       required: true
