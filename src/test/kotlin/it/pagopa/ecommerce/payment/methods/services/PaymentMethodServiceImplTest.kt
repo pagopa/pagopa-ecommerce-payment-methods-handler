@@ -873,4 +873,103 @@ class PaymentMethodsClientTest {
         assertEquals(1, result.paymentMethodData.form.size)
         assertEquals(null, result.paymentMethodData.form[0].src)
     }
+
+    // --- getCardDataInformation tests ---
+
+    private val testSessionDocument =
+        NpgSessionDocument(
+            orderId = testOrderId,
+            correlationId = "550e8400-e29b-41d4-a716-446655440000",
+            sessionId = "npg-session-123",
+            securityToken = "npg-sec-token",
+        )
+
+    @Test
+    fun `should return card data from cache when cardData is present`() {
+        val sessionWithCardData =
+            testSessionDocument.copy(
+                cardData =
+                    it.pagopa.ecommerce.payment.methods.domain.CardDataDocument(
+                        bin = "123456",
+                        lastFourDigits = "7890",
+                        expiringDate = "1225",
+                        circuit = "VISA",
+                    )
+            )
+
+        whenever(mockClient.getPaymentMethod(any(), any(), any()))
+            .thenReturn(Uni.createFrom().item(buildAfmPaymentMethodResponse()))
+        whenever(mockNpgSessionsRedis.findById(testOrderId))
+            .thenReturn(Uni.createFrom().item(sessionWithCardData))
+
+        val result = service.getCardDataInformation("pm-001", testOrderId).await().indefinitely()
+
+        assertEquals("npg-session-123", result.sessionId)
+        assertEquals("123456", result.bin)
+        assertEquals("7890", result.lastFourDigits)
+        assertEquals("1225", result.expiringDate)
+        assertEquals("VISA", result.brand)
+
+        // Should NOT call NPG since data is cached
+        verify(mockNpgClient, times(0)).getCardData(any(), any())
+    }
+
+    @Test
+    fun `should call NPG and cache result when cardData is not present`() {
+        whenever(mockClient.getPaymentMethod(any(), any(), any()))
+            .thenReturn(Uni.createFrom().item(buildAfmPaymentMethodResponse()))
+        whenever(mockNpgSessionsRedis.findById(testOrderId))
+            .thenReturn(Uni.createFrom().item(testSessionDocument))
+        whenever(mockNpgClient.getCardData(any(), any()))
+            .thenReturn(
+                Uni.createFrom()
+                    .item(
+                        it.pagopa.ecommerce.payment.methods.client.NpgCardDataResponse(
+                            bin = "654321",
+                            lastFourDigits = "4321",
+                            expiringDate = "0627",
+                            circuit = "MC",
+                        )
+                    )
+            )
+        whenever(mockNpgSessionsRedis.save(any()))
+            .thenReturn(Uni.createFrom().item(testSessionDocument))
+
+        val result = service.getCardDataInformation("pm-001", testOrderId).await().indefinitely()
+
+        assertEquals("npg-session-123", result.sessionId)
+        assertEquals("654321", result.bin)
+        assertEquals("4321", result.lastFourDigits)
+        assertEquals("0627", result.expiringDate)
+        assertEquals("MC", result.brand)
+
+        // Should call NPG and save to Redis
+        verify(mockNpgClient).getCardData(any(), org.mockito.kotlin.eq("npg-session-123"))
+        verify(mockNpgSessionsRedis).save(any())
+    }
+
+    @Test
+    fun `should throw OrderIdNotFoundException when session not found in Redis`() {
+        whenever(mockClient.getPaymentMethod(any(), any(), any()))
+            .thenReturn(Uni.createFrom().item(buildAfmPaymentMethodResponse()))
+        whenever(mockNpgSessionsRedis.findById(testOrderId)).thenReturn(Uni.createFrom().nullItem())
+
+        assertThrows<it.pagopa.ecommerce.payment.methods.exception.OrderIdNotFoundException> {
+            service.getCardDataInformation("pm-001", testOrderId).await().indefinitely()
+        }
+    }
+
+    @Test
+    fun `should throw PaymentMethodNotFoundException when payment method does not exist for getCardData`() {
+        whenever(mockClient.getPaymentMethod(any(), any(), any()))
+            .thenReturn(
+                Uni.createFrom().failure(PaymentMethodNotFoundException("Payment method not found"))
+            )
+
+        assertThrows<PaymentMethodNotFoundException> {
+            service.getCardDataInformation("pm-001", testOrderId).await().indefinitely()
+        }
+
+        verify(mockNpgSessionsRedis, times(0)).findById(any())
+    }
 }

@@ -195,4 +195,63 @@ class NpgClientWrapperTest {
 
         assertTrue(thrown.message!!.contains("NPG connection timeout"))
     }
+
+    // --- getCardData tests ---
+
+    @Test
+    fun `should get card data successfully`() {
+        val sessionId = "session-123"
+        val npgResponse =
+            NpgCardDataResponse(
+                bin = "123456",
+                lastFourDigits = "7890",
+                expiringDate = "1225",
+                circuit = "VISA",
+            )
+
+        doReturn(Uni.createFrom().item(npgResponse))
+            .whenever(npgRestClient)
+            .getCardData(any(), any(), any())
+
+        val result = npgClientWrapper.getCardData(correlationId, sessionId).await().indefinitely()
+
+        assertEquals("123456", result.bin)
+        assertEquals("7890", result.lastFourDigits)
+        assertEquals("1225", result.expiringDate)
+        assertEquals("VISA", result.circuit)
+
+        verify(npgRestClient).getCardData(eq(correlationId.toString()), eq(apiKey), eq(sessionId))
+    }
+
+    @Test
+    fun `should propagate error when NPG getCardData fails`() {
+        val restError = RuntimeException("NPG getCardData timeout")
+
+        doReturn(Uni.createFrom().failure<NpgCardDataResponse>(restError))
+            .whenever(npgRestClient)
+            .getCardData(any(), any(), any())
+
+        val thrown =
+            assertThrows<NpgResponseException> {
+                npgClientWrapper.getCardData(correlationId, "session-123").await().indefinitely()
+            }
+
+        assertTrue(thrown.message!!.contains("NPG getCardData timeout"))
+    }
+
+    @Test
+    fun `should propagate NpgResponseException as-is from getCardData`() {
+        val npgError = NpgResponseException("NPG card data error")
+
+        doReturn(Uni.createFrom().failure<NpgCardDataResponse>(npgError))
+            .whenever(npgRestClient)
+            .getCardData(any(), any(), any())
+
+        val thrown =
+            assertThrows<NpgResponseException> {
+                npgClientWrapper.getCardData(correlationId, "session-123").await().indefinitely()
+            }
+
+        assertEquals("NPG card data error", thrown.message)
+    }
 }
