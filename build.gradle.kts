@@ -39,6 +39,7 @@ dependencies {
     "io.quarkiverse.openapi.generator:quarkus-openapi-generator:$quarkusOpenApiGeneratorVersion"
   )
   implementation("io.quarkus:quarkus-hibernate-validator")
+  implementation("io.quarkus:quarkus-cache")
   implementation("io.quarkus:quarkus-smallrye-openapi")
   testImplementation("io.quarkus:quarkus-junit5")
   testImplementation("io.quarkus:quarkus-junit5-mockito")
