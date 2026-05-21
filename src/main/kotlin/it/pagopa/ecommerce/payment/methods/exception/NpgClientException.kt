@@ -1,8 +1,3 @@
 package it.pagopa.ecommerce.payment.methods.exception
 
-class NpgClientException : RuntimeException {
-
-    constructor(message: String) : super(message)
-
-    constructor(message: String, cause: Throwable) : super(message, cause)
-}
+class NpgClientException(message: String, cause: Throwable) : RuntimeException(message, cause)

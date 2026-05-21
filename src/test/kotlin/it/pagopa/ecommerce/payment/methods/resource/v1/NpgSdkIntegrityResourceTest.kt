@@ -67,6 +67,28 @@ class NpgSdkIntegrityResourceTest {
     }
 
     @Test
+    fun `should return 500 on generic exception`() {
+        whenever(mockNpgClient.getIntegrity(anyOrNull())).then {
+            Uni.createFrom()
+                .failure<BuildIntegrityResponseDto>(IllegalStateException("Unexpected error"))
+        }
+
+        val result =
+            RestAssured.given()
+                .header("x-api-key", "test-primary")
+                .`when`()
+                .get("/npg/sdk/integrity")
+                .then()
+                .statusCode(500)
+                .extract()
+                .`as`(ProblemJson::class.java)
+
+        assertNotNull(result)
+        assertEquals(500, result.status)
+        assertEquals("Unexpected Exception", result.title)
+    }
+
+    @Test
     fun `should return 401 without api key`() {
         RestAssured.given().`when`().get("/npg/sdk/integrity").then().statusCode(401)
     }
