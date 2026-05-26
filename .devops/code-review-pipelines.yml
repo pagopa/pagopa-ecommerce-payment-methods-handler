@@ -14,7 +14,7 @@ resources:
     - repository: pagopaEcommerceLocal
       type: github
       name: pagopa/pagopa-ecommerce-local
-      ref: main
+      ref: PIDM-1982-add-methods-handler-integrity-tests
       endpoint: 'io-azure-devops-github-ro'
 
 stages:
