@@ -19,7 +19,7 @@ interface NpgRestClient {
     @Produces(MediaType.APPLICATION_JSON)
     fun buildForm(
         @HeaderParam("Correlation-Id") correlationId: String,
-        @HeaderParam("apikey") apiKey: String,
+        @HeaderParam("X-API-KEY") apiKey: String,
         request: NpgBuildRequest,
     ): Uni<NpgBuildResponse>
 }
