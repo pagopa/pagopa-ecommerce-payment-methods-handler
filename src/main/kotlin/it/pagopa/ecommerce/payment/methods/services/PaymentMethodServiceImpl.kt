@@ -125,7 +125,7 @@ constructor(
     override fun createSessionForPaymentMethod(
         paymentMethodId: String,
         language: String?,
-        xClientId: String?,
+        xClientId: String,
     ): Uni<CreateSessionResponse> {
         log.info(
             "[Payment Method service] create new NPG session using paymentMethodId: {}",
@@ -135,7 +135,7 @@ constructor(
         val xRequestId = UUID.randomUUID().toString()
 
         return restClient
-            .getPaymentMethod(paymentMethodId, xRequestId, xClientId ?: "CHECKOUT")
+            .getPaymentMethod(paymentMethodId, xRequestId, xClientId)
             .map { response -> NpgPaymentMethod.fromPaymentTypeCode(response.group) }
             .flatMap { paymentMethod ->
                 uniqueIdGenerator.generateUniqueId().map { orderId -> Pair(orderId, paymentMethod) }
