@@ -14,7 +14,7 @@ resources:
     - repository: pagopaEcommerceLocal
       type: github
       name: pagopa/pagopa-ecommerce-local
-      ref: main
+      ref: PIDM-1469-api-tests-calculatefees
       endpoint: 'io-azure-devops-github-ro'
 
 stages:
