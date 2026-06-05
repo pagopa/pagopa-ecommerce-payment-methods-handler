@@ -21,9 +21,9 @@ class UniqueIdGenerator
 constructor(private val uniqueIdRedisWrapper: UniqueIdRedisWrapper) {
 
     private val log = LoggerFactory.getLogger(UniqueIdGenerator::class.java)
+    private val secureRandom = SecureRandom()
 
     companion object {
-        private val secureRandom = SecureRandom()
         private const val ALPHANUMERICS =
             "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-._"
         const val MAX_LENGTH = 18
