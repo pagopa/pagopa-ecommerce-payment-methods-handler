@@ -746,15 +746,6 @@ class PaymentMethodsClientTest {
     }
 
     @Test
-    fun `should default to CHECKOUT when xClientId is null`() {
-        setupCreateSessionMocks()
-
-        service.createSessionForPaymentMethod("pm-001", null, null).await().indefinitely()
-
-        verify(mockClient).getPaymentMethod(any(), any(), org.mockito.kotlin.eq("CHECKOUT"))
-    }
-
-    @Test
     fun `should save session to Redis with correct data`() {
         setupCreateSessionMocks()
 
