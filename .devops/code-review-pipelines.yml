@@ -1,10 +1,10 @@
 variables:
-  BRANCH_NAME: $[ replace(variables['System.PullRequest.SourceBranch'], 'refs/heads/', '') ]
+  BRANCH_NAME: "PIDM-1469-post-fees-api-tests"
   GRADLE_USER_HOME: $(Pipeline.Workspace)/.gradle
 trigger:
- branches:
-  include:
-    - main
+  branches:
+    include:
+      - main
 
 pool:
   vmImage: ubuntu-latest
