@@ -713,63 +713,6 @@
 				}
 			},
 			"response": []
-		},
-		{
-			"name": "Calculate Fees for Payment Method (No Bundle Available) [404]",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 404 Not Found\", function () {",
-							"    pm.response.to.have.status(404);",
-							"});",
-							"",
-							"pm.test(\"ProblemJson structure is valid\", function () {",
-							"    pm.response.to.be.json;",
-							"    const res = pm.response.json();",
-							"    pm.expect(res.status).to.eql(404);",
-							"    pm.expect(res.detail).to.be.a('string');",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "x-client-id",
-						"value": "{{CLIENT_ID}}"
-					},
-					{
-						"key": "x-language",
-						"value": "IT"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n  \"touchpoint\": \"CHECKOUT\",\n  \"isAllCCP\": false,\n  \"paymentNotices\": [\n    {\n      \"paymentAmount\": 999999999,\n      \"primaryCreditorInstitution\": \"PA_FISCAL_CODE_NO_BUNDLE\",\n      \"transferList\": [{ \"creditorInstitution\": \"PA_FISCAL_CODE_NO_BUNDLE\", \"transferCategory\": \"TAX\", \"digitalStamp\": false }]\n    }\n  ]\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{baseUrl}}/payment-methods/{{paymentMethodId}}/fees",
-					"host": [
-						"{{baseUrl}}"
-					],
-					"path": [
-						"payment-methods",
-						"{{paymentMethodId}}",
-						"fees"
-					]
-				}
-			},
-			"response": []
 		}
 	],
 	"auth": {
