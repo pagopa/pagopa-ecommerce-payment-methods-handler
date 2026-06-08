@@ -1,17 +1,24 @@
 package it.pagopa.ecommerce.payment.methods.domain
 
-data class CardDataDocument(
-    val bin: String,
-    val lastFourDigits: String,
-    val expiringDate: String,
-    val circuit: String,
+import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonProperty
+
+data class CardDataDocument
+@JsonCreator
+constructor(
+    @JsonProperty("bin") val bin: String,
+    @JsonProperty("lastFourDigits") val lastFourDigits: String,
+    @JsonProperty("expiringDate") val expiringDate: String,
+    @JsonProperty("circuit") val circuit: String,
 )
 
-data class NpgSessionDocument(
-    val orderId: String,
-    val correlationId: String,
-    val sessionId: String,
-    val securityToken: String,
-    val cardData: CardDataDocument? = null,
-    val transactionId: String? = null,
+data class NpgSessionDocument
+@JsonCreator
+constructor(
+    @JsonProperty("orderId") val orderId: String,
+    @JsonProperty("correlationId") val correlationId: String,
+    @JsonProperty("sessionId") val sessionId: String,
+    @JsonProperty("securityToken") val securityToken: String,
+    @JsonProperty("cardData") val cardData: CardDataDocument? = null,
+    @JsonProperty("transactionId") val transactionId: String? = null,
 )

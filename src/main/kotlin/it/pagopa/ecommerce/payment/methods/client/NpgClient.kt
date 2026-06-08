@@ -1,5 +1,6 @@
 package it.pagopa.ecommerce.payment.methods.client
 
+import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
@@ -23,53 +24,65 @@ enum class NpgPaymentMethod(val serviceName: String, val paymentTypeCode: String
 }
 
 /** DTO representing NPG build form response fields. */
-data class NpgFieldDto(
-    val id: String?,
-    val type: String?,
-    val propertyClass: String?,
-    val src: String?,
+data class NpgFieldDto
+@JsonCreator
+constructor(
+    @JsonProperty("id") val id: String?,
+    @JsonProperty("type") val type: String?,
+    @JsonProperty("class") val propertyClass: String?,
+    @JsonProperty("src") val src: String?,
 )
 
 /** DTO representing NPG build form response. */
-data class NpgFieldsDto(
-    val sessionId: String,
-    val securityToken: String,
-    val fields: List<NpgFieldDto>,
+data class NpgFieldsDto
+@JsonCreator
+constructor(
+    @JsonProperty("sessionId") val sessionId: String,
+    @JsonProperty("securityToken") val securityToken: String,
+    @JsonProperty("fields") val fields: List<NpgFieldDto>,
 )
 
 /** Request body for NPG order/build endpoint (CreateHostedOrderRequest). */
-data class NpgBuildRequest(
-    val version: String = "2",
-    val merchantUrl: String,
-    val order: NpgOrderDto,
-    val paymentSession: NpgPaymentSessionDto,
+data class NpgBuildRequest
+@JsonCreator
+constructor(
+    @JsonProperty("version") val version: String = "2",
+    @JsonProperty("merchantUrl") val merchantUrl: String,
+    @JsonProperty("order") val order: NpgOrderDto,
+    @JsonProperty("paymentSession") val paymentSession: NpgPaymentSessionDto,
 )
 
-data class NpgOrderDto(
-    val orderId: String,
-    val amount: String = "1",
-    val currency: String = "EUR",
-    val customerId: String? = null,
+data class NpgOrderDto
+@JsonCreator
+constructor(
+    @JsonProperty("orderId") val orderId: String,
+    @JsonProperty("amount") val amount: String = "1",
+    @JsonProperty("currency") val currency: String = "EUR",
+    @JsonProperty("customerId") val customerId: String? = null,
 )
 
-data class NpgPaymentSessionDto(
-    val actionType: String = "PAY",
-    val amount: String = "1",
-    val language: String = "ITA",
-    val paymentService: String,
-    val resultUrl: String,
-    val cancelUrl: String,
-    val notificationUrl: String,
-    val recurrence: RecurringSettingsDto? = null,
+data class NpgPaymentSessionDto
+@JsonCreator
+constructor(
+    @JsonProperty("actionType") val actionType: String = "PAY",
+    @JsonProperty("amount") val amount: String = "1",
+    @JsonProperty("language") val language: String = "ITA",
+    @JsonProperty("paymentService") val paymentService: String,
+    @JsonProperty("resultUrl") val resultUrl: String,
+    @JsonProperty("cancelUrl") val cancelUrl: String,
+    @JsonProperty("notificationUrl") val notificationUrl: String,
+    @JsonProperty("recurrence") val recurrence: RecurringSettingsDto? = null,
 )
 
 /** DTO representing NPG recurring payment settings. */
-data class RecurringSettingsDto(
-    val action: RecurringAction? = null,
-    val contractId: String? = null,
-    val contractType: RecurringContractType? = null,
-    val contractExpiryDate: String? = null,
-    val contractFrequency: String? = null,
+data class RecurringSettingsDto
+@JsonCreator
+constructor(
+    @JsonProperty("action") val action: RecurringAction? = null,
+    @JsonProperty("contractId") val contractId: String? = null,
+    @JsonProperty("contractType") val contractType: RecurringContractType? = null,
+    @JsonProperty("contractExpiryDate") val contractExpiryDate: String? = null,
+    @JsonProperty("contractFrequency") val contractFrequency: String? = null,
 )
 
 /** Enum representing NPG recurring action types. */
@@ -88,16 +101,20 @@ enum class RecurringContractType {
 }
 
 /** Response from NPG order/build endpoint. */
-data class NpgBuildResponse(
-    val sessionId: String?,
-    val securityToken: String?,
-    val fields: List<NpgBuildFieldResponse>?,
-    val state: String?,
+data class NpgBuildResponse
+@JsonCreator
+constructor(
+    @JsonProperty("sessionId") val sessionId: String?,
+    @JsonProperty("securityToken") val securityToken: String?,
+    @JsonProperty("fields") val fields: List<NpgBuildFieldResponse>?,
+    @JsonProperty("state") val state: String?,
 )
 
-data class NpgBuildFieldResponse(
-    val id: String?,
-    val type: String?,
+data class NpgBuildFieldResponse
+@JsonCreator
+constructor(
+    @JsonProperty("id") val id: String?,
+    @JsonProperty("type") val type: String?,
     @JsonProperty("class") val propertyClass: String?,
-    val src: String?,
+    @JsonProperty("src") val src: String?,
 )
