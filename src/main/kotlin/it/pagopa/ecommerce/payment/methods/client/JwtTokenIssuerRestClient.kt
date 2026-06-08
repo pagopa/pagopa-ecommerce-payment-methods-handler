@@ -19,9 +19,7 @@ constructor(
     @JsonProperty("duration") val duration: Int,
 )
 
-data class CreateTokenResponse
-@JsonCreator
-constructor(@JsonProperty("token") val token: String)
+data class CreateTokenResponse @JsonCreator constructor(@JsonProperty("token") val token: String)
 
 @RegisterRestClient(configKey = "jwt-issuer-api")
 fun interface JwtTokenIssuerRestClient {
