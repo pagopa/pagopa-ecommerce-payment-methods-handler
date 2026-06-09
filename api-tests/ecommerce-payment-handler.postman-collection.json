@@ -221,35 +221,7 @@
 					"script": {
 						"type": "text/javascript",
 						"exec": [
-							"pm.sendRequest({",
-							"    url: pm.environment.get('PROTOCOL') + pm.environment.get('HOST') + '/ecommerce/checkout/v2/transactions?recaptchaResponse=token',",
-							"    method: 'POST',",
-							"    header: {",
-							"        'Content-Type': 'application/json',",
-							"        'ocp-apim-subscription-key': pm.environment.get('API_KEY'),",
-							"        'x-correlation-id': 'b6bb9f02-a20d-409b-8699-8603b83cd950'",
-							"    },",
-							"    body: {",
-							"        mode: 'raw',",
-							"        raw: JSON.stringify({",
-							"            paymentNotices: [{",
-							"                rptId: '77777777777302010400330000191',",
-							"                amount: 12000",
-							"            }],",
-							"            orderId: 'E' + Date.now() + '_test',",
-							"            email: 'test@test.it'",
-							"        })",
-							"    }",
-							"}, (error, response) => {",
-							"    if (!error && response.code === 200) {",
-							"        const body = response.json();",
-							"        pm.collectionVariables.set('AUTH_TOKEN', body.authToken);",
-							"        pm.collectionVariables.set('TRANSACTION_ID', body.transactionId);",
-							"        console.log('Transaction created, transactionId:', body.transactionId);",
-							"    } else {",
-							"        console.log('Error:', error || response.status, response.text());",
-							"    }",
-							"});"
+							""
 						]
 					}
 				},
@@ -318,16 +290,6 @@
 				}
 			],
 			"request": {
-				"auth": {
-					"type": "bearer",
-					"bearer": [
-						{
-							"key": "token",
-							"value": "{{AUTH_TOKEN}}",
-							"type": "string"
-						}
-					]
-				},
 				"method": "POST",
 				"header": [
 					{
@@ -339,8 +301,8 @@
 						"value": "IT"
 					},
 					{
-						"key": "ocp-apim-subscription-key",
-						"value": "{{API_KEY}}"
+						"key": "x-transaction-id-from-client",
+						"value": "{{TRANSACTION_ID}}"
 					}
 				],
 				"body": {
@@ -624,20 +586,20 @@
 			"response": []
 		},
 		{
-			"name": "Calculate Fees for Payment Method (Missing x-client-id) [200]",
+			"name": "Calculate Fees for Payment Method (Missing x-client-id) [400]",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code is 200 \", function () {",
-							"    pm.response.to.have.status(200);",
+							"pm.test(\"Status code is 400 \", function () {",
+							"    pm.response.to.have.status(400);",
 							"});",
 							"",
 							"pm.test(\"ProblemJson structure is valid\", function () {",
 							"    pm.response.to.be.json;",
 							"    const res = pm.response.json();",
-							"    pm.expect(res).to.have.property(\"status\").eql(200);",
+							"    pm.expect(res).to.have.property(\"status\").eql(400);",
 							"    pm.expect(res).to.have.property(\"title\").and.is.a(\"string\");",
 							"    pm.expect(res).to.have.property(\"detail\").and.is.a(\"string\");",
 							"});"
@@ -816,8 +778,7 @@
 			{
 				"key": "key",
 				"value": "ocp-apim-subscription-key",
-				"type": "string"
-			}
+				"type": "string"}
 		]
 	},
 	"event": [
