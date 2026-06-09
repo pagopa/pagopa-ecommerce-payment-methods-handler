@@ -268,6 +268,7 @@ constructor(
     override fun getCardDataInformation(
         paymentMethodId: String,
         orderId: String,
+        xClientId: String,
     ): Uni<SessionPaymentMethodResponse> {
         log.info(
             "[Payment Method service] Retrieve card data from NPG using paymentMethodId: {} and orderId: {}",
@@ -278,7 +279,7 @@ constructor(
         val xRequestId = UUID.randomUUID().toString()
 
         return restClient
-            .getPaymentMethod(paymentMethodId, xRequestId, "CHECKOUT")
+            .getPaymentMethod(paymentMethodId, xRequestId, xClientId)
             .flatMap { npgSessionsRedisWrapper.findById(orderId) }
             .onItem()
             .ifNull()

@@ -1333,7 +1333,7 @@ class PaymentMethodsClientTest {
         whenever(mockNpgSessionsRedis.findById(testOrderId))
             .thenReturn(Uni.createFrom().item(sessionWithCardData))
 
-        val result = service.getCardDataInformation("pm-001", testOrderId).await().indefinitely()
+        val result = service.getCardDataInformation("pm-001", testOrderId, "CHECKOUT").await().indefinitely()
 
         assertEquals("npg-session-123", result.sessionId)
         assertEquals("123456", result.bin)
@@ -1366,7 +1366,7 @@ class PaymentMethodsClientTest {
         whenever(mockNpgSessionsRedis.save(any()))
             .thenReturn(Uni.createFrom().item(testSessionDocument))
 
-        val result = service.getCardDataInformation("pm-001", testOrderId).await().indefinitely()
+        val result = service.getCardDataInformation("pm-001", testOrderId, "CHECKOUT").await().indefinitely()
 
         assertEquals("npg-session-123", result.sessionId)
         assertEquals("654321", result.bin)
@@ -1386,7 +1386,7 @@ class PaymentMethodsClientTest {
         whenever(mockNpgSessionsRedis.findById(testOrderId)).thenReturn(Uni.createFrom().nullItem())
 
         assertThrows<it.pagopa.ecommerce.payment.methods.exception.OrderIdNotFoundException> {
-            service.getCardDataInformation("pm-001", testOrderId).await().indefinitely()
+            service.getCardDataInformation("pm-001", testOrderId, "CHECKOUT").await().indefinitely()
         }
     }
 
@@ -1398,7 +1398,7 @@ class PaymentMethodsClientTest {
             )
 
         assertThrows<PaymentMethodNotFoundException> {
-            service.getCardDataInformation("pm-001", testOrderId).await().indefinitely()
+            service.getCardDataInformation("pm-001", testOrderId, "CHECKOUT").await().indefinitely()
         }
 
         verify(mockNpgSessionsRedis, times(0)).findById(any())

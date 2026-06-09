@@ -40,5 +40,6 @@ interface PaymentMethodService {
     fun getCardDataInformation(
         paymentMethodId: String,
         orderId: String,
+        xClientId: String,
     ): Uni<SessionPaymentMethodResponse>
 }
