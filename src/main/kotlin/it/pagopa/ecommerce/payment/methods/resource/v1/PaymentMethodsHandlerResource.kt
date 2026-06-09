@@ -60,8 +60,11 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
     override fun getSessionPaymentMethod(
         id: String,
         orderId: String,
+        xClientId: @NotNull it.pagopa.ecommerce.payment.methods.v1.server.model.SessionClientId,
     ): CompletionStage<SessionPaymentMethodResponse> {
-        return paymentMethodService.getCardDataInformation(id, orderId).subscribeAsCompletionStage()
+        return paymentMethodService
+            .getCardDataInformation(id, orderId, xClientId.toString())
+            .subscribeAsCompletionStage()
     }
 
     @ServerExceptionMapper
@@ -123,10 +126,18 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
     @ServerExceptionMapper
     fun mapValidationException(exception: ValidationException): RestResponse<ProblemJson> {
         log.error("Validation Exception While Processing the Request", exception)
+        val detail =
+            if (exception is jakarta.validation.ConstraintViolationException) {
+                exception.constraintViolations.joinToString("; ") {
+                    "${it.propertyPath}: ${it.message}"
+                }
+            } else {
+                "The request is malformed, contains invalid parameters, or is missing required information."
+            }
         return problemResponse(
             Response.Status.BAD_REQUEST,
             "Bad Request",
-            "The request is malformed, contains invalid parameters, or is missing required information.",
+            detail,
         )
     }
 

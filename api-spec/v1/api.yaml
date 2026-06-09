@@ -206,7 +206,7 @@ paths:
         - payment-methods
       operationId: getSessionPaymentMethod
       summary: Get session payment method by ID
-      description: API for retrieve card data information for a given payment method session
+      description: API for retrieving card data information for a given payment method session
       parameters:
         - name: id
           in: path
@@ -220,6 +220,12 @@ paths:
           required: true
           schema:
             type: string
+        - in: header
+          name: X-Client-Id
+          required: true
+          description: Transaction origin (populated by APIM policy)
+          schema:
+            $ref: '#/components/schemas/SessionClientId'
       responses:
         '200':
           description: Session payment method successfully retrieved
