@@ -578,9 +578,9 @@
 					}
 				},
 				"url": {
-					"raw": "{{baseUrl}}/payment-methods/{{paymentMethodId}}/fees",
+					"raw": "{{baseUrlV2}}/payment-methods/{{paymentMethodId}}/fees",
 					"host": [
-						"{{baseUrl}}"
+						"{{baseUrlV2}}"
 					],
 					"path": [
 						"payment-methods",
@@ -644,9 +644,9 @@
 					}
 				},
 				"url": {
-					"raw": "{{baseUrl}}/payment-methods/{{paymentMethodId}}/fees?maxOccurrences=3",
+					"raw": "{{baseUrlV2}}/payment-methods/{{paymentMethodId}}/fees?maxOccurrences=3",
 					"host": [
-						"{{baseUrl}}"
+						"{{baseUrlV2}}"
 					],
 					"path": [
 						"payment-methods",
@@ -722,9 +722,9 @@
 					}
 				},
 				"url": {
-					"raw": "{{baseUrl}}/payment-methods/{{paymentMethodId}}/fees",
+					"raw": "{{baseUrlV2}}/payment-methods/{{paymentMethodId}}/fees",
 					"host": [
-						"{{baseUrl}}"
+						"{{baseUrlV2}}"
 					],
 					"path": [
 						"payment-methods",
@@ -790,9 +790,9 @@
 					}
 				},
 				"url": {
-					"raw": "{{baseUrl}}/payment-methods/{{paymentMethodId}}/fees",
+					"raw": "{{baseUrlV2}}/payment-methods/{{paymentMethodId}}/fees",
 					"host": [
-						"{{baseUrl}}"
+						"{{baseUrlV2}}"
 					],
 					"path": [
 						"payment-methods",
@@ -858,9 +858,9 @@
 					}
 				},
 				"url": {
-					"raw": "{{baseUrl}}/payment-methods/{{paymentMethodId}}/fees",
+					"raw": "{{baseUrlV2}}/payment-methods/{{paymentMethodId}}/fees",
 					"host": [
-						"{{baseUrl}}"
+						"{{baseUrlV2}}"
 					],
 					"path": [
 						"payment-methods",
@@ -927,9 +927,9 @@
 					}
 				},
 				"url": {
-					"raw": "{{baseUrl}}/payment-methods/{{paymentMethodId}}/fees",
+					"raw": "{{baseUrlV2}}/payment-methods/{{paymentMethodId}}/fees",
 					"host": [
-						"{{baseUrl}}"
+						"{{baseUrlV2}}"
 					],
 					"path": [
 						"payment-methods",
@@ -988,9 +988,9 @@
 					}
 				},
 				"url": {
-					"raw": "{{baseUrl}}/payment-methods/{{paymentMethodId}}/fees",
+					"raw": "{{baseUrlV2}}/payment-methods/{{paymentMethodId}}/fees",
 					"host": [
-						"{{baseUrl}}"
+						"{{baseUrlV2}}"
 					],
 					"path": [
 						"payment-methods",
@@ -1056,9 +1056,9 @@
 					}
 				},
 				"url": {
-					"raw": "{{baseUrl}}/payment-methods/non-existent-id/fees",
+					"raw": "{{baseUrlV2}}/payment-methods/non-existent-id/fees",
 					"host": [
-						"{{baseUrl}}"
+						"{{baseUrlV2}}"
 					],
 					"path": [
 						"payment-methods",
