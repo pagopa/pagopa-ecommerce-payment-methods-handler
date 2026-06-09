@@ -337,6 +337,10 @@
 					{
 						"key": "x-language",
 						"value": "IT"
+					},
+					{
+						"key": "x-transaction-id-from-client",
+						"value": "{{TRANSACTION_ID}}"
 					}
 				],
 				"body": {
@@ -405,6 +409,10 @@
 					{
 						"key": "x-language",
 						"value": "IT"
+					},
+					{
+						"key": "x-transaction-id-from-client",
+						"value": "{{TRANSACTION_ID}}"
 					}
 				],
 				"body": {
@@ -463,6 +471,10 @@
 					{
 						"key": "x-language",
 						"value": "IT"
+					},
+					{
+						"key": "x-transaction-id-from-client",
+						"value": "{{TRANSACTION_ID}}"
 					}
 				],
 				"body": {
@@ -521,6 +533,10 @@
 					{
 						"key": "x-language",
 						"value": "IT"
+					},
+					{
+						"key": "x-transaction-id-from-client",
+						"value": "{{TRANSACTION_ID}}"
 					}
 				],
 				"body": {
@@ -580,6 +596,10 @@
 					{
 						"key": "x-language",
 						"value": "IT"
+					},
+					{
+						"key": "x-transaction-id-from-client",
+						"value": "{{TRANSACTION_ID}}"
 					}
 				],
 				"body": {
@@ -631,7 +651,12 @@
 						"key": "x-language",
 						"value": "",
 						"disabled": true
+					},
+					{
+						"key": "x-transaction-id-from-client",
+						"value": "{{TRANSACTION_ID}}"
 					}
+
 				],
 				"body": {
 					"mode": "raw",
@@ -689,6 +714,10 @@
 					{
 						"key": "x-language",
 						"value": "IT"
+					},
+					{
+						"key": "x-transaction-id-from-client",
+						"value": "{{TRANSACTION_ID}}"
 					}
 				],
 				"body": {
@@ -727,6 +756,10 @@
 				"key": "key",
 				"value": "ocp-apim-subscription-key",
 				"type": "string"
+			},
+			{
+				"key": "x-transaction-id-from-client",
+				"value": "{{TRANSACTION_ID}}"
 			}
 		]
 	},
@@ -737,7 +770,35 @@
 				"type": "text/javascript",
 				"packages": {},
 				"exec": [
-					""
+					"pm.sendRequest({",
+					"    url: pm.environment.get('PROTOCOL') + pm.environment.get('HOST') + '/ecommerce/checkout/v2/transactions?recaptchaResponse=token',",
+					"    method: 'POST',",
+					"    header: {",
+					"        'Content-Type': 'application/json',",
+					"        'ocp-apim-subscription-key': pm.environment.get('API_KEY'),",
+					"        'x-correlation-id': 'b6bb9f02-a20d-409b-8699-8603b83cd950'",
+					"    },",
+					"    body: {",
+					"        mode: 'raw',",
+					"        raw: JSON.stringify({",
+					"            paymentNotices: [{",
+					"                rptId: '77777777777302010400330000191',",
+					"                amount: 12000",
+					"            }],",
+					"            orderId: 'E' + Date.now() + '_test',",
+					"            email: 'test@test.it'",
+					"        })",
+					"    }",
+					"}, (error, response) => {",
+					"    if (!error && response.code === 200) {",
+					"        const body = response.json();",
+					"        pm.collectionVariables.set('AUTH_TOKEN', body.authToken);",
+					"        pm.collectionVariables.set('TRANSACTION_ID', body.transactionId);",
+					"        console.log('Transaction created, transactionId:', body.transactionId);",
+					"    } else {",
+					"        console.log('Error:', error || response.status, response.text());",
+					"    }",
+					"});"
 				]
 			}
 		},
@@ -764,6 +825,14 @@
 		{
 			"key": "paymentMethodId",
 			"value": "ID_METODO"
+		},
+		{
+			"key": "AUTH_TOKEN",
+			"value": ""
+		},
+		{
+			"key": "TRANSACTION_ID",
+			"value": ""
 		}
 	]
 }
