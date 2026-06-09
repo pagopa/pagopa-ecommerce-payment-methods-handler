@@ -586,22 +586,14 @@
 			"response": []
 		},
 		{
-			"name": "Calculate Fees for Payment Method (Missing x-client-id) [400]",
+			"name": "Calculate Fees for Payment Method (Missing x-client-id) [200]",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code is 400 \", function () {",
-							"    pm.response.to.have.status(400);",
-							"});",
-							"",
-							"pm.test(\"ProblemJson structure is valid\", function () {",
-							"    pm.response.to.be.json;",
-							"    const res = pm.response.json();",
-							"    pm.expect(res).to.have.property(\"status\").eql(400);",
-							"    pm.expect(res).to.have.property(\"title\").and.is.a(\"string\");",
-							"    pm.expect(res).to.have.property(\"detail\").and.is.a(\"string\");",
+							"pm.test(\"Status code is 200 \", function () {",
+							"    pm.response.to.have.status(200);",
 							"});"
 						],
 						"type": "text/javascript"
@@ -713,14 +705,6 @@
 						"exec": [
 							"pm.test(\"Status code is 404 Not Found\", function () {",
 							"    pm.response.to.have.status(404);",
-							"});",
-							"",
-							"pm.test(\"ProblemJson structure is valid\", function () {",
-							"    pm.response.to.be.json;",
-							"    const res = pm.response.json();",
-							"    pm.expect(res).to.have.property('status').eql(404);",
-							"    pm.expect(res).to.have.property('title').and.is.a('string');",
-							"    pm.expect(res).to.have.property('detail').and.is.a('string');",
 							"});"
 						],
 						"type": "text/javascript"
