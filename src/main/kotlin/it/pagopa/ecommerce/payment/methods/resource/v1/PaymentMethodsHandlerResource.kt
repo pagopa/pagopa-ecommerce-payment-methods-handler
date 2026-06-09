@@ -49,11 +49,11 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
 
     override fun createSession(
         id: String,
+        xClientId: @NotNull it.pagopa.ecommerce.payment.methods.v1.server.model.SessionClientId,
         lang: String?,
-        xClientId: SessionClientId?,
     ): CompletionStage<CreateSessionResponse> {
         return paymentMethodService
-            .createSessionForPaymentMethod(id, lang, xClientId?.toString())
+            .createSessionForPaymentMethod(id, lang, xClientId.toString())
             .subscribeAsCompletionStage()
     }
 

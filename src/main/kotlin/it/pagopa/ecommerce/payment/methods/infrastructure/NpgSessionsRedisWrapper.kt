@@ -1,7 +1,6 @@
 package it.pagopa.ecommerce.payment.methods.infrastructure
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
 import io.quarkus.redis.datasource.ReactiveRedisDataSource
 import io.smallrye.mutiny.Uni
 import it.pagopa.ecommerce.payment.methods.domain.NpgSessionDocument
@@ -35,7 +34,7 @@ constructor(
         val key = keyPrefix + orderId
         val commands = redisDataSource.value(String::class.java, String::class.java)
         return commands[key].onItem().ifNotNull().transform { json ->
-            objectMapper.readValue<NpgSessionDocument>(json)
+            objectMapper.readValue(json, NpgSessionDocument::class.java)
         }
     }
 }

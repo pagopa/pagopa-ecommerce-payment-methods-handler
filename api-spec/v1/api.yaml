@@ -159,7 +159,7 @@ paths:
             $ref: '#/components/schemas/Lang'
         - in: header
           name: X-Client-Id
-          required: false
+          required: true
           description: Transaction origin (populated by APIM policy)
           schema:
             $ref: '#/components/schemas/SessionClientId'

@@ -23,7 +23,7 @@ interface PaymentMethodService {
     fun createSessionForPaymentMethod(
         paymentMethodId: String,
         language: String?,
-        xClientId: String?,
+        xClientId: String,
     ): Uni<CreateSessionResponse>
 
     fun getCardDataInformation(
