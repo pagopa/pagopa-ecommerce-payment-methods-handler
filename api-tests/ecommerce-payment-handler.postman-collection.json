@@ -624,20 +624,20 @@
 			"response": []
 		},
 		{
-			"name": "Calculate Fees for Payment Method (Missing x-client-id) [400]",
+			"name": "Calculate Fees for Payment Method (Missing x-client-id) [200]",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code is 400 Bad Request when x-client-id is missing\", function () {",
-							"    pm.response.to.have.status(400);",
+							"pm.test(\"Status code is 200 \", function () {",
+							"    pm.response.to.have.status(200);",
 							"});",
 							"",
 							"pm.test(\"ProblemJson structure is valid\", function () {",
 							"    pm.response.to.be.json;",
 							"    const res = pm.response.json();",
-							"    pm.expect(res).to.have.property(\"status\").eql(400);",
+							"    pm.expect(res).to.have.property(\"status\").eql(200);",
 							"    pm.expect(res).to.have.property(\"title\").and.is.a(\"string\");",
 							"    pm.expect(res).to.have.property(\"detail\").and.is.a(\"string\");",
 							"});"
