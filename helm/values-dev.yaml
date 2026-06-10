@@ -98,7 +98,7 @@ microservice-chart:
     AFM_KEY: afm-api-key
     NPG_API_KEY: npg-api-key
     JWT_ISSUER_API_KEY: ecommerce-jwt-issuer-service-active-api-key
-    REDIS_HOST: redis-ecommerce-host
+    REDIS_HOST: redis-ecommerce-hostname
     REDIS_PASSWORD: redis-ecommerce-access-key
   keyvault:
     name: "pagopa-d-ecommerce-kv"
