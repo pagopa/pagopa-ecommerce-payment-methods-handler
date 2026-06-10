@@ -134,11 +134,7 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
             } else {
                 "The request is malformed, contains invalid parameters, or is missing required information."
             }
-        return problemResponse(
-            Response.Status.BAD_REQUEST,
-            "Bad Request",
-            detail,
-        )
+        return problemResponse(Response.Status.BAD_REQUEST, "Bad Request", detail)
     }
 
     @ServerExceptionMapper

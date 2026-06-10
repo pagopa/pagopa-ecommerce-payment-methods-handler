@@ -893,7 +893,8 @@ class PaymentMethodsClientTest {
         whenever(mockNpgSessionsRedis.findById(testOrderId))
             .thenReturn(Uni.createFrom().item(sessionWithCardData))
 
-        val result = service.getCardDataInformation("pm-001", testOrderId, "CHECKOUT").await().indefinitely()
+        val result =
+            service.getCardDataInformation("pm-001", testOrderId, "CHECKOUT").await().indefinitely()
 
         assertEquals("npg-session-123", result.sessionId)
         assertEquals("123456", result.bin)
@@ -915,18 +916,19 @@ class PaymentMethodsClientTest {
             .thenReturn(
                 Uni.createFrom()
                     .item(
-                        it.pagopa.ecommerce.payment.methods.client.NpgCardDataResponse(
-                            bin = "654321",
-                            lastFourDigits = "4321",
-                            expiringDate = "0627",
-                            circuit = "MC",
-                        )
+                        it.pagopa.generated.npg.client.model.CardDataResponseDto().apply {
+                            bin = "654321"
+                            lastFourDigits = "4321"
+                            expiringDate = "0627"
+                            circuit = "MC"
+                        }
                     )
             )
         whenever(mockNpgSessionsRedis.save(any()))
             .thenReturn(Uni.createFrom().item(testSessionDocument))
 
-        val result = service.getCardDataInformation("pm-001", testOrderId, "CHECKOUT").await().indefinitely()
+        val result =
+            service.getCardDataInformation("pm-001", testOrderId, "CHECKOUT").await().indefinitely()
 
         assertEquals("npg-session-123", result.sessionId)
         assertEquals("654321", result.bin)
