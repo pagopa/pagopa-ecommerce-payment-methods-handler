@@ -5,12 +5,14 @@ import it.pagopa.ecommerce.payment.methods.exception.NpgResponseException
 import it.pagopa.ecommerce.payment.methods.v1.server.model.NpgBuildFormParams
 import it.pagopa.generated.npg.client.api.PaymentServicesApi
 import it.pagopa.generated.npg.client.model.ActionTypeDto
+import it.pagopa.generated.npg.client.model.CardDataResponseDto
 import it.pagopa.generated.npg.client.model.CreateHostedOrderRequestDto
 import it.pagopa.generated.npg.client.model.FieldsDto
 import it.pagopa.generated.npg.client.model.OrderDto
 import it.pagopa.generated.npg.client.model.PaymentSessionDto
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Inject
+import java.util.UUID
 import org.eclipse.microprofile.config.inject.ConfigProperty
 import org.eclipse.microprofile.rest.client.inject.RestClient
 import org.slf4j.LoggerFactory
@@ -88,7 +90,7 @@ constructor(
             }
     }
 
-    fun getCardData(correlationId: UUID, sessionId: String): Uni<NpgCardDataResponse> {
+    fun getCardData(correlationId: UUID, sessionId: String): Uni<CardDataResponseDto> {
         log.info(
             "Calling NPG getCardData with correlationId={}, sessionId={}",
             correlationId,
@@ -96,11 +98,7 @@ constructor(
         )
 
         return npgRestClient
-            .getCardData(
-                correlationId = correlationId.toString(),
-                apiKey = npgDefaultApiKey,
-                sessionId = sessionId,
-            )
+            .pspApiV1BuildCardDataGet(correlationId, sessionId, npgDefaultApiKey)
             .onFailure()
             .invoke { e -> log.error("Error calling NPG getCardData for sessionId=$sessionId", e) }
             .onFailure()
