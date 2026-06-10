@@ -91,13 +91,14 @@ microservice-chart:
     SESSION_URL_OUTCOME_SUFFIX: "/esito"
     SESSION_URL_CANCEL_SUFFIX: "/esito"
     SESSION_URL_NOTIFICATION_URL: "https://api.dev.platform.pagopa.it/ecommerce/npg/notifications/v1/sessions/{orderId}/outcomes?sessionToken={sessionToken}"
-    REDIS_HOST: "rediss://pagopa-d-weu-ecommerce-redis.redis.cache.windows.net:6380"
+    REDIS_PORT: "6380"
   envSecret:
     SECURITY_API_KEY_PRIMARY: ecommerce-payment-methods-primary-api-key
     SECURITY_API_KEY_SECONDARY: ecommerce-payment-methods-secondary-api-key
     AFM_KEY: afm-api-key
     NPG_API_KEY: npg-api-key
     JWT_ISSUER_API_KEY: ecommerce-jwt-issuer-service-active-api-key
+    REDIS_HOST: redis-ecommerce-host
     REDIS_PASSWORD: redis-ecommerce-access-key
   keyvault:
     name: "pagopa-d-ecommerce-kv"

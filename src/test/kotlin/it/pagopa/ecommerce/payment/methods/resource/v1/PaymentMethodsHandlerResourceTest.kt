@@ -9,8 +9,6 @@ import it.pagopa.ecommerce.payment.methods.TestUtils
 import it.pagopa.ecommerce.payment.methods.client.CreateTokenResponse
 import it.pagopa.ecommerce.payment.methods.client.JwtTokenIssuerClient
 import it.pagopa.ecommerce.payment.methods.client.NpgClientWrapper
-import it.pagopa.ecommerce.payment.methods.client.NpgFieldDto
-import it.pagopa.ecommerce.payment.methods.client.NpgFieldsDto
 import it.pagopa.ecommerce.payment.methods.client.PaymentMethodsClient
 import it.pagopa.ecommerce.payment.methods.domain.NpgSessionDocument
 import it.pagopa.ecommerce.payment.methods.exception.JwtIssuerResponseException
@@ -29,6 +27,8 @@ import it.pagopa.generated.ecommerce.client.model.FeeRangeDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodResponseDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodsItemDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodsResponseDto
+import it.pagopa.generated.npg.client.model.FieldDto
+import it.pagopa.generated.npg.client.model.FieldsDto
 import jakarta.validation.ValidationException
 import jakarta.ws.rs.core.Response
 import java.time.LocalDate
@@ -284,19 +284,19 @@ class PaymentMethodsHandlerResourceTest {
             .thenReturn(
                 Uni.createFrom()
                     .item(
-                        NpgFieldsDto(
-                            sessionId = "npg-session-123",
-                            securityToken = "npg-sec-token",
+                        FieldsDto().apply {
+                            sessionId = "npg-session-123"
+                            securityToken = "npg-sec-token"
                             fields =
                                 listOf(
-                                    NpgFieldDto(
-                                        "cardholderName",
-                                        "text",
-                                        "cardData",
-                                        "https://fe.npg.it/field.html?id=CARDHOLDER_NAME",
-                                    )
-                                ),
-                        )
+                                    FieldDto().apply {
+                                        id = "cardholderName"
+                                        type = "text"
+                                        propertyClass = "cardData"
+                                        src = "https://fe.npg.it/field.html?id=CARDHOLDER_NAME"
+                                    }
+                                )
+                        }
                     )
             )
         whenever(mockNpgSessionsRedis.save(anyOrNull()))

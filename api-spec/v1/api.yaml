@@ -6,7 +6,6 @@ info:
   contact:
     name: pagoPA - Touchpoints team
     url: https://www.pagopa.it/
-    email: touchpoints@pagopa.it
   license:
     name: EUPL-1.2
     url: https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
@@ -35,7 +34,7 @@ paths:
   /payment-methods:
     post:
       tags:
-        - payment-methods
+        - payment-methods-handler
       operationId: getAllPaymentMethods
       summary: Retrieve all Payment Methods (by filter)
       description: API for retrieve payment method using the request query parameter filters
@@ -79,7 +78,7 @@ paths:
   /payment-methods/{id}:
     get:
       tags:
-        - payment-methods
+        - payment-methods-handler
       operationId: getPaymentMethod
       summary: Get payment method by ID
       description: API for retrieve payment method information for a given payment method ID
@@ -136,7 +135,7 @@ paths:
   /payment-methods/{id}/sessions:
     post:
       tags:
-        - payment-methods
+        - payment-methods-handler
       operationId: createSession
       summary: Create frontend field data paired with a payment gateway session
       description: |-
@@ -459,6 +458,55 @@ components:
           type: string
           format: uri
           example: "https://example.com/field.html?id=CARDHOLDER_NAME&sid=052211e8-54c8-4e0a-8402-e10bcb8ff264"
+    NpgBuildFormParams:
+      type: object
+      description: Parameters for NPG build form request
+      required:
+        - correlationId
+        - urls
+        - orderId
+        - paymentMethod
+      properties:
+        correlationId:
+          type: string
+          format: uuid
+          description: Correlation ID for the NPG request
+        urls:
+          $ref: '#/components/schemas/NpgSessionUrls'
+        orderId:
+          type: string
+          description: Order identifier
+        paymentMethod:
+          type: string
+          description: NPG payment method service name
+        language:
+          type: string
+          description: ISO language code (e.g. it, en, fr, de, sl)
+    NpgSessionUrls:
+      type: object
+      description: URLs for the NPG session
+      required:
+        - merchantUrl
+        - resultUrl
+        - notificationUrl
+        - cancelUrl
+      properties:
+        merchantUrl:
+          type: string
+          format: uri
+          description: Merchant URL
+        resultUrl:
+          type: string
+          format: uri
+          description: Result URL for the payment outcome
+        notificationUrl:
+          type: string
+          format: uri
+          description: Notification URL for async callbacks
+        cancelUrl:
+          type: string
+          format: uri
+          description: Cancel URL for user cancellation
     ProblemJson:
       type: object
       description: Problem json structure

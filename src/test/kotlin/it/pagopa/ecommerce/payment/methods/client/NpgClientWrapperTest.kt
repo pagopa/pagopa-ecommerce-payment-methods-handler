@@ -2,6 +2,11 @@ package it.pagopa.ecommerce.payment.methods.client
 
 import io.smallrye.mutiny.Uni
 import it.pagopa.ecommerce.payment.methods.exception.NpgResponseException
+import it.pagopa.ecommerce.payment.methods.v1.server.model.NpgBuildFormParams
+import it.pagopa.ecommerce.payment.methods.v1.server.model.NpgSessionUrls
+import it.pagopa.generated.npg.client.api.PaymentServicesApi
+import it.pagopa.generated.npg.client.model.FieldDto
+import it.pagopa.generated.npg.client.model.FieldsDto
 import java.net.URI
 import java.util.UUID
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -17,58 +22,63 @@ import org.mockito.kotlin.whenever
 
 class NpgClientWrapperTest {
 
-    private val npgRestClient = mock<NpgRestClient>()
+    private val npgRestClient = mock<PaymentServicesApi>()
     private val apiKey = "test-npg-api-key"
     private val npgClientWrapper = NpgClientWrapper(npgRestClient, apiKey)
 
     private val correlationId = UUID.randomUUID()
 
     private val defaultUrls =
-        NpgSessionUrls(
-            merchantUrl = URI.create("https://checkout.pagopa.it"),
-            resultUrl = URI.create("https://checkout.pagopa.it/esito"),
-            notificationUrl = URI.create("https://api.pagopa.it/notifications/order1/token1"),
-            cancelUrl = URI.create("https://checkout.pagopa.it/annulla"),
-        )
+        NpgSessionUrls().apply {
+            merchantUrl = URI.create("https://checkout.pagopa.it")
+            resultUrl = URI.create("https://checkout.pagopa.it/esito")
+            notificationUrl = URI.create("https://api.pagopa.it/notifications/order1/token1")
+            cancelUrl = URI.create("https://checkout.pagopa.it/annulla")
+        }
 
     private val orderId = "E1234567890123abcd"
 
     private fun buildParams(language: String? = "it") =
-        NpgBuildFormParams(
-            correlationId = correlationId,
-            urls = defaultUrls,
-            orderId = orderId,
-            paymentMethod = NpgPaymentMethod.CARDS,
-            language = language,
-        )
+        NpgBuildFormParams().apply {
+            this.correlationId = this@NpgClientWrapperTest.correlationId
+            urls = defaultUrls
+            this.orderId = this@NpgClientWrapperTest.orderId
+            paymentMethod = NpgPaymentMethod.CARDS.serviceName
+            this.language = language
+        }
+
+    private fun buildFieldsDto(
+        sessionId: String? = "session-123",
+        securityToken: String? = "sec-token-456",
+        fields: List<FieldDto>? = emptyList(),
+    ): FieldsDto =
+        FieldsDto().apply {
+            this.sessionId = sessionId
+            this.securityToken = securityToken
+            this.fields = fields
+        }
 
     @Test
     fun `should build form successfully`() {
-        val npgResponse =
-            NpgBuildResponse(
-                sessionId = "session-123",
-                securityToken = "sec-token-456",
-                fields =
-                    listOf(
-                        NpgBuildFieldResponse(
-                            "cardholderName",
-                            "text",
-                            "cardData",
-                            "https://fe.npg.it/field.html?id=CARDHOLDER_NAME",
-                        ),
-                        NpgBuildFieldResponse(
-                            "cardNumber",
-                            "text",
-                            "cardData",
-                            "https://fe.npg.it/field.html?id=CARD_NUMBER",
-                        ),
-                    ),
-                state = "GDI_VERIFICATION",
-            )
+        val field1 =
+            FieldDto().apply {
+                id = "cardholderName"
+                type = "text"
+                propertyClass = "cardData"
+                src = "https://fe.npg.it/field.html?id=CARDHOLDER_NAME"
+            }
+        val field2 =
+            FieldDto().apply {
+                id = "cardNumber"
+                type = "text"
+                propertyClass = "cardData"
+                src = "https://fe.npg.it/field.html?id=CARD_NUMBER"
+            }
+        val npgResponse = buildFieldsDto(fields = listOf(field1, field2))
 
         doReturn(Uni.createFrom().item(npgResponse))
             .whenever(npgRestClient)
-            .buildForm(any(), any(), any())
+            .pspApiV1OrdersBuildPost(any(), any(), any())
 
         val result = npgClientWrapper.buildForm(buildParams()).await().indefinitely()
 
@@ -81,36 +91,25 @@ class NpgClientWrapperTest {
 
     @Test
     fun `should pass correct authorization header with Bearer prefix`() {
-        val npgResponse =
-            NpgBuildResponse(
-                sessionId = "session-123",
-                securityToken = "sec-token-456",
-                fields = emptyList(),
-                state = null,
-            )
+        val npgResponse = buildFieldsDto()
 
         doReturn(Uni.createFrom().item(npgResponse))
             .whenever(npgRestClient)
-            .buildForm(any(), any(), any())
+            .pspApiV1OrdersBuildPost(any(), any(), any())
 
         npgClientWrapper.buildForm(buildParams(language = null)).await().indefinitely()
 
-        verify(npgRestClient).buildForm(eq(correlationId.toString()), eq(apiKey), any())
+        verify(npgRestClient)
+            .pspApiV1OrdersBuildPost(eq(correlationId), eq(apiKey), any())
     }
 
     @Test
     fun `should throw NpgResponseException when sessionId is null`() {
-        val npgResponse =
-            NpgBuildResponse(
-                sessionId = null,
-                securityToken = "sec-token",
-                fields = emptyList(),
-                state = null,
-            )
+        val npgResponse = buildFieldsDto(sessionId = null)
 
         doReturn(Uni.createFrom().item(npgResponse))
             .whenever(npgRestClient)
-            .buildForm(any(), any(), any())
+            .pspApiV1OrdersBuildPost(any(), any(), any())
 
         val thrown =
             assertThrows<NpgResponseException> {
@@ -122,17 +121,11 @@ class NpgClientWrapperTest {
 
     @Test
     fun `should throw NpgResponseException when securityToken is null`() {
-        val npgResponse =
-            NpgBuildResponse(
-                sessionId = "session-123",
-                securityToken = null,
-                fields = emptyList(),
-                state = null,
-            )
+        val npgResponse = buildFieldsDto(sessionId = "session-123", securityToken = null)
 
         doReturn(Uni.createFrom().item(npgResponse))
             .whenever(npgRestClient)
-            .buildForm(any(), any(), any())
+            .pspApiV1OrdersBuildPost(any(), any(), any())
 
         val thrown =
             assertThrows<NpgResponseException> {
@@ -143,37 +136,25 @@ class NpgClientWrapperTest {
     }
 
     @Test
-    fun `should return empty fields list when NPG response fields is null`() {
-        val npgResponse =
-            NpgBuildResponse(
-                sessionId = "session-123",
-                securityToken = "sec-token-456",
-                fields = null,
-                state = null,
-            )
+    fun `should return null fields list when NPG response fields is null`() {
+        val npgResponse = buildFieldsDto(fields = null)
 
         doReturn(Uni.createFrom().item(npgResponse))
             .whenever(npgRestClient)
-            .buildForm(any(), any(), any())
+            .pspApiV1OrdersBuildPost(any(), any(), any())
 
         val result = npgClientWrapper.buildForm(buildParams(language = null)).await().indefinitely()
 
-        assertTrue(result.fields.isEmpty())
+        assertTrue(result.fields == null)
     }
 
     @Test
     fun `should use default language when language is not in langMap`() {
-        val npgResponse =
-            NpgBuildResponse(
-                sessionId = "session-123",
-                securityToken = "sec-token-456",
-                fields = emptyList(),
-                state = null,
-            )
+        val npgResponse = buildFieldsDto()
 
         doReturn(Uni.createFrom().item(npgResponse))
             .whenever(npgRestClient)
-            .buildForm(any(), any(), any())
+            .pspApiV1OrdersBuildPost(any(), any(), any())
 
         val result = npgClientWrapper.buildForm(buildParams(language = "xx")).await().indefinitely()
 
@@ -184,9 +165,9 @@ class NpgClientWrapperTest {
     fun `should propagate error when NPG rest client fails`() {
         val restError = RuntimeException("NPG connection timeout")
 
-        doReturn(Uni.createFrom().failure<NpgBuildResponse>(restError))
+        doReturn(Uni.createFrom().failure<FieldsDto>(restError))
             .whenever(npgRestClient)
-            .buildForm(any(), any(), any())
+            .pspApiV1OrdersBuildPost(any(), any(), any())
 
         val thrown =
             assertThrows<NpgResponseException> {
