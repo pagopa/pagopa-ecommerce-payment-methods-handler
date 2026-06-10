@@ -719,6 +719,7 @@ class PaymentMethodsHandlerResourceTest {
         val result =
             RestAssured.given()
                 .header("x-api-key", "test-primary")
+                .header("X-Client-Id", "CHECKOUT")
                 .contentType(ContentType.JSON)
                 .`when`()
                 .get("/payment-methods/pm-001/sessions/$testOrderId")
@@ -742,6 +743,7 @@ class PaymentMethodsHandlerResourceTest {
         val result =
             RestAssured.given()
                 .header("x-api-key", "test-primary")
+                .header("X-Client-Id", "CHECKOUT")
                 .contentType(ContentType.JSON)
                 .`when`()
                 .get("/payment-methods/pm-001/sessions/$testOrderId")
@@ -775,6 +777,7 @@ class PaymentMethodsHandlerResourceTest {
         val result =
             RestAssured.given()
                 .header("x-api-key", "test-primary")
+                .header("X-Client-Id", "CHECKOUT")
                 .contentType(ContentType.JSON)
                 .`when`()
                 .get("/payment-methods/pm-001/sessions/$testOrderId")
@@ -795,6 +798,7 @@ class PaymentMethodsHandlerResourceTest {
 
         RestAssured.given()
             .header("x-api-key", "test-primary")
+            .header("X-Client-Id", "CHECKOUT")
             .contentType(ContentType.JSON)
             .`when`()
             .get("/payment-methods/pm-001/sessions/$testOrderId")
