@@ -62,11 +62,7 @@ constructor(
             }
 
         return npgRestClient
-            .pspApiV1OrdersBuildPost(
-                params.correlationId,
-                npgDefaultApiKey,
-                request,
-            )
+            .pspApiV1OrdersBuildPost(params.correlationId, npgDefaultApiKey, request)
             .map { response ->
                 if (response.sessionId == null) {
                     throw NpgResponseException("Missing sessionId in NPG response")

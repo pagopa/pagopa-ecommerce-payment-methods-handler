@@ -99,8 +99,7 @@ class NpgClientWrapperTest {
 
         npgClientWrapper.buildForm(buildParams(language = null)).await().indefinitely()
 
-        verify(npgRestClient)
-            .pspApiV1OrdersBuildPost(eq(correlationId), eq(apiKey), any())
+        verify(npgRestClient).pspApiV1OrdersBuildPost(eq(correlationId), eq(apiKey), any())
     }
 
     @Test
