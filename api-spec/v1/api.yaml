@@ -202,7 +202,7 @@ paths:
   /payment-methods/{id}/sessions/{orderId}:
     get:
       tags:
-        - payment-methods
+        - payment-methods-handler
       operationId: getSessionPaymentMethod
       summary: Get session payment method by ID
       description: API for retrieving card data information for a given payment method session
