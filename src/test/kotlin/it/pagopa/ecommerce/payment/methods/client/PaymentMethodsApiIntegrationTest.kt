@@ -4,6 +4,8 @@ import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension
 import io.quarkus.test.junit.QuarkusTest
+import io.quarkus.test.junit.QuarkusTestProfile
+import io.quarkus.test.junit.TestProfile
 import it.pagopa.generated.ecommerce.client.api.PaymentMethodsApi
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodRequestDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodResponseDto
@@ -14,7 +16,14 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 
+class AfmIntegrationTestProfile : QuarkusTestProfile {
+    override fun getConfigOverrides(): Map<String, String> {
+        return mapOf("quarkus.rest-client.afm_yaml.url" to "http://localhost:18089")
+    }
+}
+
 @QuarkusTest
+@TestProfile(AfmIntegrationTestProfile::class)
 class PaymentMethodsApiIntegrationTest {
 
     @Inject @RestClient lateinit var paymentMethodsApi: PaymentMethodsApi
@@ -24,7 +33,8 @@ class PaymentMethodsApiIntegrationTest {
         @RegisterExtension
         val wireMock =
             WireMockExtension.newInstance()
-                .options(WireMockConfiguration.wireMockConfig().port(8089))
+                .options(WireMockConfiguration.wireMockConfig().port(18089))
+                .failOnUnmatchedRequests(false)
                 .build()
     }
 
