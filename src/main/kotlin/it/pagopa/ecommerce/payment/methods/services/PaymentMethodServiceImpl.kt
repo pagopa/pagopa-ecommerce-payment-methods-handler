@@ -3,10 +3,8 @@ package it.pagopa.ecommerce.payment.methods.services
 import io.smallrye.mutiny.Uni
 import it.pagopa.ecommerce.payment.methods.client.CreateTokenRequest
 import it.pagopa.ecommerce.payment.methods.client.JwtTokenIssuerClient
-import it.pagopa.ecommerce.payment.methods.client.NpgBuildFormParams
 import it.pagopa.ecommerce.payment.methods.client.NpgClientWrapper
 import it.pagopa.ecommerce.payment.methods.client.NpgPaymentMethod
-import it.pagopa.ecommerce.payment.methods.client.NpgSessionUrls
 import it.pagopa.ecommerce.payment.methods.client.PaymentMethodsClient
 import it.pagopa.ecommerce.payment.methods.config.SessionUrlConfig
 import it.pagopa.ecommerce.payment.methods.domain.CardDataDocument
@@ -20,6 +18,8 @@ import it.pagopa.ecommerce.payment.methods.utils.UniqueIdGenerator
 import it.pagopa.ecommerce.payment.methods.v1.server.model.CardFormFields
 import it.pagopa.ecommerce.payment.methods.v1.server.model.CreateSessionResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.Field
+import it.pagopa.ecommerce.payment.methods.v1.server.model.NpgBuildFormParams
+import it.pagopa.ecommerce.payment.methods.v1.server.model.NpgSessionUrls
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
@@ -179,19 +179,19 @@ constructor(
 
                 npgClient
                     .buildForm(
-                        NpgBuildFormParams(
-                            correlationId = correlationId,
-                            urls =
-                                NpgSessionUrls(
-                                    merchantUrl = returnUrlBasePath,
-                                    resultUrl = resultUrl,
-                                    notificationUrl = notificationUrl,
-                                    cancelUrl = cancelUrl,
-                                ),
-                            orderId = orderId,
-                            paymentMethod = paymentMethod,
-                            language = language,
-                        )
+                        NpgBuildFormParams().apply {
+                            this.correlationId = correlationId
+                            this.urls =
+                                NpgSessionUrls().apply {
+                                    this.merchantUrl = returnUrlBasePath
+                                    this.resultUrl = resultUrl
+                                    this.notificationUrl = notificationUrl
+                                    this.cancelUrl = cancelUrl
+                                }
+                            this.orderId = orderId
+                            this.paymentMethod = paymentMethod.serviceName
+                            this.language = language
+                        }
                     )
                     .map { fields ->
                         SessionBuildData(fields, paymentMethod, orderId, correlationId)
@@ -217,7 +217,7 @@ constructor(
                         CardFormFields().apply {
                             paymentMethod = data.paymentMethod.serviceName
                             form =
-                                data.fields.fields.map { field ->
+                                (data.fields.fields ?: emptyList()).map { field ->
                                     Field().apply {
                                         id = field.id
                                         type = field.type
@@ -311,7 +311,7 @@ constructor(
     }
 
     private data class SessionBuildData(
-        val fields: it.pagopa.ecommerce.payment.methods.client.NpgFieldsDto,
+        val fields: it.pagopa.generated.npg.client.model.FieldsDto,
         val paymentMethod: NpgPaymentMethod,
         val orderId: String,
         val correlationId: UUID,

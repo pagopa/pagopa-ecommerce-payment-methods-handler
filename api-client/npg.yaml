@@ -1,0 +1,649 @@
+---
+openapi: 3.0.2
+info:
+  title: Nexi Build APIs
+  version: "0.7"
+servers:
+  - url: "https://{gateway_test}/api/v1"
+    description: TEST
+  - url: "https://{gateway_prod}/api/v1"
+    description: PROD
+security:
+  - OAuth2: [ ]
+paths:
+  /psp/api/v1/orders/build:
+    post:
+      tags:
+        - Payment Services
+      summary: Create an order and initiates a payment through build functionality.
+      description: "This service is targeted to ecommerce platforms requiring to implement
+        the payment pages in line with their own dedicated UI style guidelines. The
+        service will return a list of fields expressed in JSON format, to be translated
+        into HTML by the ecommerce platform web app. If the paymentService field is
+        valued at CARDS the service will return a list of fields for the CARD_DATA_COLLECTION
+        without going through the PAYMENT_METHOD_SELECTION state and if it's valued
+        with an APM the service will return an url where the customer should be redirected."
+      parameters:
+        - name: Correlation-Id
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: "Mandatory field to be valued with a UUID to be renewed at
+            every call. The purpose of the field is to allow referring to a specific
+            call for any integration or maintenance activity."
+        - name: X-API-KEY
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateHostedOrderRequest'
+        required: true
+      responses:
+        "200":
+          description: "In case of success, the service returns a list of fields to
+            be rendered in the ecomm web app."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fields'
+        "400":
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientError'
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+  /psp/api/v1/build/cardData:
+    get:
+      tags:
+        - Payment Services
+      security:
+        - ApiKeyAuth: [ ]
+      summary: Get card characteristics.
+      description: It provides PCI-free non sensitive information about the payment
+        card entered by the user along the current payment session.
+      parameters:
+        - name: Correlation-Id
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Mandatory field to be valued with a UUID to be renewed at every
+            call. The purpose of the field is to allow referring to a specific call
+            for any integration or maintenance activity.
+        - name: sessionId
+          in: query
+          required: true
+          schema:
+            type: string
+          description: the value of the payment session identifier
+        - name: X-API-KEY
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: In case of success, the service returns the data collected
+            for the given card.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardDataResponse'
+        "400":
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientError'
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+  /psp/api/v1/operations/{operationId}/refunds:
+    post:
+      tags:
+        - Payment Services
+      summary: Create an order and initiates a payment through build functionality.
+      description: "This service is targeted to ecommerce platforms requiring to implement
+        the refund of a payment given the operationId"
+      parameters:
+        - name: operationId
+          required: true
+          in: path
+          schema:
+            type: string
+          description: ID of the operation
+        - name: Correlation-Id
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: "Mandatory field to be valued with a UUID to be renewed at
+            every call. The purpose of the field is to allow referring to a specific
+            call for any integration or maintenance activity."
+        - name: x-api-key
+          in: header
+          required: true
+          schema:
+            type: string
+          description: "Default api key"
+        - name: Idempotency-key
+          in: header
+          required: true
+          schema:
+            type: string
+          description: "Idempotence key"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefundRequest'
+        required: true
+      responses:
+        "200":
+          description: "In case of success, the service returns a dto containing the
+            information about the operation"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefundResponse'
+        "400":
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientError'
+        "404":
+          description: Operation not found
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+  /psp/api/v1/orders/{orderId}/:
+    get:
+      tags:
+        - Payment Services
+      summary: Searches for an order and returns its details.
+      description: It provides order details including all operations associated with given orderId.
+      parameters:
+        - name: Correlation-Id
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: X-API-KEY
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Order found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        "401":
+          description: Unauthorized
+        "404":
+          description: "Order not found"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+components:
+  schemas:
+    CreateHostedOrderRequest:
+      type: object
+      properties:
+        version:
+          type: string
+          example: "1"
+          default: "1"
+        merchantUrl:
+          type: string
+          example: "https://merchanturl.it"
+        order:
+          $ref: '#/components/schemas/Order'
+        paymentSession:
+          $ref: '#/components/schemas/PaymentSession'
+    Order:
+      type: object
+      properties:
+        orderId:
+          maxLength: 27
+          type: string
+          example: btid2384983
+        amount:
+          type: string
+          example: "3545"
+        currency:
+          type: string
+          example: EUR
+        customerId:
+          maxLength: 27
+          type: string
+          example: mcid97295873
+        description:
+          maxLength: 255
+          type: string
+          example: TV LG 3423
+        customField:
+          maxLength: 255
+          type: string
+          example: weekend promotion
+        customerInfo:
+          $ref: '#/components/schemas/CustomerInfo'
+        transactionSummary:
+          type: array
+          items:
+            $ref: '#/components/schemas/TransactionSummary'
+        installments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Installment'
+        termsAndConditionsIds:
+          $ref: '#/components/schemas/TermsAndConditions'
+    PaymentSession:
+      type: object
+      properties:
+        actionType:
+          $ref: '#/components/schemas/ActionType'
+        amount:
+          type: string
+          example: "3545"
+        recurrence:
+          $ref: '#/components/schemas/RecurringSettings'
+        captureType:
+          $ref: '#/components/schemas/CaptureType'
+        exemptions:
+          $ref: '#/components/schemas/ExemptionsSettings'
+        language:
+          type: string
+          example: ita
+          default: ita
+        resultUrl:
+          maxLength: 2048
+          type: string
+          example: "https://{merchant_result_url}"
+        cancelUrl:
+          maxLength: 2048
+          type: string
+          example: "https://{merchant_cancel_url}"
+        notificationUrl:
+          maxLength: 2048
+          type: string
+          example: "https://{merchant_notification_url}"
+        paymentService:
+          type: string
+          example: GOOGLEPAY
+    ActionType:
+      type: string
+      example: PAY
+      enum:
+        - PAY
+        - VERIFY
+        - PREAUTH
+    RecurringSettings:
+      type: object
+      properties:
+        action:
+          $ref: '#/components/schemas/RecurringAction'
+        contractId:
+          maxLength: 255
+          type: string
+          example: C2834987
+        contractType:
+          $ref: '#/components/schemas/RecurringContractType'
+        contractExpiryDate:
+          type: string
+          format: date
+          example: 2023-03-16
+        contractFrequency:
+          maxLength: 4
+          type: string
+          example: "120"
+    RecurringAction:
+      type: string
+      example: NO_RECURRING
+      enum:
+        - NO_RECURRING
+        - SUBSEQUENT_PAYMENT
+        - CONTRACT_CREATION
+        - CARD_SUBSTITUTION
+    RecurringContractType:
+      type: string
+      example: CIT
+      enum:
+        - MIT_UNSCHEDULED
+        - MIT_SCHEDULED
+        - CIT
+    CaptureType:
+      type: string
+      example: EXPLICIT
+      enum:
+        - IMPLICIT
+        - EXPLICIT
+    ExemptionsSettings:
+      type: string
+      example: NO_PREFERENCE
+      default: NO_PREFERENCE
+      enum:
+        - NO_PREFERENCE
+        - CHALLENGE_REQUESTED
+    Fields:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          example: "sessionId"
+        securityToken:
+          type: string
+          example: "security token"
+        fields:
+          $ref: '#/components/schemas/FieldsList'
+        state:
+          $ref: '#/components/schemas/WorkflowState'
+        url:
+          type: string
+          example: "https:apm_url.it"
+    FieldsList:
+      type: array
+      items:
+        $ref: '#/components/schemas/Field'
+    Field:
+      type: object
+      properties:
+        type:
+          type: string
+          example: "text"
+        class:
+          type: string
+          example: "cardData"
+        id:
+          type: string
+          example: "cardholderName"
+        src:
+          type: string
+          example: "https://<fe>/field.html?id=CARDHOLDER_NAME&sid=052211e8-54c8-4e0a-8402-e10bcb8ff264"
+    WorkflowState:
+      type: string
+      example: "CARD_DATA_COLLECTION"
+      enum:
+        - PAYMENT_METHOD_SELECTION
+        - CARD_DATA_COLLECTION
+        - READY_FOR_PAYMENT
+        - REDIRECTED_TO_EXTERNAL_DOMAIN
+        - PAYMENT_COMPLETE
+        - GDI_VERIFICATION
+    CardDataResponse:
+      type: object
+      properties:
+        bin:
+          type: string
+          example: "123456"
+        lastFourDigits:
+          type: string
+          minLength: 4
+          maxLength: 4
+          example: "1234"
+        expiringDate:
+          type: string
+          example: "0423"
+        circuit:
+          type: string
+          example: VISA
+    CustomerInfo:
+      type: object
+      properties:
+        cardHolderName:
+          maxLength: 255
+          type: string
+          example: Mauro Morandi
+        cardHolderEmail:
+          maxLength: 255
+          type: string
+          example: mauro.morandi@nexi.it
+        billingAddress:
+          $ref: '#/components/schemas/Address'
+        shippingAddress:
+          $ref: '#/components/schemas/Address'
+        mobilePhoneCountryCode:
+          maxLength: 4
+          type: string
+          example: "39"
+        mobilePhone:
+          maxLength: 15
+          type: string
+          example: "3280987654"
+        homePhone:
+          maxLength: 19
+          type: string
+          example: 391231234567
+        workPhone:
+          maxLength: 19
+          type: string
+          example: 391231234567
+    Address:
+      type: object
+      properties:
+        name:
+          maxLength: 50
+          type: string
+          example: Mario Rossi
+        street:
+          maxLength: 50
+          type: string
+          example: "Piazza Maggiore, 1"
+        additionalInfo:
+          maxLength: 50
+          type: string
+          example: "Quinto Piano, Scala B"
+        city:
+          maxLength: 50
+          type: string
+          example: Bologna
+        postCode:
+          maxLength: 16
+          type: string
+          example: "40124"
+        province:
+          maxLength: 3
+          type: string
+          example: BO
+        country:
+          type: string
+          example: ITA
+    TransactionSummary:
+      type: object
+      properties:
+        language:
+          type: string
+          example: eng
+        summaryList:
+          type: array
+          items:
+            $ref: '#/components/schemas/TransactionSummaryAttribute'
+    TransactionSummaryAttribute:
+      type: object
+      properties:
+        label:
+          type: string
+          example: Number of people
+        value:
+          type: string
+          example: "4"
+    Installment:
+      type: object
+      properties:
+        date:
+          type: string
+          example: 2022-09-01
+        amount:
+          type: string
+          example: "350"
+    TermsAndConditions:
+      type: array
+      items:
+        type: string
+        example: 16dd6ac6-0791-4c72-b362-85f77f1728a2
+    Operation:
+      type: object
+      properties:
+        orderId:
+          maxLength: 27
+          type: string
+          example: btid2384983
+        operationId:
+          type: string
+          example: "3470744"
+        channel:
+          type: string
+          example: ECOMMERCE
+        operationType:
+          type: string
+          example: CAPTURE
+        operationResult:
+          type: string
+          example: AUTHORIZED
+        operationTime:
+          type: string
+          example: 2022-09-01T01:20:00Z
+        paymentMethod:
+          type: string
+          example: CARD
+        paymentCircuit:
+          type: string
+          example: VISA
+        paymentInstrumentInfo:
+          type: string
+          example: '***6152'
+        paymentEndToEndId:
+          maxLength: 35
+          type: string
+          example: e723hedsdew
+        cancelledOperationId:
+          type: string
+          example: ""
+        operationAmount:
+          type: string
+          example: "3545"
+        operationCurrency:
+          type: string
+          example: EUR
+        customerInfo:
+          $ref: '#/components/schemas/CustomerInfo'
+        additionalData:
+          type: object
+          additionalProperties: { }
+    OrderStatus:
+      type: object
+      properties:
+        order:
+          $ref: '#/components/schemas/Order'
+        authorizedAmount:
+          type: string
+          example: "3545"
+        capturedAmount:
+          type: string
+          example: "3545"
+        lastOperationType:
+          type: string
+          example: CAPTURE
+        lastOperationTime:
+          type: string
+          example: "2022-09-01T01:20:00.001Z"
+    OrderResponse:
+      type: object
+      properties:
+        orderStatus:
+          $ref: '#/components/schemas/OrderStatus'
+        operations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Operation'
+    RefundRequest:
+      type: object
+      properties:
+        amount:
+          type: string
+          example: "100"
+        currency:
+          type: string
+          example: "EUR"
+        description:
+          type: string
+          example: "Goods have been shipped"
+    RefundResponse:
+      type: object
+      properties:
+        operationId:
+          type: string
+          example: "3470744"
+        operationTime:
+          type: string
+          example: "2022-09-01T01:20:00.001Z"
+    ClientError:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorItem'
+    ServerError:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorItem'
+    ErrorItem:
+      type: object
+      properties:
+        code:
+          type: string
+          example: GW0001
+        description:
+          type: string
+          example: Invalid merchant URL
+  securitySchemes:
+    OAuth2:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-KEY

@@ -2,34 +2,24 @@ package it.pagopa.ecommerce.payment.methods.client
 
 import io.smallrye.mutiny.Uni
 import it.pagopa.ecommerce.payment.methods.exception.NpgResponseException
+import it.pagopa.ecommerce.payment.methods.v1.server.model.NpgBuildFormParams
+import it.pagopa.generated.npg.client.api.PaymentServicesApi
+import it.pagopa.generated.npg.client.model.ActionTypeDto
+import it.pagopa.generated.npg.client.model.CreateHostedOrderRequestDto
+import it.pagopa.generated.npg.client.model.FieldsDto
+import it.pagopa.generated.npg.client.model.OrderDto
+import it.pagopa.generated.npg.client.model.PaymentSessionDto
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Inject
-import java.net.URI
-import java.util.UUID
 import org.eclipse.microprofile.config.inject.ConfigProperty
 import org.eclipse.microprofile.rest.client.inject.RestClient
 import org.slf4j.LoggerFactory
-
-data class NpgBuildFormParams(
-    val correlationId: UUID,
-    val urls: NpgSessionUrls,
-    val orderId: String,
-    val paymentMethod: NpgPaymentMethod,
-    val language: String?,
-)
-
-data class NpgSessionUrls(
-    val merchantUrl: URI,
-    val resultUrl: URI,
-    val notificationUrl: URI,
-    val cancelUrl: URI,
-)
 
 @ApplicationScoped
 class NpgClientWrapper
 @Inject
 constructor(
-    @RestClient private val npgRestClient: NpgRestClient,
+    @RestClient private val npgRestClient: PaymentServicesApi,
     @ConfigProperty(name = "npg.client.api-key") private val npgDefaultApiKey: String,
 ) {
     private val log = LoggerFactory.getLogger(NpgClientWrapper::class.java)
@@ -38,55 +28,49 @@ constructor(
         mapOf("it" to "ITA", "fr" to "FRA", "de" to "DEU", "sl" to "SLV", "en" to "ENG")
     private val defaultLanguage = "ITA"
 
-    fun buildForm(params: NpgBuildFormParams): Uni<NpgFieldsDto> {
+    fun buildForm(params: NpgBuildFormParams): Uni<FieldsDto> {
         log.info(
             "Calling NPG buildForm with correlationId={}, orderId={}, paymentMethod={}",
             params.correlationId,
             params.orderId,
-            params.paymentMethod.serviceName,
+            params.paymentMethod,
         )
 
         val npgLanguage =
             params.language?.let { langMap.getOrDefault(it, defaultLanguage) } ?: defaultLanguage
 
         val request =
-            NpgBuildRequest(
-                merchantUrl = params.urls.merchantUrl.toString(),
-                order = NpgOrderDto(orderId = params.orderId),
+            CreateHostedOrderRequestDto().apply {
+                version = "2"
+                merchantUrl = params.urls.merchantUrl.toString()
+                order =
+                    OrderDto().apply {
+                        orderId = params.orderId
+                        amount = "1"
+                        currency = "EUR"
+                    }
                 paymentSession =
-                    NpgPaymentSessionDto(
-                        paymentService = params.paymentMethod.serviceName,
-                        resultUrl = params.urls.resultUrl.toString(),
-                        cancelUrl = params.urls.cancelUrl.toString(),
-                        notificationUrl = params.urls.notificationUrl.toString(),
-                        language = npgLanguage,
-                    ),
-            )
+                    PaymentSessionDto().apply {
+                        actionType = ActionTypeDto.PAY
+                        amount = "1"
+                        language = npgLanguage
+                        paymentService = params.paymentMethod
+                        resultUrl = params.urls.resultUrl.toString()
+                        cancelUrl = params.urls.cancelUrl.toString()
+                        notificationUrl = params.urls.notificationUrl.toString()
+                    }
+            }
 
         return npgRestClient
-            .buildForm(
-                correlationId = params.correlationId.toString(),
-                apiKey = npgDefaultApiKey,
-                request = request,
-            )
+            .pspApiV1OrdersBuildPost(params.correlationId, npgDefaultApiKey, request)
             .map { response ->
-                NpgFieldsDto(
-                    sessionId =
-                        response.sessionId
-                            ?: throw NpgResponseException("Missing sessionId in NPG response"),
-                    securityToken =
-                        response.securityToken
-                            ?: throw NpgResponseException("Missing securityToken in NPG response"),
-                    fields =
-                        response.fields?.map { field ->
-                            NpgFieldDto(
-                                id = field.id,
-                                type = field.type,
-                                propertyClass = field.propertyClass,
-                                src = field.src,
-                            )
-                        } ?: emptyList(),
-                )
+                if (response.sessionId == null) {
+                    throw NpgResponseException("Missing sessionId in NPG response")
+                }
+                if (response.securityToken == null) {
+                    throw NpgResponseException("Missing securityToken in NPG response")
+                }
+                response
             }
             .onFailure()
             .invoke { e ->
