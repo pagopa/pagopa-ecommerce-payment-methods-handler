@@ -264,7 +264,7 @@ constructor(
                         )
                 } else {
                     log.info("Cache miss for orderId: {}", orderId)
-                    val correlationId = UUID.fromString(session.correlationId)
+                    val correlationId = UUID.randomUUID()
                     npgClient
                         .getCardData(correlationId, session.sessionId)
                         .flatMap { cardData ->
