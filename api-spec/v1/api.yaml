@@ -256,6 +256,72 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemJson'
+    patch:
+      tags:
+        - payment-methods-handler
+      operationId: updateSession
+      summary: Update a payment method session
+      description: |-
+        Associates a transaction ID to an existing NPG session identified by payment method ID and order ID.
+        Returns 204 No Content on success.
+      parameters:
+        - name: id
+          in: path
+          description: Payment Method ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/PaymentMethodId'
+        - name: orderId
+          in: path
+          description: Order id related to NPG session
+          required: true
+          schema:
+            type: string
+        - in: header
+          name: X-Client-Id
+          required: true
+          description: Transaction origin (populated by APIM policy)
+          schema:
+            $ref: '#/components/schemas/SessionClientId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchSessionRequest'
+      responses:
+        '204':
+          description: Session successfully updated
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+        '404':
+          description: Session or payment method not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+        '409':
+          description: Session already associated to a different transaction
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+        '500':
+          description: Service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
 components:
   schemas:
     PaymentMethodId:
@@ -581,6 +647,15 @@ components:
         title:
           description: Problem title
           type: string
+    PatchSessionRequest:
+      type: object
+      description: Request body for updating a payment method session
+      required:
+        - transactionId
+      properties:
+        transactionId:
+          type: string
+          description: Transaction ID to associate with the session
     SessionPaymentMethodResponse:
       type: object
       description: Session Payment method Response

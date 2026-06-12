@@ -10,6 +10,7 @@ import it.pagopa.ecommerce.payment.methods.config.SessionUrlConfig
 import it.pagopa.ecommerce.payment.methods.domain.CardDataDocument
 import it.pagopa.ecommerce.payment.methods.domain.NpgSessionDocument
 import it.pagopa.ecommerce.payment.methods.exception.OrderIdNotFoundException
+import it.pagopa.ecommerce.payment.methods.exception.SessionAlreadyAssociatedToTransactionException
 import it.pagopa.ecommerce.payment.methods.infrastructure.NpgSessionsRedisWrapper
 import it.pagopa.ecommerce.payment.methods.mappers.toPaymentMethodRequestDto
 import it.pagopa.ecommerce.payment.methods.mappers.toPaymentMethodResponse
@@ -18,6 +19,7 @@ import it.pagopa.ecommerce.payment.methods.utils.UniqueIdGenerator
 import it.pagopa.ecommerce.payment.methods.v1.server.model.CardFormFields
 import it.pagopa.ecommerce.payment.methods.v1.server.model.CreateSessionResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.Field
+import it.pagopa.ecommerce.payment.methods.v1.server.model.PatchSessionRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.NpgBuildFormParams
 import it.pagopa.ecommerce.payment.methods.v1.server.model.NpgSessionUrls
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodResponse
@@ -296,6 +298,65 @@ constructor(
                                 brand = cardData.circuit
                             }
                         }
+                }
+            }
+    }
+
+    override fun updateSession(
+        paymentMethodId: String,
+        orderId: String,
+        patchSessionRequest: PatchSessionRequest,
+        xClientId: String,
+    ): Uni<Void> {
+        log.info(
+            "[Payment Method handler] Update session for paymentMethodId: {} and orderId: {}",
+            paymentMethodId,
+            orderId,
+        )
+
+        val xRequestId = UUID.randomUUID().toString()
+
+        return restClient
+            .getPaymentMethod(paymentMethodId, xRequestId, xClientId)
+            .flatMap { npgSessionsRedisWrapper.findById(orderId) }
+            .onItem()
+            .ifNull()
+            .failWith { OrderIdNotFoundException(orderId) }
+            .flatMap { session ->
+                val existingTransactionId = session!!.transactionId
+                val requestedTransactionId = patchSessionRequest.transactionId
+
+                if (
+                    existingTransactionId != null && existingTransactionId != requestedTransactionId
+                ) {
+                    log.error(
+                        "Session's transaction id ({}) differs from requested transaction id ({})",
+                        existingTransactionId,
+                        requestedTransactionId,
+                    )
+                    Uni.createFrom()
+                        .failure(
+                            SessionAlreadyAssociatedToTransactionException(
+                                orderId,
+                                existingTransactionId,
+                                requestedTransactionId,
+                            )
+                        )
+                } else if (existingTransactionId != null) {
+                    // Transaction already associated to session (retry case), no-op
+                    Uni.createFrom().voidItem()
+                } else {
+                    // Associate transaction to session
+                    val updatedDocument =
+                        NpgSessionDocument(
+                            orderId = session.orderId,
+                            correlationId = session.correlationId,
+                            sessionId = session.sessionId,
+                            securityToken = session.securityToken,
+                            cardData = session.cardData,
+                            transactionId = requestedTransactionId,
+                        )
+                    npgSessionsRedisWrapper.save(updatedDocument).replaceWithVoid()
                 }
             }
     }

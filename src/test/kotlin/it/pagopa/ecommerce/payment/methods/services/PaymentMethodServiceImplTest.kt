@@ -9,6 +9,8 @@ import it.pagopa.ecommerce.payment.methods.domain.NpgSessionDocument
 import it.pagopa.ecommerce.payment.methods.exception.JwtIssuerResponseException
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodNotFoundException
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodsClientException
+import it.pagopa.ecommerce.payment.methods.exception.SessionAlreadyAssociatedToTransactionException
+import it.pagopa.ecommerce.payment.methods.v1.server.model.PatchSessionRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
@@ -961,6 +963,91 @@ class PaymentMethodsClientTest {
 
         assertThrows<PaymentMethodNotFoundException> {
             service.getCardDataInformation("pm-001", testOrderId, "CHECKOUT").await().indefinitely()
+        }
+
+        verify(mockNpgSessionsRedis, times(0)).findById(any())
+    }
+
+    // --- updateSession tests ---
+
+    @Test
+    fun `should associate transactionId to session when no transactionId exists`() {
+        val patchRequest = PatchSessionRequest().apply { transactionId = "tx-001" }
+
+        whenever(mockClient.getPaymentMethod(any(), any(), any()))
+            .thenReturn(Uni.createFrom().item(buildAfmPaymentMethodResponse()))
+        whenever(mockNpgSessionsRedis.findById(testOrderId))
+            .thenReturn(Uni.createFrom().item(testSessionDocument))
+        whenever(mockNpgSessionsRedis.save(any()))
+            .thenReturn(Uni.createFrom().item(testSessionDocument))
+
+        assertDoesNotThrow {
+            service.updateSession("pm-001", testOrderId, patchRequest, "CHECKOUT").await().indefinitely()
+        }
+
+        verify(mockNpgSessionsRedis).save(any())
+    }
+
+    @Test
+    fun `should be no-op when transactionId already matches`() {
+        val patchRequest = PatchSessionRequest().apply { transactionId = "tx-001" }
+        val sessionWithTransaction = testSessionDocument.copy(transactionId = "tx-001")
+
+        whenever(mockClient.getPaymentMethod(any(), any(), any()))
+            .thenReturn(Uni.createFrom().item(buildAfmPaymentMethodResponse()))
+        whenever(mockNpgSessionsRedis.findById(testOrderId))
+            .thenReturn(Uni.createFrom().item(sessionWithTransaction))
+
+        assertDoesNotThrow {
+            service.updateSession("pm-001", testOrderId, patchRequest, "CHECKOUT").await().indefinitely()
+        }
+
+        // Should NOT save since it's a retry with same transactionId
+        verify(mockNpgSessionsRedis, times(0)).save(any())
+    }
+
+    @Test
+    fun `should throw SessionAlreadyAssociatedToTransactionException when transactionId conflicts`() {
+        val patchRequest = PatchSessionRequest().apply { transactionId = "tx-002" }
+        val sessionWithDifferentTransaction = testSessionDocument.copy(transactionId = "tx-001")
+
+        whenever(mockClient.getPaymentMethod(any(), any(), any()))
+            .thenReturn(Uni.createFrom().item(buildAfmPaymentMethodResponse()))
+        whenever(mockNpgSessionsRedis.findById(testOrderId))
+            .thenReturn(Uni.createFrom().item(sessionWithDifferentTransaction))
+
+        assertThrows<SessionAlreadyAssociatedToTransactionException> {
+            service.updateSession("pm-001", testOrderId, patchRequest, "CHECKOUT").await().indefinitely()
+        }
+
+        verify(mockNpgSessionsRedis, times(0)).save(any())
+    }
+
+    @Test
+    fun `should throw OrderIdNotFoundException when session not found for updateSession`() {
+        val patchRequest = PatchSessionRequest().apply { transactionId = "tx-001" }
+
+        whenever(mockClient.getPaymentMethod(any(), any(), any()))
+            .thenReturn(Uni.createFrom().item(buildAfmPaymentMethodResponse()))
+        whenever(mockNpgSessionsRedis.findById(testOrderId))
+            .thenReturn(Uni.createFrom().nullItem())
+
+        assertThrows<it.pagopa.ecommerce.payment.methods.exception.OrderIdNotFoundException> {
+            service.updateSession("pm-001", testOrderId, patchRequest, "CHECKOUT").await().indefinitely()
+        }
+    }
+
+    @Test
+    fun `should throw PaymentMethodNotFoundException when payment method does not exist for updateSession`() {
+        val patchRequest = PatchSessionRequest().apply { transactionId = "tx-001" }
+
+        whenever(mockClient.getPaymentMethod(any(), any(), any()))
+            .thenReturn(
+                Uni.createFrom().failure(PaymentMethodNotFoundException("Payment method not found"))
+            )
+
+        assertThrows<PaymentMethodNotFoundException> {
+            service.updateSession("pm-001", testOrderId, patchRequest, "CHECKOUT").await().indefinitely()
         }
 
         verify(mockNpgSessionsRedis, times(0)).findById(any())

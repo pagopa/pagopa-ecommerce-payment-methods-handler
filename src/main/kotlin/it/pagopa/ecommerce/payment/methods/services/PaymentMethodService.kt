@@ -2,6 +2,7 @@ package it.pagopa.ecommerce.payment.methods.services
 
 import io.smallrye.mutiny.Uni
 import it.pagopa.ecommerce.payment.methods.v1.server.model.CreateSessionResponse
+import it.pagopa.ecommerce.payment.methods.v1.server.model.PatchSessionRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
@@ -31,4 +32,11 @@ interface PaymentMethodService {
         orderId: String,
         xClientId: String,
     ): Uni<SessionPaymentMethodResponse>
+
+    fun updateSession(
+        paymentMethodId: String,
+        orderId: String,
+        patchSessionRequest: PatchSessionRequest,
+        xClientId: String,
+    ): Uni<Void>
 }
