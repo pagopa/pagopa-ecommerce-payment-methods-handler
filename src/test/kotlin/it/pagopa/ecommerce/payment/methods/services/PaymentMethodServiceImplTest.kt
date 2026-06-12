@@ -982,7 +982,10 @@ class PaymentMethodsClientTest {
             .thenReturn(Uni.createFrom().item(testSessionDocument))
 
         assertDoesNotThrow {
-            service.updateSession("pm-001", testOrderId, patchRequest, "CHECKOUT").await().indefinitely()
+            service
+                .updateSession("pm-001", testOrderId, patchRequest, "CHECKOUT")
+                .await()
+                .indefinitely()
         }
 
         verify(mockNpgSessionsRedis).save(any())
@@ -999,7 +1002,10 @@ class PaymentMethodsClientTest {
             .thenReturn(Uni.createFrom().item(sessionWithTransaction))
 
         assertDoesNotThrow {
-            service.updateSession("pm-001", testOrderId, patchRequest, "CHECKOUT").await().indefinitely()
+            service
+                .updateSession("pm-001", testOrderId, patchRequest, "CHECKOUT")
+                .await()
+                .indefinitely()
         }
 
         // Should NOT save since it's a retry with same transactionId
@@ -1017,7 +1023,10 @@ class PaymentMethodsClientTest {
             .thenReturn(Uni.createFrom().item(sessionWithDifferentTransaction))
 
         assertThrows<SessionAlreadyAssociatedToTransactionException> {
-            service.updateSession("pm-001", testOrderId, patchRequest, "CHECKOUT").await().indefinitely()
+            service
+                .updateSession("pm-001", testOrderId, patchRequest, "CHECKOUT")
+                .await()
+                .indefinitely()
         }
 
         verify(mockNpgSessionsRedis, times(0)).save(any())
@@ -1029,11 +1038,13 @@ class PaymentMethodsClientTest {
 
         whenever(mockClient.getPaymentMethod(any(), any(), any()))
             .thenReturn(Uni.createFrom().item(buildAfmPaymentMethodResponse()))
-        whenever(mockNpgSessionsRedis.findById(testOrderId))
-            .thenReturn(Uni.createFrom().nullItem())
+        whenever(mockNpgSessionsRedis.findById(testOrderId)).thenReturn(Uni.createFrom().nullItem())
 
         assertThrows<it.pagopa.ecommerce.payment.methods.exception.OrderIdNotFoundException> {
-            service.updateSession("pm-001", testOrderId, patchRequest, "CHECKOUT").await().indefinitely()
+            service
+                .updateSession("pm-001", testOrderId, patchRequest, "CHECKOUT")
+                .await()
+                .indefinitely()
         }
     }
 
@@ -1047,7 +1058,10 @@ class PaymentMethodsClientTest {
             )
 
         assertThrows<PaymentMethodNotFoundException> {
-            service.updateSession("pm-001", testOrderId, patchRequest, "CHECKOUT").await().indefinitely()
+            service
+                .updateSession("pm-001", testOrderId, patchRequest, "CHECKOUT")
+                .await()
+                .indefinitely()
         }
 
         verify(mockNpgSessionsRedis, times(0)).findById(any())
