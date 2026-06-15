@@ -39,4 +39,11 @@ interface PaymentMethodService {
         patchSessionRequest: PatchSessionRequest,
         xClientId: String,
     ): Uni<Void>
+
+    fun getTransactionIdForSession(
+        paymentMethodId: String,
+        orderId: String,
+        securityToken: String,
+        xClientId: String,
+    ): Uni<String>
 }
