@@ -9,9 +9,9 @@ import it.pagopa.ecommerce.payment.methods.client.PaymentMethodsClient
 import it.pagopa.ecommerce.payment.methods.config.SessionUrlConfig
 import it.pagopa.ecommerce.payment.methods.domain.CardDataDocument
 import it.pagopa.ecommerce.payment.methods.domain.NpgSessionDocument
-import it.pagopa.ecommerce.payment.methods.exception.OrderIdNotFoundException
 import it.pagopa.ecommerce.payment.methods.exception.InvalidSessionException
 import it.pagopa.ecommerce.payment.methods.exception.MismatchedSecurityTokenException
+import it.pagopa.ecommerce.payment.methods.exception.OrderIdNotFoundException
 import it.pagopa.ecommerce.payment.methods.exception.SessionAlreadyAssociatedToTransactionException
 import it.pagopa.ecommerce.payment.methods.infrastructure.NpgSessionsRedisWrapper
 import it.pagopa.ecommerce.payment.methods.mappers.toPaymentMethodRequestDto
@@ -386,16 +386,11 @@ constructor(
             .flatMap { session ->
                 val transactionId = session!!.transactionId
                 if (transactionId == null) {
-                    Uni.createFrom()
-                        .failure(
-                            InvalidSessionException(orderId)
-                        )
+                    Uni.createFrom().failure(InvalidSessionException(orderId))
                 } else if (session.securityToken != securityToken) {
                     log.warn("Invalid security token for requested order id {}", orderId)
                     Uni.createFrom()
-                        .failure(
-                            MismatchedSecurityTokenException(orderId, transactionId)
-                        )
+                        .failure(MismatchedSecurityTokenException(orderId, transactionId))
                 } else {
                     Uni.createFrom().item(transactionId)
                 }

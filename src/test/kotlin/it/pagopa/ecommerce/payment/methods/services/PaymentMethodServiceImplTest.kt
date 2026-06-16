@@ -1111,7 +1111,9 @@ class PaymentMethodsClientTest {
         whenever(mockNpgSessionsRedis.findById(testOrderId))
             .thenReturn(Uni.createFrom().item(sessionWithTransaction))
 
-        assertThrows<it.pagopa.ecommerce.payment.methods.exception.MismatchedSecurityTokenException> {
+        assertThrows<
+            it.pagopa.ecommerce.payment.methods.exception.MismatchedSecurityTokenException
+        > {
             service
                 .getTransactionIdForSession("pm-001", testOrderId, "wrong-token", "CHECKOUT")
                 .await()
@@ -1123,8 +1125,7 @@ class PaymentMethodsClientTest {
     fun `should throw OrderIdNotFoundException when session not found for getTransactionId`() {
         whenever(mockClient.getPaymentMethod(any(), any(), any()))
             .thenReturn(Uni.createFrom().item(buildAfmPaymentMethodResponse()))
-        whenever(mockNpgSessionsRedis.findById(testOrderId))
-            .thenReturn(Uni.createFrom().nullItem())
+        whenever(mockNpgSessionsRedis.findById(testOrderId)).thenReturn(Uni.createFrom().nullItem())
 
         assertThrows<it.pagopa.ecommerce.payment.methods.exception.OrderIdNotFoundException> {
             service

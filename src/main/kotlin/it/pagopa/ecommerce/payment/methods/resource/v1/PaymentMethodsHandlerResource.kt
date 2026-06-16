@@ -85,17 +85,20 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
         orderId: String,
         authorization: String,
         xClientId: @NotNull it.pagopa.ecommerce.payment.methods.v1.server.model.SessionClientId,
-    ): CompletionStage<it.pagopa.ecommerce.payment.methods.v1.server.model.SessionGetTransactionIdResponse> {
+    ): CompletionStage<
+        it.pagopa.ecommerce.payment.methods.v1.server.model.SessionGetTransactionIdResponse
+    > {
         val securityToken =
-            authorization
-                .takeIf { it.startsWith("Bearer ") }
-                ?.removePrefix("Bearer ")
-                ?: throw jakarta.validation.ValidationException("Missing or invalid Authorization Bearer token")
+            authorization.takeIf { it.startsWith("Bearer ") }?.removePrefix("Bearer ")
+                ?: throw jakarta.validation.ValidationException(
+                    "Missing or invalid Authorization Bearer token"
+                )
 
         return paymentMethodService
             .getTransactionIdForSession(id, orderId, securityToken, xClientId.toString())
             .map { transactionId ->
-                it.pagopa.ecommerce.payment.methods.v1.server.model.SessionGetTransactionIdResponse()
+                it.pagopa.ecommerce.payment.methods.v1.server.model
+                    .SessionGetTransactionIdResponse()
                     .apply { this.transactionId = transactionId }
             }
             .subscribeAsCompletionStage()
@@ -220,11 +223,7 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
         exception: it.pagopa.ecommerce.payment.methods.exception.MismatchedSecurityTokenException
     ): RestResponse<ProblemJson> {
         log.warn("Mismatched Security Token: {}", exception.message)
-        return problemResponse(
-            Response.Status.NOT_FOUND,
-            "Not Found",
-            "Order id not found",
-        )
+        return problemResponse(Response.Status.NOT_FOUND, "Not Found", "Order id not found")
     }
 
     private fun problemResponse(
