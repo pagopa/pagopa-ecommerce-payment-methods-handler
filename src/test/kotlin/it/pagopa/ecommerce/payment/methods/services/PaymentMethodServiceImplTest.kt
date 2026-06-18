@@ -6,6 +6,7 @@ import it.pagopa.ecommerce.payment.methods.TestUtils
 import it.pagopa.ecommerce.payment.methods.client.PaymentMethodsClient
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodNotFoundException
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodsClientException
+import it.pagopa.ecommerce.payment.methods.repositories.PaymentMethodRedisRepository
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
@@ -19,6 +20,7 @@ import java.time.LocalDate
 import org.jboss.resteasy.reactive.ClientWebApplicationException
 import org.jboss.resteasy.reactive.client.impl.ClientResponseImpl
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
@@ -27,6 +29,7 @@ import org.junit.jupiter.params.provider.NullSource
 import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.Mockito
 import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.given
 import org.mockito.kotlin.whenever
 
@@ -34,10 +37,16 @@ import org.mockito.kotlin.whenever
 class PaymentMethodsClientTest {
 
     private val mockClient = Mockito.mock(PaymentMethodsClient::class.java)
-    private val service = PaymentMethodServiceImpl(mockClient)
+    private val mockRedisRepository = Mockito.mock(PaymentMethodRedisRepository::class.java)
+    private val service = PaymentMethodServiceImpl(mockClient, mockRedisRepository)
 
     private val mockApi = Mockito.mock(PaymentMethodsApi::class.java)
     private val client = PaymentMethodsClient(mockApi)
+
+    @BeforeEach
+    fun setup() {
+        whenever(mockRedisRepository.findById(anyOrNull())).thenReturn(Uni.createFrom().nullItem())
+    }
 
     @Test
     fun `should return response from PaymentMethodsApi get all methods`() {
@@ -539,5 +548,63 @@ class PaymentMethodsClientTest {
             PaymentMethodResponse.MethodManagementEnum.ONBOARDABLE,
             paypalPaymentMethod.methodManagement,
         )
+    }
+
+    @Test
+    fun `should return cached payment method on cache hit`() {
+        val methodId = "test-id"
+        val cachedResponse =
+            PaymentMethodResponse().apply {
+                id = methodId
+                status = PaymentMethodResponse.StatusEnum.ENABLED
+                paymentTypeCode = "CP"
+                methodManagement = PaymentMethodResponse.MethodManagementEnum.ONBOARDABLE
+                name = mapOf("it" to "Carta Visa")
+                description = mapOf("it" to "Carta Visa")
+                paymentMethodAsset = "asset"
+                paymentMethodTypes = listOf(PaymentMethodResponse.PaymentMethodTypesEnum.CARTE)
+                validityDateFrom = LocalDate.now()
+                metadata = mapOf("test" to "test")
+            }
+
+        whenever(mockRedisRepository.findById(methodId))
+            .thenReturn(Uni.createFrom().item(cachedResponse))
+
+        val result =
+            service.getPaymentMethod(methodId, "test-id", "CHECKOUT").toCompletableFuture().get()
+
+        assertEquals(cachedResponse, result)
+        Mockito.verify(mockClient, Mockito.never())
+            .getPaymentMethod(anyOrNull(), anyOrNull(), anyOrNull())
+    }
+
+    @Test
+    fun `should call client and save to cache on cache miss`() {
+        val methodId = "test-id"
+        val expectedResponseDto =
+            PaymentMethodResponseDto().apply {
+                paymentMethodId = methodId
+                name = mapOf("it" to "Carta Visa")
+                status = PaymentMethodResponseDto.StatusEnum.ENABLED
+                validityDateFrom = LocalDate.now()
+                group = "CP"
+                paymentMethodTypes = listOf(PaymentMethodResponseDto.PaymentMethodTypesEnum.CARTE)
+                userTouchpoint = listOf(PaymentMethodResponseDto.UserTouchpointEnum.CHECKOUT)
+                methodManagement = PaymentMethodResponseDto.MethodManagementEnum.ONBOARDABLE
+                metadata = mapOf("test" to "test")
+            }
+
+        whenever(mockRedisRepository.findById(methodId)).thenReturn(Uni.createFrom().nullItem())
+        whenever(mockClient.getPaymentMethod(eq(methodId), anyOrNull(), anyOrNull()))
+            .thenReturn(Uni.createFrom().item(expectedResponseDto))
+        whenever(mockRedisRepository.save(anyOrNull())).thenReturn(Uni.createFrom().voidItem())
+
+        val result =
+            service.getPaymentMethod(methodId, "test-id", "CHECKOUT").toCompletableFuture().get()
+
+        assertEquals(methodId, result.id)
+        Mockito.verify(mockClient, Mockito.times(1))
+            .getPaymentMethod(eq(methodId), anyOrNull(), anyOrNull())
+        Mockito.verify(mockRedisRepository, Mockito.times(1)).save(anyOrNull())
     }
 }

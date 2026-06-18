@@ -9,6 +9,7 @@ import it.pagopa.ecommerce.payment.methods.TestUtils
 import it.pagopa.ecommerce.payment.methods.client.PaymentMethodsClient
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodNotFoundException
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodsClientException
+import it.pagopa.ecommerce.payment.methods.repositories.PaymentMethodRedisRepository
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
@@ -21,6 +22,7 @@ import jakarta.validation.ValidationException
 import jakarta.ws.rs.core.Response
 import java.time.LocalDate
 import kotlin.test.assertEquals
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.eq
@@ -29,7 +31,14 @@ import org.mockito.kotlin.whenever
 @QuarkusTest
 class PaymentMethodsHandlerResourceTest {
     @InjectMock lateinit var mockClient: PaymentMethodsClient
+    @InjectMock lateinit var mockRedisRepository: PaymentMethodRedisRepository
     private val request: PaymentMethodsRequest = TestUtils.buildDefaultMockRequest()
+
+    @BeforeEach
+    fun setup() {
+        whenever(mockRedisRepository.findById(anyOrNull())).thenReturn(Uni.createFrom().nullItem())
+        whenever(mockRedisRepository.save(anyOrNull())).thenReturn(Uni.createFrom().voidItem())
+    }
 
     @Test
     fun `should return OK response for get all payment methods`() {
