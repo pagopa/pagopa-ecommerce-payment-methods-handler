@@ -3,7 +3,9 @@ package it.pagopa.ecommerce.payment.methods.client
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension
+import io.quarkus.test.InjectMock
 import io.quarkus.test.junit.QuarkusTest
+import it.pagopa.ecommerce.payment.methods.repositories.PaymentMethodRedisRepository
 import it.pagopa.generated.ecommerce.client.api.PaymentMethodsApi
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodRequestDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodResponseDto
@@ -18,6 +20,7 @@ import org.junit.jupiter.api.extension.RegisterExtension
 class PaymentMethodsApiIntegrationTest {
 
     @Inject @RestClient lateinit var paymentMethodsApi: PaymentMethodsApi
+    @InjectMock lateinit var mockRedisRepository: PaymentMethodRedisRepository
 
     companion object {
         @JvmStatic
