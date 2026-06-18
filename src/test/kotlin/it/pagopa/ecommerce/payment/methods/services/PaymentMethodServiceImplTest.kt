@@ -597,7 +597,8 @@ class PaymentMethodsClientTest {
         whenever(mockRedisRepository.findById(methodId)).thenReturn(Uni.createFrom().nullItem())
         whenever(mockClient.getPaymentMethod(eq(methodId), anyOrNull(), anyOrNull()))
             .thenReturn(Uni.createFrom().item(expectedResponseDto))
-        whenever(mockRedisRepository.save(anyOrNull())).thenReturn(Uni.createFrom().voidItem())
+        whenever(mockRedisRepository.save(anyOrNull()))
+            .thenReturn(Uni.createFrom().item(Unit))
 
         val result =
             service.getPaymentMethod(methodId, "test-id", "CHECKOUT").toCompletableFuture().get()

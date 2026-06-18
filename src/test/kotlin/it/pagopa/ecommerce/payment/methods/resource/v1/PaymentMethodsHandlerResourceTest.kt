@@ -37,7 +37,8 @@ class PaymentMethodsHandlerResourceTest {
     @BeforeEach
     fun setup() {
         whenever(mockRedisRepository.findById(anyOrNull())).thenReturn(Uni.createFrom().nullItem())
-        whenever(mockRedisRepository.save(anyOrNull())).thenReturn(Uni.createFrom().voidItem())
+        whenever(mockRedisRepository.save(anyOrNull()))
+            .thenReturn(Uni.createFrom().item(Unit))
     }
 
     @Test
