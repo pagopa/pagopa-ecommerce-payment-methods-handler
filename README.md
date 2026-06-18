@@ -35,6 +35,13 @@ The following environment variables are used to configure the application.
 | `AFM_KEY`                        | The subscription key required to authenticate with the AFM service.                                                                                             |
 | `AFM_CONNECTION_TIMEOUT`         | The timeout in milliseconds for establishing a connection to the AFM service.                                                                                   |
 | `AFM_READ_TIMEOUT`               | The timeout in milliseconds for waiting for data after a connection to the AFM service has been established.                                                    |
+| `REDIS_HOST` | Host where the Redis instance used to cache payment methods can be found | string | |
+| `REDIS_PASSWORD` | Password used for connecting to Redis instance | string | |
+| `REDIS_PORT` | Port used for connecting to Redis instance | string | |
+| `REDIS_SSL_ENABLED` | Whether SSL is enabled for Redis connection | boolean | false |
+| `REDIS_TIMEOUT` | Redis read timeout | string | |
+| `REDIS_CONNECTION_TIMEOUT` | Redis connection timeout | string | |
+| `PAYMENT_METHOD_CACHE_TTL_SECONDS` | TTL in seconds for payment method cache entries in Redis | number | 600 |
 
 An example configuration of these environment variables is in the `.env.example` file.
 
