@@ -17,11 +17,13 @@ class PaymentMethodRedisRepositoryTest {
 
     private val mockRedisDataSource = Mockito.mock(ReactiveRedisDataSource::class.java)
     private val mockCommands =
-        Mockito.mock(ReactiveValueCommands::class.java) as ReactiveValueCommands<String, String>
+        Mockito.mock(ReactiveValueCommands::class.java)
+            as ReactiveValueCommands<String, PaymentMethodResponse>
     private var repository = PaymentMethodRedisRepository(mockRedisDataSource, 3600L)
 
     init {
-        whenever(mockRedisDataSource.value(String::class.java)).thenReturn(mockCommands)
+        whenever(mockRedisDataSource.value(PaymentMethodResponse::class.java))
+            .thenReturn(mockCommands)
         repository = PaymentMethodRedisRepository(mockRedisDataSource, 3600L)
     }
 
@@ -36,10 +38,20 @@ class PaymentMethodRedisRepositoryTest {
 
     @Test
     fun `should return cached payment method on cache hit`() {
-        val json =
-            """{"id":"test-id","status":"ENABLED","paymentTypeCode":"CP","methodManagement":"ONBOARDABLE","name":{"IT":"Carte"},"description":{"IT":"Carte"},"paymentMethodAsset":"asset","paymentMethodTypes":["CARTE"],"validityDateFrom":"2025-01-01","paymentMethodsBrandAssets":{},"metadata":{}}"""
+        val paymentMethod =
+            PaymentMethodResponse().apply {
+                id = "test-id"
+                status = PaymentMethodResponse.StatusEnum.ENABLED
+                paymentTypeCode = "CP"
+                methodManagement = PaymentMethodResponse.MethodManagementEnum.ONBOARDABLE
+                name = mapOf("IT" to "Carte")
+                description = mapOf("IT" to "Carte")
+                paymentMethodAsset = "asset"
+                paymentMethodTypes = listOf(PaymentMethodResponse.PaymentMethodTypesEnum.CARTE)
+                validityDateFrom = LocalDate.of(2025, 1, 1)
+            }
 
-        whenever(mockCommands.get(anyOrNull())).thenReturn(Uni.createFrom().item(json))
+        whenever(mockCommands.get(anyOrNull())).thenReturn(Uni.createFrom().item(paymentMethod))
 
         val result = repository.findById("test-id").await().indefinitely()
 
