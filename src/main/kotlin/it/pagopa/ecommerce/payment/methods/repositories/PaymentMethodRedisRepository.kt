@@ -12,7 +12,7 @@ class PaymentMethodRedisRepository
 @Inject
 constructor(
     private val redisDataSource: ReactiveRedisDataSource,
-    @ConfigProperty(name = "payment-methods.cache.ttl-seconds", defaultValue = "60")
+    @ConfigProperty(name = "payment-methods.cache.ttl-seconds")
     private val ttlSeconds: Long,
 ) {
     private val keyPrefix = "handler-payment-methods-cache:"
