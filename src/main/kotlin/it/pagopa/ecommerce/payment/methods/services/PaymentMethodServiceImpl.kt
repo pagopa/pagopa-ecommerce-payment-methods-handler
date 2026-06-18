@@ -73,7 +73,7 @@ class PaymentMethodServiceImpl @Inject constructor(private val restClient: Payme
     override fun getPaymentMethod(
         paymentMethodsId: String,
         xRequestId: String,
-        xClientId: String,
+        xClientId: String?,
     ): CompletionStage<PaymentMethodResponse> {
         return restClient
             .getPaymentMethod(paymentMethodsId, xRequestId, xClientId)
