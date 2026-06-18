@@ -81,7 +81,7 @@ microservice-chart:
     REDIS_SSL_ENABLED: "true"
     REDIS_TIMEOUT: "2s"
     REDIS_CONNECTION_TIMEOUT: "2s"
-    PAYMENT_METHOD_CACHE_TTL_SECONDS: "3600"
+    PAYMENT_METHOD_CACHE_TTL_SECONDS: "600"
   envSecret:
     SECURITY_API_KEY_PRIMARY: ecommerce-payment-methods-primary-api-key
     SECURITY_API_KEY_SECONDARY: ecommerce-payment-methods-secondary-api-key

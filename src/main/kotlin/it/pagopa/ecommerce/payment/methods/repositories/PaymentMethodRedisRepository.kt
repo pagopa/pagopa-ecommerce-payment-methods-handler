@@ -12,7 +12,7 @@ class PaymentMethodRedisRepository
 @Inject
 constructor(
     private val redisDataSource: ReactiveRedisDataSource,
-    @ConfigProperty(name = "payment-methods.cache.ttl-seconds", defaultValue = "3600")
+    @ConfigProperty(name = "payment-methods.cache.ttl-seconds", defaultValue = "60")
     private val ttlSeconds: Long,
 ) {
     private val keyPrefix = "handler-payment-methods-cache:"
@@ -22,7 +22,13 @@ constructor(
         return commands.get("$keyPrefix$paymentMethodId")
     }
 
-    fun save(paymentMethod: PaymentMethodResponse): Uni<Void> {
-        return commands.setex("$keyPrefix${paymentMethod.id}", ttlSeconds, paymentMethod)
+    fun save(paymentMethod: PaymentMethodResponse): Uni<Unit> {
+        return commands
+            .setex(
+                "$keyPrefix${paymentMethod.id}",
+                ttlSeconds,
+                paymentMethod
+            )
+            .map { Unit }
     }
 }
