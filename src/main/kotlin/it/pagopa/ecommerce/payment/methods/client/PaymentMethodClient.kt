@@ -60,15 +60,17 @@ class PaymentMethodsClient(@param:RestClient private val paymentMethodsApi: Paym
             }
             .onItem()
             .invoke { res ->
-                if (
-                    xClientId != null &&
-                        !res.userTouchpoint.contains(
-                            PaymentMethodResponseDto.UserTouchpointEnum.valueOf(xClientId)
+                if (xClientId != null) {
+                    val touchpoint =
+                        runCatching {
+                                PaymentMethodResponseDto.UserTouchpointEnum.valueOf(xClientId)
+                            }
+                            .getOrNull()
+                    if (touchpoint == null || !res.userTouchpoint.contains(touchpoint)) {
+                        throw PaymentMethodNotFoundException(
+                            "Payment method $paymentMethodsId not found for client id $xClientId"
                         )
-                ) {
-                    throw PaymentMethodNotFoundException(
-                        "Payment method $paymentMethodsId not found for client id $xClientId"
-                    )
+                    }
                 }
             }
     }
