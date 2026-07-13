@@ -1,9 +1,12 @@
 package it.pagopa.ecommerce.payment.methods.resource.v1
 
+import it.pagopa.ecommerce.payment.methods.exception.NoBundleFoundException
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodNotFoundException
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodsClientException
 import it.pagopa.ecommerce.payment.methods.services.PaymentMethodService
 import it.pagopa.ecommerce.payment.methods.v1.server.api.PaymentMethodsApi
+import it.pagopa.ecommerce.payment.methods.v1.server.model.CalculateFeeRequest
+import it.pagopa.ecommerce.payment.methods.v1.server.model.CalculateFeeResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
@@ -23,6 +26,35 @@ class PaymentMethodsHandlerResource
 @Inject
 constructor(private val paymentMethodService: PaymentMethodService) : PaymentMethodsApi {
     private val log = LoggerFactory.getLogger(PaymentMethodsHandlerResource::class.java)
+
+    override fun calculateFees(
+        paymentMethodId: String,
+        xClientId: @NotNull String,
+        xLanguage: @NotNull String,
+        calculateFeeRequest: @Valid @NotNull CalculateFeeRequest,
+        maxOccurrences: Int?,
+    ): CompletionStage<CalculateFeeResponse> {
+        log.info(
+            "[Payment Method] Retrieve bundles for client [{}] list for payment method: [{}], allCcp: [{}], isMulti: [{}] and payment notice amounts: {}",
+            xClientId,
+            paymentMethodId,
+            calculateFeeRequest.isAllCCP,
+            calculateFeeRequest.paymentNotices.size > 1,
+            calculateFeeRequest.paymentNotices
+                .stream()
+                .map { paymentNotice -> paymentNotice.paymentAmount }
+                .toList(),
+        )
+        val xRequestId = UUID.randomUUID().toString()
+        return paymentMethodService.calculateFees(
+            paymentMethodId,
+            calculateFeeRequest,
+            xRequestId,
+            xClientId,
+            xLanguage,
+            maxOccurrences ?: Int.MAX_VALUE,
+        )
+    }
 
     override fun getAllPaymentMethods(
         paymentMethodsRequest: @Valid @NotNull PaymentMethodsRequest
@@ -75,6 +107,15 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
             Response.Status.NOT_FOUND,
             "Not Found",
             "The requested payment method does not exist or could not be found.",
+        )
+    }
+
+    @ServerExceptionMapper
+    fun mapNoBundleFoundException(exception: NoBundleFoundException): RestResponse<ProblemJson> {
+        return problemResponse(
+            Response.Status.NOT_FOUND,
+            "Not Found",
+            "No bundle found for the requested payment method.",
         )
     }
 

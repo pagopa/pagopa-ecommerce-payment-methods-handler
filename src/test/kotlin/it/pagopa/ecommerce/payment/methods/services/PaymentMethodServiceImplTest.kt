@@ -4,29 +4,37 @@ import io.quarkus.test.junit.QuarkusTest
 import io.smallrye.mutiny.Uni
 import it.pagopa.ecommerce.payment.methods.TestUtils
 import it.pagopa.ecommerce.payment.methods.client.PaymentMethodsClient
+import it.pagopa.ecommerce.payment.methods.exception.NoBundleFoundException
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodNotFoundException
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodsClientException
+import it.pagopa.ecommerce.payment.methods.utils.BundleOptions
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
+import it.pagopa.generated.ecommerce.client.api.CalculatorApi
 import it.pagopa.generated.ecommerce.client.api.PaymentMethodsApi
+import it.pagopa.generated.ecommerce.client.model.BundleOptionDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodRequestDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodResponseDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodsItemDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodsResponseDto
+import it.pagopa.generated.ecommerce.client.model.TransferDto
 import jakarta.ws.rs.core.Response
 import java.time.LocalDate
+import kotlin.test.assertTrue
 import org.jboss.resteasy.reactive.ClientWebApplicationException
 import org.jboss.resteasy.reactive.client.impl.ClientResponseImpl
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
+import org.junit.jupiter.api.assertNotNull
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.NullSource
 import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.Mockito
 import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.given
 import org.mockito.kotlin.whenever
 
@@ -37,7 +45,8 @@ class PaymentMethodsClientTest {
     private val service = PaymentMethodServiceImpl(mockClient)
 
     private val mockApi = Mockito.mock(PaymentMethodsApi::class.java)
-    private val client = PaymentMethodsClient(mockApi)
+    private val calculatorMockApi = Mockito.mock(CalculatorApi::class.java)
+    private val client = PaymentMethodsClient(mockApi, calculatorMockApi)
 
     @Test
     fun `should return response from PaymentMethodsApi get all methods`() {
@@ -539,5 +548,386 @@ class PaymentMethodsClientTest {
             PaymentMethodResponse.MethodManagementEnum.ONBOARDABLE,
             paypalPaymentMethod.methodManagement,
         )
+    }
+
+    @Test
+    fun `should delegate calculateFees to client`() {
+        val expectedResponseDto = TestUtils.buildCalculateFeeResponse()
+
+        whenever(
+                mockClient.calculateFees(
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                )
+            )
+            .thenReturn(Uni.createFrom().item(expectedResponseDto))
+
+        val result =
+            service
+                .calculateFees(
+                    "test-id",
+                    TestUtils.buildCalculateFeeRequest(),
+                    "req-id",
+                    "CHECKOUT",
+                    "IT",
+                    Int.MAX_VALUE,
+                )
+                .toCompletableFuture()
+                .get()
+
+        assertEquals(expectedResponseDto, result)
+    }
+
+    @Test
+    fun `should propagate exception from client on calculateFees`() {
+        val expectedException = PaymentMethodsClientException("error")
+
+        whenever(
+                mockClient.calculateFees(
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                )
+            )
+            .thenReturn(Uni.createFrom().failure(expectedException))
+
+        assertThrows<Exception> {
+            service
+                .calculateFees(
+                    "test-id",
+                    TestUtils.buildCalculateFeeRequest(),
+                    "req-id",
+                    "CHECKOUT",
+                    "IT",
+                    Int.MAX_VALUE,
+                )
+                .toCompletableFuture()
+                .get()
+        }
+    }
+
+    @Test
+    fun `should pass INT_MAX_VALUE as maxOccurrences to client`() {
+        val captor = argumentCaptor<Int>()
+        val expectedResponseDto = TestUtils.buildCalculateFeeResponse()
+
+        whenever(
+                mockClient.calculateFees(
+                    anyOrNull(),
+                    anyOrNull(),
+                    captor.capture(),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                )
+            )
+            .thenReturn(Uni.createFrom().item(expectedResponseDto))
+
+        service
+            .calculateFees(
+                "test-id",
+                TestUtils.buildCalculateFeeRequest(),
+                "req-id",
+                "CHECKOUT",
+                "IT",
+                Int.MAX_VALUE,
+            )
+            .toCompletableFuture()
+            .get()
+
+        assertEquals(Int.MAX_VALUE, captor.firstValue)
+    }
+
+    @Test
+    fun `should throw NoBundleFoundException when no bundles are returned`() {
+        val methodId = "test-id"
+
+        whenever(mockApi.getPaymentMethod(methodId, "test-id"))
+            .thenReturn(
+                Uni.createFrom().item {
+                    PaymentMethodResponseDto().apply {
+                        paymentMethodId = methodId
+                        userTouchpoint =
+                            listOf(PaymentMethodResponseDto.UserTouchpointEnum.CHECKOUT)
+                        status = PaymentMethodResponseDto.StatusEnum.ENABLED
+                        group = "CP"
+                    }
+                }
+            )
+
+        whenever(
+                calculatorMockApi.getFeesMulti(
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                )
+            )
+            .thenReturn(
+                Uni.createFrom().item { BundleOptionDto().apply { bundleOptions = emptyList() } }
+            )
+
+        assertThrows<NoBundleFoundException> {
+            client
+                .calculateFees(
+                    methodId,
+                    TestUtils.buildCalculateFeeRequest(),
+                    10,
+                    "test-id",
+                    "CHECKOUT",
+                    "IT",
+                )
+                .await()
+                .indefinitely()
+        }
+    }
+
+    @Test
+    fun `should remove duplicate psp bundles and return response`() {
+        val methodId = "test-id"
+        whenever(mockApi.getPaymentMethod(methodId, "test-id"))
+            .thenReturn(
+                Uni.createFrom().item {
+                    PaymentMethodResponseDto().apply {
+                        paymentMethodId = methodId
+                        userTouchpoint =
+                            listOf(PaymentMethodResponseDto.UserTouchpointEnum.CHECKOUT)
+                        status = PaymentMethodResponseDto.StatusEnum.ENABLED
+                        group = "CP"
+                        name = mapOf("IT" to "Carte")
+                        description = mapOf("IT" to "Descrizione")
+                        paymentMethodAsset = "asset"
+                        paymentMethodsBrandAssets = mapOf("brand" to "asset")
+                    }
+                }
+            )
+
+        whenever(
+                calculatorMockApi.getFeesMulti(
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                )
+            )
+            .thenReturn(
+                Uni.createFrom().item {
+                    BundleOptionDto().apply {
+                        bundleOptions =
+                            listOf(
+                                TransferDto().apply {
+                                    idPsp = "psp-1"
+                                    taxPayerFee = 100L
+                                    bundleName = "bundle"
+                                    abi = "abi"
+                                    idBundle = "bundle-id"
+                                    idChannel = "channel"
+                                    idBrokerPsp = "broker"
+                                    onUs = false
+                                    touchpoint = "CHECKOUT"
+                                    pspBusinessName = "PSP Name"
+                                },
+                                TransferDto().apply {
+                                    idPsp = "psp-1"
+                                    taxPayerFee = 100L
+                                    bundleName = "bundle"
+                                    abi = "abi"
+                                    idBundle = "bundle-id"
+                                    idChannel = "channel"
+                                    idBrokerPsp = "broker"
+                                    onUs = false
+                                    touchpoint = "CHECKOUT"
+                                    pspBusinessName = "PSP Name"
+                                },
+                                TransferDto().apply {
+                                    idPsp = "psp-2"
+                                    taxPayerFee = 100L
+                                    bundleName = "bundle"
+                                    abi = "abi"
+                                    idBundle = "bundle-id"
+                                    idChannel = "channel"
+                                    idBrokerPsp = "broker"
+                                    onUs = false
+                                    touchpoint = "CHECKOUT"
+                                    pspBusinessName = "PSP Name"
+                                },
+                            )
+                    }
+                }
+            )
+        val response =
+            client
+                .calculateFees(
+                    methodId,
+                    TestUtils.buildCalculateFeeRequest(),
+                    10,
+                    "test-id",
+                    "CHECKOUT",
+                    "IT",
+                )
+                .await()
+                .indefinitely()
+
+        assertNotNull(response)
+        assertEquals(2, response.bundles?.size)
+    }
+
+    @Test
+    fun `should throw NoBundleFoundException with cause when no bundles are returned`() {
+        val methodId = "test-id"
+        whenever(mockApi.getPaymentMethod(methodId, "test-id"))
+            .thenReturn(
+                Uni.createFrom().item {
+                    PaymentMethodResponseDto().apply {
+                        paymentMethodId = methodId
+                        userTouchpoint =
+                            listOf(PaymentMethodResponseDto.UserTouchpointEnum.CHECKOUT)
+                        status = PaymentMethodResponseDto.StatusEnum.ENABLED
+                        group = "CP"
+                    }
+                }
+            )
+
+        whenever(
+                calculatorMockApi.getFeesMulti(
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                )
+            )
+            .thenReturn(
+                Uni.createFrom().item { BundleOptionDto().apply { bundleOptions = emptyList() } }
+            )
+
+        val thrown =
+            assertThrows<NoBundleFoundException> {
+                client
+                    .calculateFees(
+                        methodId,
+                        TestUtils.buildCalculateFeeRequest(),
+                        10,
+                        "test-id",
+                        "CHECKOUT",
+                        "IT",
+                    )
+                    .await()
+                    .indefinitely()
+            }
+        assertNotNull(thrown.message)
+    }
+
+    @Test
+    fun `should throw PaymentMethodNotFoundException when getPaymentMethod returns 404 during calculateFees`() {
+        val methodId = "test-id"
+        val mockResponse = ClientResponseImpl()
+        mockResponse.setStatus(Response.Status.NOT_FOUND.statusCode)
+
+        whenever(mockApi.getPaymentMethod(methodId, "test-id"))
+            .thenReturn(Uni.createFrom().failure(ClientWebApplicationException(mockResponse)))
+
+        assertThrows<PaymentMethodNotFoundException> {
+            client
+                .calculateFees(
+                    methodId,
+                    TestUtils.buildCalculateFeeRequest(),
+                    10,
+                    "test-id",
+                    "CHECKOUT",
+                    "IT",
+                )
+                .await()
+                .indefinitely()
+        }
+    }
+
+    @Test
+    fun `should throw PaymentMethodsClientException when getPaymentMethod fails during calculateFees`() {
+        val methodId = "test-id"
+
+        whenever(mockApi.getPaymentMethod(methodId, "test-id"))
+            .thenReturn(Uni.createFrom().failure(RuntimeException("generic error")))
+
+        assertThrows<PaymentMethodsClientException> {
+            client
+                .calculateFees(
+                    methodId,
+                    TestUtils.buildCalculateFeeRequest(),
+                    10,
+                    "test-id",
+                    "CHECKOUT",
+                    "IT",
+                )
+                .await()
+                .indefinitely()
+        }
+    }
+
+    @Test
+    fun `should throw PaymentMethodNotFoundException when payment method does not support client id during calculateFees`() {
+        val methodId = "test-id"
+
+        whenever(mockApi.getPaymentMethod(methodId, "test-id"))
+            .thenReturn(
+                Uni.createFrom().item {
+                    PaymentMethodResponseDto().apply {
+                        paymentMethodId = methodId
+                        userTouchpoint =
+                            listOf(PaymentMethodResponseDto.UserTouchpointEnum.CHECKOUT)
+                        status = PaymentMethodResponseDto.StatusEnum.ENABLED
+                        group = "CP"
+                        name = mapOf("IT" to "Carte")
+                        description = mapOf("IT" to "Descrizione")
+                        paymentMethodAsset = "asset"
+                        paymentMethodsBrandAssets = mapOf("brand" to "asset")
+                    }
+                }
+            )
+
+        assertThrows<PaymentMethodNotFoundException> {
+            client
+                .calculateFees(
+                    methodId,
+                    TestUtils.buildCalculateFeeRequest(),
+                    10,
+                    "test-id",
+                    "IO",
+                    "IT",
+                )
+                .await()
+                .indefinitely()
+        }
+    }
+
+    @Test
+    fun `should return empty list when bundleOptions is null`() {
+        val bundle = BundleOptionDto()
+        bundle.bundleOptions = null
+
+        val result = BundleOptions.removeDuplicatePsp(bundle)
+
+        assertTrue(result.bundleOptions!!.isEmpty())
+    }
+
+    @Test
+    fun `should create NoBundleFoundException with cause`() {
+        val cause = RuntimeException("original cause")
+        val exception = NoBundleFoundException("test message", cause)
+
+        assertEquals("test message", exception.message)
+        assertEquals(cause, exception.cause)
     }
 }
