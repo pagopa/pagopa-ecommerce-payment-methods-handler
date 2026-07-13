@@ -73,7 +73,7 @@
 							"    });",
 							"});",
 							"*/",
-							"pm.test(\"Must contain both applepay and googlepay payment methods\", function() {",
+							"pm.test(\"Must contain applepay payment method and not googlepay\", function() {",
 							"    pm.expect(responseJson.paymentMethods.filter(p => p.paymentTypeCode === \"APPL\")).to.not.be.empty;",
 							"    pm.expect(responseJson.paymentMethods.filter(p => p.paymentTypeCode === \"GOOG\")).to.not.be.empty;",
 							"});",
@@ -323,8 +323,670 @@
 				"description": "Tests the 404 Not Found response for a non-existent payment method ID."
 			},
 			"response": []
+		},
+		{
+			"name": "Create transaction for calculateFees JWT",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Transaction created successfully\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"const body = pm.response.json();",
+							"pm.collectionVariables.set('AUTH_TOKEN', body.authToken);",
+							"pm.collectionVariables.set('TRANSACTION_ID', body.transactionId);",
+							"console.log('Transaction created, transactionId:', body.transactionId);"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{"key": "Content-Type", "value": "application/json"},
+					{"key": "x-correlation-id", "value": "b6bb9f02-a20d-409b-8699-8603b83cd950"}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"paymentNotices\": [{\"rptId\": \"77777777777302010400330000191\", \"amount\": 12000}],\n  \"orderId\": \"E1_test\",\n  \"email\": \"test@test.it\"\n}",
+					"options": {"raw": {"language": "json"}}
+				},
+				"url": {
+					"raw": "{{PROTOCOL}}{{HOST}}/ecommerce/checkout/v2/transactions?recaptchaResponse=token",
+					"host": ["{{PROTOCOL}}{{HOST}}"],
+					"path": ["ecommerce", "checkout", "v2", "transactions"],
+					"query": [{"key": "recaptchaResponse", "value": "token"}]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Calculate Fees for Payment Method [200]",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200 OK\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response is valid JSON\", function () {",
+							"    pm.response.to.be.json;",
+							"});",
+							"",
+							"const res = pm.response.json();",
+							"",
+							"pm.test(\"Response has all required fields with correct types\", function () {",
+							"    pm.expect(res).to.have.property(\"paymentMethodName\").and.is.a(\"string\");",
+							"    pm.expect(res).to.have.property(\"paymentMethodDescription\").and.is.a(\"string\");",
+							"    pm.expect(res).to.have.property(\"paymentMethodStatus\").and.is.a(\"string\");",
+							"    pm.expect(res).to.have.property(\"bundles\").and.is.an(\"array\");",
+							"    pm.expect(res).to.have.property(\"asset\").and.is.a(\"string\");",
+							"    pm.expect([\"ENABLED\",\"DISABLED\",\"MAINTENANCE\"]).to.include(res.paymentMethodStatus);",
+							"    pm.expect(res.asset).to.match(/^https?:\\/\\//);",
+							"});",
+							"",
+							"pm.test(\"Bundles array is not empty\", function () {",
+							"    pm.expect(res.bundles).to.not.be.empty;",
+							"});",
+							"",
+							"pm.test(\"Each bundle has required fields with correct types\", function () {",
+							"    res.bundles.forEach(function (bundle) {",
+							"        pm.expect(bundle).to.have.property(\"idBundle\").and.is.a(\"string\");",
+							"        pm.expect(bundle).to.have.property(\"idPsp\").and.is.a(\"string\");",
+							"        pm.expect(bundle).to.have.property(\"taxPayerFee\").and.is.a(\"number\");",
+							"        pm.expect(bundle).to.have.property(\"idChannel\").and.is.a(\"string\");",
+							"        pm.expect(bundle).to.have.property(\"touchpoint\").and.is.a(\"string\");",
+							"        pm.expect(bundle.taxPayerFee).to.be.at.least(0);",
+							"    });",
+							"});",
+							"",
+							"pm.test(\"belowThreshold is boolean if present\", function () {",
+							"    if (res.hasOwnProperty(\"belowThreshold\")) {",
+							"        pm.expect(res.belowThreshold).to.be.a(\"boolean\");",
+							"    }",
+							"});",
+							"",
+							"pm.test(\"brandAssets values are strings if present\", function () {",
+							"    if (res.hasOwnProperty(\"brandAssets\")) {",
+							"        pm.expect(res.brandAssets).to.be.an(\"object\");",
+							"        Object.values(res.brandAssets).forEach(v => {",
+							"            pm.expect(v).to.be.a(\"string\");",
+							"        });",
+							"    }",
+							"});",
+							"",
+							"pm.test(\"pspBusinessName is a string when present (bundleName is deprecated)\", function () {",
+							"    res.bundles.forEach(function (bundle) {",
+							"        if (bundle.hasOwnProperty(\"pspBusinessName\")) {",
+							"            pm.expect(bundle.pspBusinessName).to.be.a(\"string\");",
+							"        }",
+							"    });",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{AUTH_TOKEN}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "x-client-id",
+						"value": "CHECKOUT"
+					},
+					{
+						"key": "x-language",
+						"value": "IT"
+					},
+					{
+						"key": "x-transaction-id-from-client",
+						"value": "{{TRANSACTION_ID}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"touchpoint\": \"CHECKOUT\",\n  \"isAllCCP\": false,\n  \"paymentNotices\": [\n    {\n      \"paymentAmount\": 15050,\n      \"primaryCreditorInstitution\": \"PA_FISCAL_CODE_1\",\n      \"transferList\": [\n        {\n          \"creditorInstitution\": \"PA_FISCAL_CODE_1\",\n          \"transferCategory\": \"TAX\",\n          \"digitalStamp\": false\n        }\n      ]\n    }\n  ]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/payment-methods/{{paymentMethodId}}/fees",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"payment-methods",
+						"{{paymentMethodId}}",
+						"fees"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Calculate Fees for Payment Method (Max Occurrences) [200]",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200 OK\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const res = pm.response.json();",
+							"",
+							"pm.test(\"Bundles do not exceed maxOccurrences\", function () {",
+							"    pm.expect(res.bundles.length).to.be.at.most(3, `Expected at most 3 bundles, got ${res.bundles.length}`);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{AUTH_TOKEN}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "x-client-id",
+						"value": "CHECKOUT"
+					},
+					{
+						"key": "x-language",
+						"value": "IT"
+					},
+					{
+						"key": "x-transaction-id-from-client",
+						"value": "{{TRANSACTION_ID}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"touchpoint\": \"CHECKOUT\",\n  \"isAllCCP\": false,\n  \"paymentNotices\": [\n    {\n      \"paymentAmount\": 15050,\n      \"primaryCreditorInstitution\": \"PA_FISCAL_CODE_1\",\n      \"transferList\": [\n        {\n          \"creditorInstitution\": \"PA_FISCAL_CODE_1\",\n          \"transferCategory\": \"TAX\",\n          \"digitalStamp\": false\n        }\n      ]\n    }\n  ]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/payment-methods/{{paymentMethodId}}/fees?maxOccurrences=3",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"payment-methods",
+						"{{paymentMethodId}}",
+						"fees"
+					],
+					"query": [
+						{
+							"key": "maxOccurrences",
+							"value": "3"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Calculate Fees for Payment Method (Multi Notice) [200]",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200 OK\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const res = pm.response.json();",
+							"",
+							"pm.test(\"Bundles array is not empty\", function () {",
+							"    pm.expect(res.bundles).to.be.an(\"array\").and.not.be.empty;",
+							"});",
+							"",
+							"pm.test(\"Each bundle taxPayerFee is non-negative\", function () {",
+							"    res.bundles.forEach(function (bundle) {",
+							"        pm.expect(bundle.taxPayerFee).to.be.at.least(0);",
+							"    });",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{AUTH_TOKEN}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "x-client-id",
+						"value": "CHECKOUT"
+					},
+					{
+						"key": "x-language",
+						"value": "IT"
+					},
+					{
+						"key": "x-transaction-id-from-client",
+						"value": "{{TRANSACTION_ID}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"touchpoint\": \"CHECKOUT\",\n  \"isAllCCP\": false,\n  \"paymentNotices\": [\n    {\n      \"paymentAmount\": 5000,\n      \"primaryCreditorInstitution\": \"PA_FISCAL_CODE_1\",\n      \"transferList\": [\n        {\n          \"creditorInstitution\": \"PA_FISCAL_CODE_1\",\n          \"transferCategory\": \"TAX\",\n          \"digitalStamp\": false\n        }\n      ]\n    },\n    {\n      \"paymentAmount\": 10050,\n      \"primaryCreditorInstitution\": \"PA_FISCAL_CODE_2\",\n      \"transferList\": [\n        {\n          \"creditorInstitution\": \"PA_FISCAL_CODE_2\",\n          \"transferCategory\": \"TAX\",\n          \"digitalStamp\": false\n        }\n      ]\n    }\n  ]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/payment-methods/{{paymentMethodId}}/fees",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"payment-methods",
+						"{{paymentMethodId}}",
+						"fees"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Calculate Fees for Payment Method (Missing Touchpoint) [500]",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 500 — Jackson MismatchedInputException on missing touchpoint\", function () {",
+							"    pm.response.to.have.status(500);",
+							"});",
+							"",
+							"pm.test(\"ProblemJson structure is valid\", function () {",
+							"    pm.response.to.be.json;",
+							"    const res = pm.response.json();",
+							"    pm.expect(res).to.have.property(\"status\").eql(500);",
+							"    pm.expect(res).to.have.property(\"title\").and.is.a(\"string\");",
+							"    pm.expect(res).to.have.property(\"detail\").and.is.a(\"string\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{AUTH_TOKEN}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "x-client-id",
+						"value": "CHECKOUT"
+					},
+					{
+						"key": "x-language",
+						"value": "IT"
+					},
+					{
+						"key": "x-transaction-id-from-client",
+						"value": "{{TRANSACTION_ID}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"isAllCCP\": false,\n  \"paymentNotices\": [\n    {\n      \"paymentAmount\": 15050,\n      \"primaryCreditorInstitution\": \"PA_FISCAL_CODE_1\",\n      \"transferList\": [\n        {\n          \"creditorInstitution\": \"PA_FISCAL_CODE_1\",\n          \"transferCategory\": \"TAX\",\n          \"digitalStamp\": false\n        }\n      ]\n    }\n  ]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/payment-methods/{{paymentMethodId}}/fees",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"payment-methods",
+						"{{paymentMethodId}}",
+						"fees"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Calculate Fees for Payment Method (Empty Payment Notices) [400]",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 400 Bad Request\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"",
+							"pm.test(\"ProblemJson structure is valid\", function () {",
+							"    pm.response.to.be.json;",
+							"    const res = pm.response.json();",
+							"    pm.expect(res).to.have.property(\"status\").eql(400);",
+							"    pm.expect(res).to.have.property(\"title\").and.is.a(\"string\");",
+							"    pm.expect(res).to.have.property(\"detail\").and.is.a(\"string\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{AUTH_TOKEN}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "x-client-id",
+						"value": "CHECKOUT"
+					},
+					{
+						"key": "x-language",
+						"value": "IT"
+					},
+					{
+						"key": "x-transaction-id-from-client",
+						"value": "{{TRANSACTION_ID}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"touchpoint\": \"CHECKOUT\",\n  \"isAllCCP\": false,\n  \"paymentNotices\": []\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/payment-methods/{{paymentMethodId}}/fees",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"payment-methods",
+						"{{paymentMethodId}}",
+						"fees"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Calculate Fees for Payment Method (Missing x-client-id) [200]",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200 when x-client-id is missing\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{AUTH_TOKEN}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "x-client-id",
+						"value": "",
+						"disabled": true
+					},
+					{
+						"key": "x-language",
+						"value": "IT"
+					},
+					{
+						"key": "x-transaction-id-from-client",
+						"value": "{{TRANSACTION_ID}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"touchpoint\": \"CHECKOUT\",\n  \"isAllCCP\": false,\n  \"paymentNotices\": [\n    {\n      \"paymentAmount\": 15050,\n      \"primaryCreditorInstitution\": \"PA_FISCAL_CODE_1\",\n      \"transferList\": [\n        {\n          \"creditorInstitution\": \"PA_FISCAL_CODE_1\",\n          \"transferCategory\": \"TAX\",\n          \"digitalStamp\": false\n        }\n      ]\n    }\n  ]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/payment-methods/{{paymentMethodId}}/fees",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"payment-methods",
+						"{{paymentMethodId}}",
+						"fees"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Calculate Fees for Payment Method (Missing x-language) [200]",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200 \", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{AUTH_TOKEN}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "x-client-id",
+						"value": "CHECKOUT"
+					},
+					{
+						"key": "x-language",
+						"value": "",
+						"disabled": true
+					},
+					{
+						"key": "x-transaction-id-from-client",
+						"value": "{{TRANSACTION_ID}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"touchpoint\": \"CHECKOUT\",\n  \"isAllCCP\": false,\n  \"paymentNotices\": [\n    {\n      \"paymentAmount\": 15050,\n      \"primaryCreditorInstitution\": \"PA_FISCAL_CODE_1\",\n      \"transferList\": [\n        {\n          \"creditorInstitution\": \"PA_FISCAL_CODE_1\",\n          \"transferCategory\": \"TAX\",\n          \"digitalStamp\": false\n        }\n      ]\n    }\n  ]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/payment-methods/{{paymentMethodId}}/fees",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"payment-methods",
+						"{{paymentMethodId}}",
+						"fees"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Calculate Fees for Payment Method (Not Found) [404]",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 404 Not Found\", function () {",
+							"    pm.response.to.have.status(404);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{AUTH_TOKEN}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "x-client-id",
+						"value": "CHECKOUT"
+					},
+					{
+						"key": "x-language",
+						"value": "IT"
+					},
+					{
+						"key": "x-transaction-id-from-client",
+						"value": "{{TRANSACTION_ID}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"touchpoint\": \"CHECKOUT\",\n  \"isAllCCP\": false,\n  \"paymentNotices\": [\n    {\n      \"paymentAmount\": 15050,\n      \"primaryCreditorInstitution\": \"PA_FISCAL_CODE_1\",\n      \"transferList\": [\n        {\n          \"creditorInstitution\": \"PA_FISCAL_CODE_1\",\n          \"transferCategory\": \"TAX\",\n          \"digitalStamp\": false\n        }\n      ]\n    }\n  ]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/payment-methods/non-existent-id/fees",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"payment-methods",
+						"non-existent-id",
+						"fees"
+					]
+				}
+			},
+			"response": []
 		}
 	],
+	"auth": {
+		"type": "apikey",
+		"apikey": [
+			{
+				"key": "value",
+				"value": "{{API_KEY}}",
+				"type": "string"
+			},
+			{
+				"key": "key",
+				"value": "ocp-apim-subscription-key",
+				"type": "string"
+			}
+		]
+	},
 	"event": [
 		{
 			"listen": "prerequest",
@@ -355,8 +1017,16 @@
 			"value": "{{PROTOCOL}}{{HOST}}{{BASE_PATH}}"
 		},
 		{
-			"key": "paymentMethodId",
-			"value": "ID_METODO"
+			"key": "ocp-apim-subscription-key",
+			"value": "{{API_KEY}}"
+		},
+		{
+			"key": "AUTH_TOKEN",
+			"value": ""
+		},
+		{
+			"key": "TRANSACTION_ID",
+			"value": ""
 		}
 	]
 }
