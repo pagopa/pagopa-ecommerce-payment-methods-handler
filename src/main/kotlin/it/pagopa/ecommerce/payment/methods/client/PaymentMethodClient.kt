@@ -194,7 +194,7 @@ class PaymentMethodsClient(
     fun getPaymentMethod(
         paymentMethodsId: String,
         xRequestId: String,
-        xClientId: String,
+        xClientId: String?,
     ): Uni<PaymentMethodResponseDto> {
         return paymentMethodsApi
             .getPaymentMethod(paymentMethodsId, xRequestId)
@@ -217,14 +217,17 @@ class PaymentMethodsClient(
             }
             .onItem()
             .invoke { res ->
-                if (
-                    !res.userTouchpoint.contains(
-                        PaymentMethodResponseDto.UserTouchpointEnum.valueOf(xClientId)
-                    )
-                ) {
-                    throw PaymentMethodNotFoundException(
-                        "Payment method $paymentMethodsId not found for client id $xClientId"
-                    )
+                if (xClientId != null) {
+                    val touchpoint =
+                        runCatching {
+                                PaymentMethodResponseDto.UserTouchpointEnum.valueOf(xClientId)
+                            }
+                            .getOrNull()
+                    if (touchpoint == null || !res.userTouchpoint.contains(touchpoint)) {
+                        throw PaymentMethodNotFoundException(
+                            "Payment method $paymentMethodsId not found for client id $xClientId"
+                        )
+                    }
                 }
             }
     }

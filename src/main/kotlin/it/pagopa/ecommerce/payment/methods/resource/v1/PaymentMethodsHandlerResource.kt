@@ -65,7 +65,7 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
 
     override fun getPaymentMethod(
         id: String,
-        xClientId: @NotNull String,
+        xClientId: String?,
     ): CompletionStage<PaymentMethodResponse> {
         val xRequestId = UUID.randomUUID().toString()
         return paymentMethodService.getPaymentMethod(id, xRequestId, xClientId)
