@@ -4,7 +4,7 @@ microservice-chart:
   fullnameOverride: "pagopa-ecommerce-payment-methods-handler"
   image:
     repository: pagopaucommonacr.azurecr.io/pagopaecommercepaymentmethodshandler
-    tag: "1.2.1"
+    tag: "1.4.0"
     pullPolicy: Always
   livenessProbe:
     handlerType: httpGet
@@ -76,6 +76,7 @@ microservice-chart:
     ECS_SERVICE_ENVIRONMENT: uat
     SECURITY_API_KEY_SECURED_PATHS: "/payment-methods,/npg"
     AFM_URI_V1: "https://api.uat.platform.pagopa.it/afm/calculator-service/v1"
+    AFM_URI_V2: "https://api.uat.platform.pagopa.it/afm/calculator-service/v2"
     AFM_CONNECTION_TIMEOUT: "10000"
     AFM_READ_TIMEOUT: "10000"
     NPG_B2B_URI: "https://stg-ta.nexigroup.com"

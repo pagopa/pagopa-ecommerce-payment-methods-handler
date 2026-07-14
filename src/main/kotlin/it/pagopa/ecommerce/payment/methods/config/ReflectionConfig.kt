@@ -1,8 +1,13 @@
 package it.pagopa.ecommerce.payment.methods.config
 
 import io.quarkus.runtime.annotations.RegisterForReflection
-import it.pagopa.ecommerce.payment.methods.v1.server.model.NpgSdkIntegrityResponse
-import it.pagopa.ecommerce.payment.methods.v1.server.model.ProblemJson
 
-@RegisterForReflection(targets = [ProblemJson::class, NpgSdkIntegrityResponse::class])
+@RegisterForReflection(
+    classNames =
+        [
+            "it.pagopa.ecommerce.payment.methods.v1.server.model.ProblemJson",
+            "it.pagopa.generated.ecommerce.client.model.PaymentOptionMultiDto",
+            "it.pagopa.ecommerce.payment.methods.v1.server.model.NpgSdkIntegrityResponse",
+        ]
+)
 class ReflectionConfig {}
