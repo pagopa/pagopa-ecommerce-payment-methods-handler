@@ -12,6 +12,8 @@ info:
 tags:
   - name: payment-methods
     description: Api's for handle payment methods
+  - name: npg-sdk-integrity
+    description: NPG SDK subresource integrity
     externalDocs:
       url: https://pagopa.atlassian.net/wiki/spaces/I/pages/2003402841/DR+IPG-147+Integrazione+GMP+su+checkout+e+eCommerce
       description: Technical specifications
@@ -195,8 +197,42 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemJson'
+  /npg/sdk/integrity:
+    get:
+      tags:
+        - npg-sdk-integrity
+      operationId: getNpgSdkIntegrity
+      summary: Get NPG SDK integrity hash
+      description: Returns the SHA-384 integrity hash for the NPG SDK script, used for Subresource Integrity (SRI) checks
+      responses:
+        '200':
+          description: NPG SDK integrity hash
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NpgSdkIntegrityResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+        '500':
+          description: Error retrieving integrity hash
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
 components:
   schemas:
+    NpgSdkIntegrityResponse:
+      type: object
+      required:
+        - integrityHash
+      properties:
+        integrityHash:
+          type: string
+          description: SHA-384 integrity hash for NPG SDK
     PaymentNotice:
       description: Payment notice data
       type: object
