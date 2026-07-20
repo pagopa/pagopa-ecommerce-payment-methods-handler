@@ -21,6 +21,11 @@ import it.pagopa.ecommerce.payment.methods.v1.server.model.ProblemJson
             CreateTokenResponse::class,
             NpgSessionDocument::class,
             CardDataDocument::class,
-        ]
+        ],
+    classNames =
+        [
+            "it.pagopa.generated.ecommerce.client.model.PaymentOptionMultiDto",
+            "it.pagopa.ecommerce.payment.methods.v1.server.model.NpgSdkIntegrityResponse",
+        ],
 )
 class ReflectionConfig {}

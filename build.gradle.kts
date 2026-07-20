@@ -39,6 +39,7 @@ dependencies {
     "io.quarkiverse.openapi.generator:quarkus-openapi-generator:$quarkusOpenApiGeneratorVersion"
   )
   implementation("io.quarkus:quarkus-hibernate-validator")
+  implementation("io.quarkus:quarkus-cache")
   implementation("io.quarkus:quarkus-smallrye-openapi")
   implementation("io.quarkus:quarkus-redis-client")
   testImplementation("com.fasterxml.jackson.module:jackson-module-kotlin")
@@ -55,7 +56,7 @@ dependencies {
 
 group = "it.pagopa.ecommerce"
 
-version = "1.2.1-SNAPSHOT"
+version = "1.6.0-SNAPSHOT"
 
 java {
   sourceCompatibility = JavaVersion.VERSION_21
