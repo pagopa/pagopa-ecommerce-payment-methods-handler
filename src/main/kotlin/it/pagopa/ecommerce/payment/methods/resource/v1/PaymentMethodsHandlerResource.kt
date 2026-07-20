@@ -69,10 +69,10 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
 
     override fun getPaymentMethod(
         id: String,
-        xClientId: String?,
+        xClientId: it.pagopa.ecommerce.payment.methods.v1.server.model.ClientId?,
     ): CompletionStage<PaymentMethodResponse> {
         val xRequestId = UUID.randomUUID().toString()
-        return paymentMethodService.getPaymentMethod(id, xRequestId, xClientId.toString())
+        return paymentMethodService.getPaymentMethod(id, xRequestId, xClientId?.toString())
     }
 
     override fun createSession(
