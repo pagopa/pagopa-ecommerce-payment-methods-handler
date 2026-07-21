@@ -14,7 +14,7 @@ resources:
     - repository: pagopaEcommerceLocal
       type: github
       name: pagopa/pagopa-ecommerce-local
-      ref: main
+      ref: refs/heads/feat/PIDM-1771-update-handler-env
       endpoint: 'io-azure-devops-github-ro'
 
 stages:
