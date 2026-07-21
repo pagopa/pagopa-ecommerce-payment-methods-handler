@@ -31,7 +31,6 @@ import kotlin.test.assertTrue
 import org.jboss.resteasy.reactive.ClientWebApplicationException
 import org.jboss.resteasy.reactive.client.impl.ClientResponseImpl
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertNotNull
