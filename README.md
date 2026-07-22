@@ -35,6 +35,11 @@ The following environment variables are used to configure the application.
 | `AFM_KEY`                        | The subscription key required to authenticate with the AFM service.                                                                                             |
 | `AFM_CONNECTION_TIMEOUT`         | The timeout in milliseconds for establishing a connection to the AFM service.                                                                                   |
 | `AFM_READ_TIMEOUT`               | The timeout in milliseconds for waiting for data after a connection to the AFM service has been established.                                                    |
+| **NPG B2B Client**               |                                                                                                                                                                 |
+| `NPG_B2B_URI`                    | The base URI for the Nexi B2B API (e.g., `https://stg-ta.nexigroup.com` for staging, `https://xpay.nexigroup.com` for production).                              |
+| `NPG_API_KEY`                    | The API key required to authenticate with the Nexi B2B API.                                                                                                     |
+| `NPG_B2B_CONNECTION_TIMEOUT`     | The timeout in milliseconds for establishing a connection to the Nexi B2B API.                                                                                  |
+| `NPG_B2B_READ_TIMEOUT`           | The timeout in milliseconds for waiting for data after a connection to the Nexi B2B API has been established.                                                   |
 
 An example configuration of these environment variables is in the `.env.example` file.
 
