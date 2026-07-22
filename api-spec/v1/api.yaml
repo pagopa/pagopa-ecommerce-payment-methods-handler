@@ -10,8 +10,10 @@ info:
     name: EUPL-1.2
     url: https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
 tags:
-  - name: payment-methods-handler
+  - name: payment-methods
     description: Api's for handle payment methods
+  - name: npg-sdk-integrity
+    description: NPG SDK subresource integrity
     externalDocs:
       url: https://pagopa.atlassian.net/wiki/spaces/I/pages/2003402841/DR+IPG-147+Integrazione+GMP+su+checkout+e+eCommerce
       description: Technical specifications
@@ -22,12 +24,12 @@ servers:
   - url: https://${host}
     variables:
       host:
-          description: The hostname of the API server
-          default: weuprod.ecommerce.internal.platform.pagopa.it
-          enum:
-            - weudev.ecommerce.internal.dev.platform.pagopa.it
-            - weuuat.ecommerce.internal.uat.platform.pagopa.it
-            - weuprod.ecommerce.internal.platform.pagopa.it
+        description: The hostname of the API server
+        default: weuprod.ecommerce.internal.platform.pagopa.it
+        enum:
+          - weudev.ecommerce.internal.dev.platform.pagopa.it
+          - weuuat.ecommerce.internal.uat.platform.pagopa.it
+          - weuprod.ecommerce.internal.platform.pagopa.it
 security:
   - ApiKeyAuth: [ ]
 paths:
@@ -92,7 +94,7 @@ paths:
         - name: x-client-id
           in: header
           description: client id related to a given touchpoint
-          required: true
+          required: false
           schema:
             $ref: '#/components/schemas/ClientId'
       responses:
@@ -195,6 +197,103 @@ paths:
                 $ref: '#/components/schemas/ProblemJson'
         '502':
           description: Payment gateway did return error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+  /payment-methods/{id}/fees:
+    post:
+      tags:
+        - payment-methods
+      operationId: calculateFees
+      summary: Calculate payment method fees
+      description: >
+        GET with body payload - no resources created:
+        Return the fees for the choosen payment method based on transaction amount etc.
+      parameters:
+        - name: id
+          in: path
+          description: Payment Method ID
+          required: true
+          schema:
+            type: string
+        - name: maxOccurrences
+          in: query
+          description: max occurrences
+          required: false
+          schema:
+            type: integer
+        - name: x-client-id
+          in: header
+          description: client id related to a given touchpoint
+          required: true
+          schema:
+            type: string
+            enum:
+              - IO
+              - CHECKOUT
+              - CHECKOUT_CART
+        - name: x-language
+          in: header
+          required: true
+          schema:
+            type: string
+            description: "The user language"
+            enum:
+             - IT
+             - EN
+             - FR
+             - DE
+             - SL
+      requestBody:
+        $ref: "#/components/requestBodies/PostPaymentMethodPSP"
+      responses:
+        '200':
+          description: Return list of psp ordered by fee.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalculateFeeResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+        '500':
+          description: Service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+  /npg/sdk/integrity:
+    get:
+      tags:
+        - npg-sdk-integrity
+      operationId: getNpgSdkIntegrity
+      summary: Get NPG SDK integrity hash
+      description: Returns the SHA-384 integrity hash for the NPG SDK script, used for Subresource Integrity (SRI) checks
+      responses:
+        '200':
+          description: NPG SDK integrity hash
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NpgSdkIntegrityResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+        '500':
+          description: Error retrieving integrity hash
           content:
             application/json:
               schema:
@@ -345,6 +444,34 @@ components:
         - CHECKOUT
         - CHECKOUT_CART
         - WISP_REDIRECT
+    NpgSdkIntegrityResponse:
+      type: object
+      required:
+        - integrityHash
+      properties:
+        integrityHash:
+          type: string
+          description: SHA-384 integrity hash for NPG SDK
+    PaymentNotice:
+      description: Payment notice data
+      type: object
+      properties:
+        paymentAmount:
+          description: The transaction payment amount
+          type: integer
+          format: int64
+        primaryCreditorInstitution:
+          description: The primary creditor institution
+          type: string
+        transferList:
+          description: Transfert list
+          type: array
+          items:
+            $ref: '#/components/schemas/TransferListItem'
+      required:
+        - paymentAmount
+        - primaryCreditorInstitution
+        - transferList
     PaymentMethodsRequest:
       required:
         - paymentNotice
@@ -630,6 +757,114 @@ components:
           type: string
           format: uri
           description: Cancel URL for user cancellation
+    CalculateFeeRequest:
+      description: Calculate fee request
+      type: object
+      properties:
+        touchpoint:
+          type: string
+          description: The touchpoint name
+        bin:
+          type: string
+          description: The user card bin
+        idPspList:
+          description: List of psps
+          type: array
+          items:
+            type: string
+        paymentNotices:
+          type: array
+          minItems: 1
+          maxItems: 5
+          items:
+            $ref: '#/components/schemas/PaymentNotice'
+        isAllCCP:
+          description: Flag for the inclusion of Poste bundles. false -> excluded, true -> included
+          type: boolean
+      required:
+        - paymentNotices
+        - touchpoint
+        - isAllCCP
+    CalculateFeeResponse:
+      description: Calculate fee response
+      type: object
+      properties:
+        paymentMethodName:
+          description: Payment method name
+          type: string
+        paymentMethodDescription:
+          description: Payment method description
+          type: string
+        paymentMethodStatus:
+          type: string
+          enum:
+            - ENABLED
+            - DISABLED
+            - MAINTENANCE
+        belowThreshold:
+          description: Boolean value indicating if the payment is below the configured threshold
+          type: boolean
+        bundles:
+          description: Bundle list
+          type: array
+          items:
+            $ref: "#/components/schemas/Bundle"
+        asset:
+          description: Payment method asset
+          type: string
+        brandAssets:
+          description: Brand assets map associated to the selected payment method
+          type: object
+          additionalProperties:
+            type: string
+      required:
+        - bundles
+        - paymentMethodName
+        - paymentMethodStatus
+        - paymentMethodDescription
+        - asset
+    Bundle:
+      description: Bundle object
+      type: object
+      properties:
+        abi:
+          description: Bundle ABI code
+          type: string
+        bundleDescription:
+          description: Bundle description
+          type: string
+        bundleName:
+          description: DEPRECATED, use pspBusinessName instead
+          type: string
+          deprecated: true
+        idBrokerPsp:
+          description: Bundle PSP broker id
+          type: string
+        idBundle:
+          description: Bundle id
+          type: string
+        idChannel:
+          description: Channel id
+          type: string
+        idPsp:
+          description: PSP id
+          type: string
+        onUs:
+          description: Boolean value indicating if this bundle is an on-us ones
+          type: boolean
+        paymentMethod:
+          description: Payment method
+          type: string
+        taxPayerFee:
+          description: Tax payer fee
+          type: integer
+          format: int64
+        touchpoint:
+          description: The touchpoint name
+          type: string
+        pspBusinessName:
+          description: The psp business name
+          type: string
     ProblemJson:
       type: object
       description: Problem json structure
@@ -689,6 +924,12 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/PaymentMethodsRequest"
+    PostPaymentMethodPSP:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CalculateFeeRequest"
   securitySchemes:
     ApiKeyAuth:
       type: apiKey

@@ -16,6 +16,8 @@ import it.pagopa.ecommerce.payment.methods.mappers.toPaymentMethodRequestDto
 import it.pagopa.ecommerce.payment.methods.mappers.toPaymentMethodResponse
 import it.pagopa.ecommerce.payment.methods.mappers.toPaymentMethodsResponse
 import it.pagopa.ecommerce.payment.methods.utils.UniqueIdGenerator
+import it.pagopa.ecommerce.payment.methods.v1.server.model.CalculateFeeRequest
+import it.pagopa.ecommerce.payment.methods.v1.server.model.CalculateFeeResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.CardFormFields
 import it.pagopa.ecommerce.payment.methods.v1.server.model.CreateSessionResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.Field
@@ -106,7 +108,7 @@ constructor(
     override fun getPaymentMethod(
         paymentMethodsId: String,
         xRequestId: String,
-        xClientId: String,
+        xClientId: String?,
     ): CompletionStage<PaymentMethodResponse> {
         return restClient
             .getPaymentMethod(paymentMethodsId, xRequestId, xClientId)
@@ -122,6 +124,39 @@ constructor(
             .invoke { _ ->
                 log.info(
                     "Payment method retrieved successfully for request with id $xRequestId and client id $xClientId"
+                )
+            }
+            .subscribeAsCompletionStage()
+    }
+
+    override fun calculateFees(
+        paymentMethodsId: String,
+        calculateFeeRequest: CalculateFeeRequest,
+        xRequestId: String,
+        xClientId: String,
+        xLanguage: String,
+        maxOccurrences: Int,
+    ): CompletionStage<CalculateFeeResponse> {
+        return restClient
+            .calculateFees(
+                paymentMethodsId,
+                calculateFeeRequest,
+                maxOccurrences,
+                xRequestId,
+                xClientId,
+                xLanguage,
+            )
+            .onFailure()
+            .invoke { exception ->
+                log.error(
+                    "Exception during request with id $xRequestId and client id $xClientId",
+                    exception,
+                )
+            }
+            .onItem()
+            .invoke { _ ->
+                log.info(
+                    "Bundles retrieved successfully for request with id $xRequestId and client id $xClientId"
                 )
             }
             .subscribeAsCompletionStage()
