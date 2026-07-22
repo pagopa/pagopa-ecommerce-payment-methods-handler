@@ -5,6 +5,7 @@ import it.pagopa.ecommerce.payment.methods.exception.NpgResponseException
 import it.pagopa.ecommerce.payment.methods.v1.server.model.NpgBuildFormParams
 import it.pagopa.ecommerce.payment.methods.v1.server.model.NpgSessionUrls
 import it.pagopa.generated.npg.client.api.PaymentServicesApi
+import it.pagopa.generated.npg.client.model.CardDataResponseDto
 import it.pagopa.generated.npg.client.model.FieldDto
 import it.pagopa.generated.npg.client.model.FieldsDto
 import java.net.URI
@@ -174,5 +175,64 @@ class NpgClientWrapperTest {
             }
 
         assertTrue(thrown.message!!.contains("NPG connection timeout"))
+    }
+
+    // --- getCardData tests ---
+
+    @Test
+    fun `should get card data successfully`() {
+        val sessionId = "session-123"
+        val npgResponse =
+            CardDataResponseDto().apply {
+                bin = "123456"
+                lastFourDigits = "7890"
+                expiringDate = "1225"
+                circuit = "VISA"
+            }
+
+        doReturn(Uni.createFrom().item(npgResponse))
+            .whenever(npgRestClient)
+            .pspApiV1BuildCardDataGet(any(), any(), any())
+
+        val result = npgClientWrapper.getCardData(correlationId, sessionId).await().indefinitely()
+
+        assertEquals("123456", result.bin)
+        assertEquals("7890", result.lastFourDigits)
+        assertEquals("1225", result.expiringDate)
+        assertEquals("VISA", result.circuit)
+
+        verify(npgRestClient).pspApiV1BuildCardDataGet(eq(correlationId), eq(sessionId), eq(apiKey))
+    }
+
+    @Test
+    fun `should propagate error when NPG getCardData fails`() {
+        val restError = RuntimeException("NPG getCardData timeout")
+
+        doReturn(Uni.createFrom().failure<CardDataResponseDto>(restError))
+            .whenever(npgRestClient)
+            .pspApiV1BuildCardDataGet(any(), any(), any())
+
+        val thrown =
+            assertThrows<NpgResponseException> {
+                npgClientWrapper.getCardData(correlationId, "session-123").await().indefinitely()
+            }
+
+        assertTrue(thrown.message!!.contains("NPG getCardData timeout"))
+    }
+
+    @Test
+    fun `should propagate NpgResponseException as-is from getCardData`() {
+        val npgError = NpgResponseException("NPG card data error")
+
+        doReturn(Uni.createFrom().failure<CardDataResponseDto>(npgError))
+            .whenever(npgRestClient)
+            .pspApiV1BuildCardDataGet(any(), any(), any())
+
+        val thrown =
+            assertThrows<NpgResponseException> {
+                npgClientWrapper.getCardData(correlationId, "session-123").await().indefinitely()
+            }
+
+        assertEquals("NPG card data error", thrown.message)
     }
 }

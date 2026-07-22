@@ -24,6 +24,7 @@ import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.ProblemJson
+import it.pagopa.ecommerce.payment.methods.v1.server.model.SessionPaymentMethodResponse
 import it.pagopa.generated.ecommerce.client.model.FeeRangeDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodResponseDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodsItemDto
@@ -689,5 +690,119 @@ class PaymentMethodsHandlerResourceTest {
 
         assertEquals(500, result.status)
         assertEquals("Internal Server Error", result.title)
+    }
+
+    // --- getSessionPaymentMethod tests ---
+
+    @Test
+    fun `should return 200 for getSessionPaymentMethod`() {
+        setupCreateSessionMocks()
+        whenever(mockNpgSessionsRedis.findById(anyOrNull()))
+            .thenReturn(
+                Uni.createFrom()
+                    .item(
+                        NpgSessionDocument(
+                            testOrderId,
+                            "550e8400-e29b-41d4-a716-446655440000",
+                            "npg-session-123",
+                            "npg-sec-token",
+                            it.pagopa.ecommerce.payment.methods.domain.CardDataDocument(
+                                bin = "123456",
+                                lastFourDigits = "7890",
+                                expiringDate = "1225",
+                                circuit = "VISA",
+                            ),
+                        )
+                    )
+            )
+
+        val result =
+            RestAssured.given()
+                .header("x-api-key", "test-primary")
+                .header("X-Client-Id", "CHECKOUT")
+                .contentType(ContentType.JSON)
+                .`when`()
+                .get("/payment-methods/pm-001/sessions/$testOrderId")
+                .then()
+                .statusCode(200)
+                .extract()
+                .`as`(SessionPaymentMethodResponse::class.java)
+
+        assertEquals("npg-session-123", result.sessionId)
+        assertEquals("123456", result.bin)
+        assertEquals("7890", result.lastFourDigits)
+        assertEquals("1225", result.expiringDate)
+        assertEquals("VISA", result.brand)
+    }
+
+    @Test
+    fun `should return 404 for OrderIdNotFoundException on getSessionPaymentMethod`() {
+        setupCreateSessionMocks()
+        whenever(mockNpgSessionsRedis.findById(anyOrNull())).thenReturn(Uni.createFrom().nullItem())
+
+        val result =
+            RestAssured.given()
+                .header("x-api-key", "test-primary")
+                .header("X-Client-Id", "CHECKOUT")
+                .contentType(ContentType.JSON)
+                .`when`()
+                .get("/payment-methods/pm-001/sessions/$testOrderId")
+                .then()
+                .statusCode(404)
+                .extract()
+                .`as`(ProblemJson::class.java)
+
+        assertEquals(404, result.status)
+        assertEquals("Not Found", result.title)
+    }
+
+    @Test
+    fun `should return 502 for NpgResponseException on getSessionPaymentMethod`() {
+        setupCreateSessionMocks()
+        whenever(mockNpgSessionsRedis.findById(anyOrNull()))
+            .thenReturn(
+                Uni.createFrom()
+                    .item(
+                        NpgSessionDocument(
+                            testOrderId,
+                            "550e8400-e29b-41d4-a716-446655440000",
+                            "npg-session-123",
+                            "npg-sec-token",
+                        )
+                    )
+            )
+        whenever(mockNpgClient.getCardData(anyOrNull(), anyOrNull()))
+            .thenReturn(Uni.createFrom().failure(NpgResponseException("NPG card data error")))
+
+        val result =
+            RestAssured.given()
+                .header("x-api-key", "test-primary")
+                .header("X-Client-Id", "CHECKOUT")
+                .contentType(ContentType.JSON)
+                .`when`()
+                .get("/payment-methods/pm-001/sessions/$testOrderId")
+                .then()
+                .statusCode(502)
+                .extract()
+                .`as`(ProblemJson::class.java)
+
+        assertEquals(502, result.status)
+        assertEquals("Bad Gateway", result.title)
+        assertEquals("NPG card data error", result.detail)
+    }
+
+    @Test
+    fun `should return 404 for PaymentMethodNotFoundException on getSessionPaymentMethod`() {
+        whenever(mockClient.getPaymentMethod(anyOrNull(), anyOrNull(), anyOrNull()))
+            .thenReturn(Uni.createFrom().failure(PaymentMethodNotFoundException("not found")))
+
+        RestAssured.given()
+            .header("x-api-key", "test-primary")
+            .header("X-Client-Id", "CHECKOUT")
+            .contentType(ContentType.JSON)
+            .`when`()
+            .get("/payment-methods/pm-001/sessions/$testOrderId")
+            .then()
+            .statusCode(404)
     }
 }
