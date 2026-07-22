@@ -111,6 +111,30 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
             .subscribeAsCompletionStage()
     }
 
+    override fun getTransactionIdForSession(
+        id: String,
+        orderId: String,
+        authorization: String,
+        xClientId: @NotNull it.pagopa.ecommerce.payment.methods.v1.server.model.SessionClientId,
+    ): CompletionStage<
+        it.pagopa.ecommerce.payment.methods.v1.server.model.SessionGetTransactionIdResponse
+    > {
+        val securityToken =
+            authorization.takeIf { it.startsWith("Bearer ") }?.removePrefix("Bearer ")
+                ?: throw jakarta.validation.ValidationException(
+                    "Missing or invalid Authorization Bearer token"
+                )
+
+        return paymentMethodService
+            .getTransactionIdForSession(id, orderId, securityToken, xClientId.toString())
+            .map { transactionId ->
+                it.pagopa.ecommerce.payment.methods.v1.server.model
+                    .SessionGetTransactionIdResponse()
+                    .apply { this.transactionId = transactionId }
+            }
+            .subscribeAsCompletionStage()
+    }
+
     @ServerExceptionMapper
     fun mapNpgResponseException(exception: NpgResponseException): RestResponse<ProblemJson> {
         log.error("NPG Response Exception", exception)
@@ -220,6 +244,26 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
             "Session already associated to transaction",
             exception.message.orEmpty(),
         )
+    }
+
+    @ServerExceptionMapper
+    fun mapInvalidSessionException(
+        exception: it.pagopa.ecommerce.payment.methods.exception.InvalidSessionException
+    ): RestResponse<ProblemJson> {
+        log.info("Invalid Session: {}", exception.message)
+        return problemResponse(
+            Response.Status.CONFLICT,
+            "Invalid session",
+            exception.message.orEmpty(),
+        )
+    }
+
+    @ServerExceptionMapper
+    fun mapMismatchedSecurityTokenException(
+        exception: it.pagopa.ecommerce.payment.methods.exception.MismatchedSecurityTokenException
+    ): RestResponse<ProblemJson> {
+        log.warn("Mismatched Security Token: {}", exception.message)
+        return problemResponse(Response.Status.NOT_FOUND, "Not Found", "Order id not found")
     }
 
     private fun problemResponse(
