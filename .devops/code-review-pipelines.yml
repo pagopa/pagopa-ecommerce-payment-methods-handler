@@ -2,9 +2,9 @@ variables:
   BRANCH_NAME: $[ replace(variables['System.PullRequest.SourceBranch'], 'refs/heads/', '') ]
   GRADLE_USER_HOME: $(Pipeline.Workspace)/.gradle
 trigger:
- branches:
-  include:
-    - main
+  branches:
+    include:
+      - main
 
 pool:
   vmImage: ubuntu-latest
@@ -14,7 +14,7 @@ resources:
     - repository: pagopaEcommerceLocal
       type: github
       name: pagopa/pagopa-ecommerce-local
-      ref: main
+      ref: PIDM-1771-update-handler-env
       endpoint: 'io-azure-devops-github-ro'
 
 stages:
@@ -79,10 +79,10 @@ stages:
         steps:
           - checkout: pagopaEcommerceLocal
           - script: |
-              echo "##[debug] Change placeholder for ecommerce-payment-method-service set branch: $(BRANCH_NAME)"
-              sed -i "s|^ECOMMERCE_PAYMENT_METHODS_COMMIT_SHA=.*$|ECOMMERCE_PAYMENT_METHODS_COMMIT_SHA=$(BRANCH_NAME)|" .env
-            displayName: 'Change payment-method-handler branch name ecommerce-local .env'
-          - script: docker compose up pagopa-ecommerce-payment-methods-handler pagopa-gec-mock --build -d
+              echo "##[debug] Change placeholder for ecommerce-payment-methods-handler set branch: $(BRANCH_NAME)"
+              sed -i "s|^ECOMMERCE_PAYMENT_METHODS_HANDLER_COMMIT_SHA=.*$|ECOMMERCE_PAYMENT_METHODS_HANDLER_COMMIT_SHA=$(BRANCH_NAME)|" .env
+            displayName: 'Change payment-methods-handler branch name ecommerce-local .env'
+          - script: docker compose up pagopa-ecommerce-payment-methods-handler pagopa-gec-mock pagopa-npg-mock --build -d
             displayName: 'Run app with docker-compose'
             env:
               GITHUB_TOKEN: $(GITHUB_RO_TOKEN)
