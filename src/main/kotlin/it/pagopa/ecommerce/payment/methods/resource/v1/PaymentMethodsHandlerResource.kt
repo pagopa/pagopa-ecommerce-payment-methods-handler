@@ -1,16 +1,25 @@
 package it.pagopa.ecommerce.payment.methods.resource.v1
 
+import it.pagopa.ecommerce.payment.methods.exception.JwtIssuerResponseException
 import it.pagopa.ecommerce.payment.methods.exception.NoBundleFoundException
+import it.pagopa.ecommerce.payment.methods.exception.NpgResponseException
+import it.pagopa.ecommerce.payment.methods.exception.OrderIdNotFoundException
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodNotFoundException
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodsClientException
+import it.pagopa.ecommerce.payment.methods.exception.SessionAlreadyAssociatedToTransactionException
+import it.pagopa.ecommerce.payment.methods.exception.UniqueIdGenerationException
 import it.pagopa.ecommerce.payment.methods.services.PaymentMethodService
 import it.pagopa.ecommerce.payment.methods.v1.server.api.PaymentMethodsApi
 import it.pagopa.ecommerce.payment.methods.v1.server.model.CalculateFeeRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.CalculateFeeResponse
+import it.pagopa.ecommerce.payment.methods.v1.server.model.CreateSessionResponse
+import it.pagopa.ecommerce.payment.methods.v1.server.model.PatchSessionRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.ProblemJson
+import it.pagopa.ecommerce.payment.methods.v1.server.model.SessionClientId
+import it.pagopa.ecommerce.payment.methods.v1.server.model.SessionPaymentMethodResponse
 import jakarta.inject.Inject
 import jakarta.validation.Valid
 import jakarta.validation.ValidationException
@@ -57,7 +66,7 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
     }
 
     override fun getAllPaymentMethods(
-        paymentMethodsRequest: @Valid @NotNull PaymentMethodsRequest
+        @Valid @NotNull paymentMethodsRequest: PaymentMethodsRequest
     ): CompletionStage<PaymentMethodsResponse> {
         val xRequestId = UUID.randomUUID().toString()
         return paymentMethodService.searchPaymentMethods(paymentMethodsRequest, xRequestId)
@@ -65,19 +74,112 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
 
     override fun getPaymentMethod(
         id: String,
-        xClientId: String?,
+        xClientId: it.pagopa.ecommerce.payment.methods.v1.server.model.ClientId?,
     ): CompletionStage<PaymentMethodResponse> {
         val xRequestId = UUID.randomUUID().toString()
-        return paymentMethodService.getPaymentMethod(id, xRequestId, xClientId)
+        return paymentMethodService.getPaymentMethod(id, xRequestId, xClientId?.toString())
+    }
+
+    override fun createSession(
+        id: String,
+        xClientId: @NotNull it.pagopa.ecommerce.payment.methods.v1.server.model.SessionClientId,
+        lang: String?,
+    ): CompletionStage<CreateSessionResponse> {
+        return paymentMethodService
+            .createSessionForPaymentMethod(id, lang, xClientId.toString())
+            .subscribeAsCompletionStage()
+    }
+
+    override fun getSessionPaymentMethod(
+        id: String,
+        orderId: String,
+        xClientId: @NotNull it.pagopa.ecommerce.payment.methods.v1.server.model.SessionClientId,
+    ): CompletionStage<SessionPaymentMethodResponse> {
+        return paymentMethodService
+            .getCardDataInformation(id, orderId, xClientId.toString())
+            .subscribeAsCompletionStage()
+    }
+
+    override fun updateSession(
+        id: String,
+        orderId: String,
+        xClientId: @NotNull it.pagopa.ecommerce.payment.methods.v1.server.model.SessionClientId,
+        patchSessionRequest: PatchSessionRequest,
+    ): CompletionStage<Void> {
+        return paymentMethodService
+            .updateSession(id, orderId, patchSessionRequest, xClientId.toString())
+            .subscribeAsCompletionStage()
+    }
+
+    override fun getTransactionIdForSession(
+        id: String,
+        orderId: String,
+        authorization: String,
+        xClientId: @NotNull it.pagopa.ecommerce.payment.methods.v1.server.model.SessionClientId,
+    ): CompletionStage<
+        it.pagopa.ecommerce.payment.methods.v1.server.model.SessionGetTransactionIdResponse
+    > {
+        val securityToken =
+            authorization.takeIf { it.startsWith("Bearer ") }?.removePrefix("Bearer ")
+                ?: throw jakarta.validation.ValidationException(
+                    "Missing or invalid Authorization Bearer token"
+                )
+
+        return paymentMethodService
+            .getTransactionIdForSession(id, orderId, securityToken, xClientId.toString())
+            .map { transactionId ->
+                it.pagopa.ecommerce.payment.methods.v1.server.model
+                    .SessionGetTransactionIdResponse()
+                    .apply { this.transactionId = transactionId }
+            }
+            .subscribeAsCompletionStage()
     }
 
     @ServerExceptionMapper
-    fun mapPaymentMethodsClientException(exception: PaymentMethodsClientException) =
-        problemResponse(
+    fun mapNpgResponseException(exception: NpgResponseException): RestResponse<ProblemJson> {
+        log.error("NPG Response Exception", exception)
+        return problemResponse(
+            Response.Status.BAD_GATEWAY,
+            "Bad Gateway",
+            exception.message.orEmpty(),
+        )
+    }
+
+    @ServerExceptionMapper
+    fun mapJwtIssuerResponseException(
+        exception: JwtIssuerResponseException
+    ): RestResponse<ProblemJson> {
+        log.error("JWT Issuer Response Exception", exception)
+        return problemResponse(
+            Response.Status.BAD_GATEWAY,
+            "Bad Gateway",
+            "Error creating notification token",
+        )
+    }
+
+    @ServerExceptionMapper
+    fun mapUniqueIdGenerationException(
+        exception: UniqueIdGenerationException
+    ): RestResponse<ProblemJson> {
+        log.error("Unique ID Generation Exception", exception)
+        return problemResponse(
+            Response.Status.INTERNAL_SERVER_ERROR,
+            "Internal Server Error",
+            exception.message.orEmpty(),
+        )
+    }
+
+    @ServerExceptionMapper
+    fun mapPaymentMethodsClientException(
+        exception: PaymentMethodsClientException
+    ): RestResponse<ProblemJson> {
+        log.error("Payment Methods Client Exception", exception)
+        return problemResponse(
             Response.Status.INTERNAL_SERVER_ERROR,
             "Unexpected Exception",
             "Error during GMP communication",
         )
+    }
 
     @ServerExceptionMapper
     fun mapException(exception: Exception): RestResponse<ProblemJson> {
@@ -92,17 +194,22 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
     @ServerExceptionMapper
     fun mapValidationException(exception: ValidationException): RestResponse<ProblemJson> {
         log.error("Validation Exception While Processing the Request", exception)
-        return problemResponse(
-            Response.Status.BAD_REQUEST,
-            "Bad Request",
-            "The request is malformed, contains invalid parameters, or is missing required information.",
-        )
+        val detail =
+            if (exception is jakarta.validation.ConstraintViolationException) {
+                exception.constraintViolations.joinToString("; ") {
+                    "${it.propertyPath}: ${it.message}"
+                }
+            } else {
+                "The request is malformed, contains invalid parameters, or is missing required information."
+            }
+        return problemResponse(Response.Status.BAD_REQUEST, "Bad Request", detail)
     }
 
     @ServerExceptionMapper
     fun mapMethodNotFoundException(
         exception: PaymentMethodNotFoundException
     ): RestResponse<ProblemJson> {
+        log.info("Payment Method Not Found: {}", exception.message)
         return problemResponse(
             Response.Status.NOT_FOUND,
             "Not Found",
@@ -117,6 +224,46 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
             "Not Found",
             "No bundle found for the requested payment method.",
         )
+    }
+
+    @ServerExceptionMapper
+    fun mapOrderIdNotFoundException(
+        exception: OrderIdNotFoundException
+    ): RestResponse<ProblemJson> {
+        log.info("Order ID Not Found: {}", exception.message)
+        return problemResponse(Response.Status.NOT_FOUND, "Not Found", exception.message.orEmpty())
+    }
+
+    @ServerExceptionMapper
+    fun mapSessionAlreadyAssociatedToTransactionException(
+        exception: SessionAlreadyAssociatedToTransactionException
+    ): RestResponse<ProblemJson> {
+        log.error("Session Already Associated To Transaction: {}", exception.message)
+        return problemResponse(
+            Response.Status.CONFLICT,
+            "Session already associated to transaction",
+            exception.message.orEmpty(),
+        )
+    }
+
+    @ServerExceptionMapper
+    fun mapInvalidSessionException(
+        exception: it.pagopa.ecommerce.payment.methods.exception.InvalidSessionException
+    ): RestResponse<ProblemJson> {
+        log.info("Invalid Session: {}", exception.message)
+        return problemResponse(
+            Response.Status.CONFLICT,
+            "Invalid session",
+            exception.message.orEmpty(),
+        )
+    }
+
+    @ServerExceptionMapper
+    fun mapMismatchedSecurityTokenException(
+        exception: it.pagopa.ecommerce.payment.methods.exception.MismatchedSecurityTokenException
+    ): RestResponse<ProblemJson> {
+        log.warn("Mismatched Security Token: {}", exception.message)
+        return problemResponse(Response.Status.NOT_FOUND, "Not Found", "Order id not found")
     }
 
     private fun problemResponse(
