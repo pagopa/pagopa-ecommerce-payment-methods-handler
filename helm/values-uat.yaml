@@ -76,8 +76,8 @@ microservice-chart:
     ECS_SERVICE_NAME: pagopa-ecommerce-payment-methods-handler-blue
     ECS_SERVICE_ENVIRONMENT: uat
     SECURITY_API_KEY_SECURED_PATHS: "/_none"
-    AFM_URI_V1: "https://api.uat.platform.pagopa.it/ecommerce/mock/gec/v1"
-    AFM_URI_V2: "https://api.uat.platform.pagopa.it/ecommerce/mock/gec/v2"
+    AFM_URI_V1: "https://api.uat.platform.pagopa.it/ecommerce/mock/gmp/v1"
+    AFM_URI_V2: "https://api.uat.platform.pagopa.it/ecommerce/mock/gmp/v1"
     AFM_CONNECTION_TIMEOUT: "10000"
     AFM_READ_TIMEOUT: "10000"
     NPG_B2B_URI: "https://api.uat.platform.pagopa.it/ecommerce/mock/npg/v1"
