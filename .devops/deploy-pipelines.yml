@@ -75,14 +75,14 @@ stages:
               FORCE_REPLACE_DOCKER_IMAGE: ${{ parameters.FORCE_REPLACE_DOCKER_IMAGE }}
               DOCKERFILE: ${{ variables.DOCKER_FILE_NAME }}
 
-  - stage: "Deploy_UAT_Green"
-    displayName: 'UAT green deployment'
+  - stage: "Deploy_UAT_Blue"
+    displayName: 'UAT blue soak test deployment'
     dependsOn: Build_release_candidate
     variables:
       app_version: $(Build.SourceVersion)
     jobs:
-      - deployment: "Green_deployment"
-        displayName: "Green deployment"
+      - deployment: "Blue_deployment"
+        displayName: "Blue soak test deployment"
         pool:
           name: pagopa-uat-linux
         environment: 'UAT'
