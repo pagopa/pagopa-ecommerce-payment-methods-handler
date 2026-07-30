@@ -3,11 +3,16 @@ package it.pagopa.ecommerce.payment.methods.services
 import io.quarkus.test.junit.QuarkusTest
 import io.smallrye.mutiny.Uni
 import it.pagopa.ecommerce.payment.methods.TestUtils
+import it.pagopa.ecommerce.payment.methods.client.CreateTokenResponse
 import it.pagopa.ecommerce.payment.methods.client.PaymentMethodsClient
+import it.pagopa.ecommerce.payment.methods.domain.NpgSessionDocument
+import it.pagopa.ecommerce.payment.methods.exception.JwtIssuerResponseException
 import it.pagopa.ecommerce.payment.methods.exception.NoBundleFoundException
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodNotFoundException
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodsClientException
+import it.pagopa.ecommerce.payment.methods.exception.SessionAlreadyAssociatedToTransactionException
 import it.pagopa.ecommerce.payment.methods.utils.BundleOptions
+import it.pagopa.ecommerce.payment.methods.v1.server.model.PatchSessionRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
@@ -19,7 +24,10 @@ import it.pagopa.generated.ecommerce.client.model.PaymentMethodResponseDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodsItemDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodsResponseDto
 import it.pagopa.generated.ecommerce.client.model.TransferDto
+import it.pagopa.generated.npg.client.model.FieldDto
+import it.pagopa.generated.npg.client.model.FieldsDto
 import jakarta.ws.rs.core.Response
+import java.net.URI
 import java.time.LocalDate
 import kotlin.test.assertTrue
 import org.jboss.resteasy.reactive.ClientWebApplicationException
@@ -33,16 +41,40 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.NullSource
 import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.Mockito
+import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.given
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 @QuarkusTest
 class PaymentMethodsClientTest {
 
     private val mockClient = Mockito.mock(PaymentMethodsClient::class.java)
-    private val service = PaymentMethodServiceImpl(mockClient)
+    private val mockNpgClient =
+        Mockito.mock(it.pagopa.ecommerce.payment.methods.client.NpgClientWrapper::class.java)
+    private val mockJwtClient =
+        Mockito.mock(it.pagopa.ecommerce.payment.methods.client.JwtTokenIssuerClient::class.java)
+    private val mockNpgSessionsRedis =
+        Mockito.mock(
+            it.pagopa.ecommerce.payment.methods.infrastructure.NpgSessionsRedisWrapper::class.java
+        )
+    private val mockUniqueIdGenerator =
+        Mockito.mock(it.pagopa.ecommerce.payment.methods.utils.UniqueIdGenerator::class.java)
+    private val mockSessionUrlConfig =
+        Mockito.mock(it.pagopa.ecommerce.payment.methods.config.SessionUrlConfig::class.java)
+    private val service =
+        PaymentMethodServiceImpl(
+            mockClient,
+            mockNpgClient,
+            mockJwtClient,
+            mockNpgSessionsRedis,
+            mockUniqueIdGenerator,
+            mockSessionUrlConfig,
+            900,
+        )
 
     private val mockApi = Mockito.mock(PaymentMethodsApi::class.java)
     private val calculatorMockApi = Mockito.mock(CalculatorApi::class.java)
@@ -980,5 +1012,583 @@ class PaymentMethodsClientTest {
 
         assertEquals("test message", exception.message)
         assertEquals(cause, exception.cause)
+    }
+
+    // --- createSession helper methods ---
+
+    private val testOrderId = "E1234567890123ab"
+
+    private fun buildAfmPaymentMethodResponse(
+        name: String = "CARDS",
+        touchpoint: PaymentMethodResponseDto.UserTouchpointEnum =
+            PaymentMethodResponseDto.UserTouchpointEnum.CHECKOUT,
+    ): PaymentMethodResponseDto {
+        return PaymentMethodResponseDto().apply {
+            paymentMethodId = "pm-001"
+            this.name = mapOf("it" to name)
+            status = PaymentMethodResponseDto.StatusEnum.ENABLED
+            group = "CP"
+            methodManagement = PaymentMethodResponseDto.MethodManagementEnum.ONBOARDABLE
+            paymentMethodAsset = "asset.png"
+            userTouchpoint = listOf(touchpoint)
+            paymentMethodTypes = listOf(PaymentMethodResponseDto.PaymentMethodTypesEnum.CARTE)
+            validityDateFrom = LocalDate.now()
+        }
+    }
+
+    private fun buildNpgFieldsDto(): FieldsDto {
+        return FieldsDto().apply {
+            sessionId = "npg-session-123"
+            securityToken = "npg-sec-token"
+            fields =
+                listOf(
+                    FieldDto().apply {
+                        id = "cardholderName"
+                        type = "text"
+                        propertyClass = "cardData"
+                        src = "https://fe.npg.it/field.html?id=CARDHOLDER_NAME"
+                    },
+                    FieldDto().apply {
+                        id = "cardNumber"
+                        type = "text"
+                        propertyClass = "cardData"
+                        src = "https://fe.npg.it/field.html?id=CARD_NUMBER"
+                    },
+                )
+        }
+    }
+
+    private fun setupCreateSessionMocks(
+        clientId: String = "CHECKOUT",
+        touchpoint: PaymentMethodResponseDto.UserTouchpointEnum =
+            PaymentMethodResponseDto.UserTouchpointEnum.CHECKOUT,
+    ) {
+        whenever(mockClient.getPaymentMethod(any(), any(), any()))
+            .thenReturn(
+                Uni.createFrom().item(buildAfmPaymentMethodResponse(touchpoint = touchpoint))
+            )
+
+        whenever(mockUniqueIdGenerator.generateUniqueId())
+            .thenReturn(Uni.createFrom().item(testOrderId))
+
+        whenever(mockJwtClient.createJWTToken(any()))
+            .thenReturn(Uni.createFrom().item(CreateTokenResponse(token = "jwt-token")))
+
+        whenever(mockSessionUrlConfig.basePath())
+            .thenReturn(URI.create("https://checkout.pagopa.it"))
+        whenever(mockSessionUrlConfig.ioBasePath()).thenReturn(URI.create("https://io.pagopa.it"))
+        whenever(mockSessionUrlConfig.outcomeSuffix()).thenReturn("/esito")
+        whenever(mockSessionUrlConfig.cancelSuffix()).thenReturn("/annulla")
+        whenever(mockSessionUrlConfig.notificationUrl())
+            .thenReturn(
+                "https://api.pagopa.it/sessions/{orderId}/outcomes?sessionToken={sessionToken}"
+            )
+
+        whenever(mockNpgClient.buildForm(any()))
+            .thenReturn(Uni.createFrom().item(buildNpgFieldsDto()))
+
+        whenever(mockNpgSessionsRedis.save(any()))
+            .thenReturn(
+                Uni.createFrom()
+                    .item(
+                        NpgSessionDocument(testOrderId, "corr", "npg-session-123", "npg-sec-token")
+                    )
+            )
+    }
+
+    // --- createSession tests ---
+
+    @Test
+    fun `should create session for valid payment method`() {
+        setupCreateSessionMocks()
+
+        val result =
+            service.createSessionForPaymentMethod("pm-001", null, "CHECKOUT").await().indefinitely()
+
+        assertEquals(testOrderId, result.orderId)
+        assertNotNull(result.correlationId)
+        assertEquals("CARDS", result.paymentMethodData.paymentMethod)
+        assertEquals(2, result.paymentMethodData.form.size)
+        assertEquals("cardholderName", result.paymentMethodData.form[0].id)
+        assertEquals("cardNumber", result.paymentMethodData.form[1].id)
+
+        verify(mockClient).getPaymentMethod(any(), any(), any())
+        verify(mockUniqueIdGenerator).generateUniqueId()
+        verify(mockJwtClient).createJWTToken(any())
+        verify(mockNpgClient).buildForm(any())
+        verify(mockNpgSessionsRedis).save(any())
+    }
+
+    @Test
+    fun `should create session for IO client using io base path`() {
+        setupCreateSessionMocks(
+            clientId = "IO",
+            touchpoint = PaymentMethodResponseDto.UserTouchpointEnum.IO,
+        )
+
+        val result =
+            service.createSessionForPaymentMethod("pm-001", null, "IO").await().indefinitely()
+
+        assertNotNull(result)
+        assertEquals(testOrderId, result.orderId)
+
+        // Verify that ioBasePath was used (not basePath)
+        verify(mockSessionUrlConfig).ioBasePath()
+    }
+
+    @Test
+    fun `should create session for CHECKOUT client using checkout base path`() {
+        setupCreateSessionMocks()
+
+        service.createSessionForPaymentMethod("pm-001", null, "CHECKOUT").await().indefinitely()
+
+        verify(mockSessionUrlConfig).basePath()
+    }
+
+    @Test
+    fun `should fail with JwtIssuerResponseException when JWT creation fails`() {
+        whenever(mockClient.getPaymentMethod(any(), any(), any()))
+            .thenReturn(Uni.createFrom().item(buildAfmPaymentMethodResponse()))
+
+        whenever(mockUniqueIdGenerator.generateUniqueId())
+            .thenReturn(Uni.createFrom().item(testOrderId))
+
+        whenever(mockJwtClient.createJWTToken(any()))
+            .thenReturn(
+                Uni.createFrom()
+                    .failure(
+                        JwtIssuerResponseException(
+                            "error jwtIssuer",
+                            RuntimeException("conn error"),
+                        )
+                    )
+            )
+
+        assertThrows<JwtIssuerResponseException> {
+            service.createSessionForPaymentMethod("pm-001", null, "CHECKOUT").await().indefinitely()
+        }
+
+        verify(mockNpgClient, times(0)).buildForm(any())
+        verify(mockNpgSessionsRedis, times(0)).save(any())
+    }
+
+    @Test
+    fun `should fail with PaymentMethodNotFoundException when payment method does not exist`() {
+        whenever(mockClient.getPaymentMethod(any(), any(), any()))
+            .thenReturn(
+                Uni.createFrom().failure(PaymentMethodNotFoundException("Payment method not found"))
+            )
+
+        assertThrows<PaymentMethodNotFoundException> {
+            service.createSessionForPaymentMethod("pm-001", null, "CHECKOUT").await().indefinitely()
+        }
+
+        verify(mockUniqueIdGenerator, times(0)).generateUniqueId()
+        verify(mockJwtClient, times(0)).createJWTToken(any())
+    }
+
+    @Test
+    fun `should save session to Redis with correct data`() {
+        setupCreateSessionMocks()
+
+        service.createSessionForPaymentMethod("pm-001", null, "CHECKOUT").await().indefinitely()
+
+        verify(mockNpgSessionsRedis)
+            .save(
+                org.mockito.kotlin.argThat {
+                    this.orderId == testOrderId &&
+                        this.sessionId == "npg-session-123" &&
+                        this.securityToken == "npg-sec-token"
+                }
+            )
+    }
+
+    @Test
+    fun `should pass language to NPG buildForm`() {
+        setupCreateSessionMocks()
+
+        service.createSessionForPaymentMethod("pm-001", "it", "CHECKOUT").await().indefinitely()
+
+        verify(mockNpgClient).buildForm(org.mockito.kotlin.argThat { this.language == "it" })
+    }
+
+    @Test
+    fun `should pass correct claims to JWT token creation`() {
+        setupCreateSessionMocks()
+
+        service.createSessionForPaymentMethod("pm-001", null, "CHECKOUT").await().indefinitely()
+
+        verify(mockJwtClient)
+            .createJWTToken(
+                org.mockito.kotlin.argThat {
+                    this.privateClaims["orderId"] == testOrderId &&
+                        this.privateClaims["paymentMethodId"] == "pm-001" &&
+                        this.audience == "npg" &&
+                        this.duration == 900
+                }
+            )
+    }
+
+    @Test
+    fun `should handle null group in payment method response`() {
+        val pmResponse =
+            PaymentMethodResponseDto().apply {
+                paymentMethodId = "pm-001"
+                name = mapOf("it" to "CARDS")
+                status = PaymentMethodResponseDto.StatusEnum.ENABLED
+                group = null
+                methodManagement = PaymentMethodResponseDto.MethodManagementEnum.ONBOARDABLE
+                paymentMethodAsset = "asset.png"
+                userTouchpoint = listOf(PaymentMethodResponseDto.UserTouchpointEnum.CHECKOUT)
+                paymentMethodTypes = listOf(PaymentMethodResponseDto.PaymentMethodTypesEnum.CARTE)
+                validityDateFrom = LocalDate.now()
+            }
+
+        whenever(mockClient.getPaymentMethod(any(), any(), any()))
+            .thenReturn(Uni.createFrom().item(pmResponse))
+
+        assertThrows<IllegalArgumentException> {
+            service.createSessionForPaymentMethod("pm-001", null, "CHECKOUT").await().indefinitely()
+        }
+    }
+
+    @Test
+    fun `should handle invalid group in payment method response`() {
+        val pmResponse =
+            PaymentMethodResponseDto().apply {
+                paymentMethodId = "pm-001"
+                name = mapOf("it" to "CARDS")
+                status = PaymentMethodResponseDto.StatusEnum.ENABLED
+                group = "UNKNOWN"
+                methodManagement = PaymentMethodResponseDto.MethodManagementEnum.ONBOARDABLE
+                paymentMethodAsset = "asset.png"
+                userTouchpoint = listOf(PaymentMethodResponseDto.UserTouchpointEnum.CHECKOUT)
+                paymentMethodTypes = listOf(PaymentMethodResponseDto.PaymentMethodTypesEnum.CARTE)
+                validityDateFrom = LocalDate.now()
+            }
+
+        whenever(mockClient.getPaymentMethod(any(), any(), any()))
+            .thenReturn(Uni.createFrom().item(pmResponse))
+
+        assertThrows<IllegalArgumentException> {
+            service.createSessionForPaymentMethod("pm-001", null, "CHECKOUT").await().indefinitely()
+        }
+    }
+
+    @Test
+    fun `should handle field with null src`() {
+        setupCreateSessionMocks()
+
+        // Override NPG response with a field that has null src
+        whenever(mockNpgClient.buildForm(any()))
+            .thenReturn(
+                Uni.createFrom()
+                    .item(
+                        FieldsDto().apply {
+                            sessionId = "npg-session-123"
+                            securityToken = "npg-sec-token"
+                            fields =
+                                listOf(
+                                    FieldDto().apply {
+                                        id = "cardholderName"
+                                        type = "text"
+                                        propertyClass = "cardData"
+                                        src = null
+                                    }
+                                )
+                        }
+                    )
+            )
+
+        val result =
+            service.createSessionForPaymentMethod("pm-001", null, "CHECKOUT").await().indefinitely()
+
+        assertEquals(1, result.paymentMethodData.form.size)
+        assertEquals(null, result.paymentMethodData.form[0].src)
+    }
+
+    // --- getCardDataInformation tests ---
+
+    private val testSessionDocument =
+        NpgSessionDocument(
+            orderId = testOrderId,
+            correlationId = "550e8400-e29b-41d4-a716-446655440000",
+            sessionId = "npg-session-123",
+            securityToken = "npg-sec-token",
+        )
+
+    @Test
+    fun `should return card data from cache when cardData is present`() {
+        val sessionWithCardData =
+            testSessionDocument.copy(
+                cardData =
+                    it.pagopa.ecommerce.payment.methods.domain.CardDataDocument(
+                        bin = "123456",
+                        lastFourDigits = "7890",
+                        expiringDate = "1225",
+                        circuit = "VISA",
+                    )
+            )
+
+        whenever(mockClient.getPaymentMethod(any(), any(), any()))
+            .thenReturn(Uni.createFrom().item(buildAfmPaymentMethodResponse()))
+        whenever(mockNpgSessionsRedis.findById(testOrderId))
+            .thenReturn(Uni.createFrom().item(sessionWithCardData))
+
+        val result =
+            service.getCardDataInformation("pm-001", testOrderId, "CHECKOUT").await().indefinitely()
+
+        assertEquals("npg-session-123", result.sessionId)
+        assertEquals("123456", result.bin)
+        assertEquals("7890", result.lastFourDigits)
+        assertEquals("1225", result.expiringDate)
+        assertEquals("VISA", result.brand)
+
+        // Should NOT call NPG since data is cached
+        verify(mockNpgClient, times(0)).getCardData(any(), any())
+    }
+
+    @Test
+    fun `should call NPG and cache result when cardData is not present`() {
+        whenever(mockClient.getPaymentMethod(any(), any(), any()))
+            .thenReturn(Uni.createFrom().item(buildAfmPaymentMethodResponse()))
+        whenever(mockNpgSessionsRedis.findById(testOrderId))
+            .thenReturn(Uni.createFrom().item(testSessionDocument))
+        whenever(mockNpgClient.getCardData(any(), any()))
+            .thenReturn(
+                Uni.createFrom()
+                    .item(
+                        it.pagopa.generated.npg.client.model.CardDataResponseDto().apply {
+                            bin = "654321"
+                            lastFourDigits = "4321"
+                            expiringDate = "0627"
+                            circuit = "MC"
+                        }
+                    )
+            )
+        whenever(mockNpgSessionsRedis.save(any()))
+            .thenReturn(Uni.createFrom().item(testSessionDocument))
+
+        val result =
+            service.getCardDataInformation("pm-001", testOrderId, "CHECKOUT").await().indefinitely()
+
+        assertEquals("npg-session-123", result.sessionId)
+        assertEquals("654321", result.bin)
+        assertEquals("4321", result.lastFourDigits)
+        assertEquals("0627", result.expiringDate)
+        assertEquals("MC", result.brand)
+
+        // Should call NPG and save to Redis
+        verify(mockNpgClient).getCardData(any(), org.mockito.kotlin.eq("npg-session-123"))
+        verify(mockNpgSessionsRedis).save(any())
+    }
+
+    @Test
+    fun `should throw OrderIdNotFoundException when session not found in Redis`() {
+        whenever(mockClient.getPaymentMethod(any(), any(), any()))
+            .thenReturn(Uni.createFrom().item(buildAfmPaymentMethodResponse()))
+        whenever(mockNpgSessionsRedis.findById(testOrderId)).thenReturn(Uni.createFrom().nullItem())
+
+        assertThrows<it.pagopa.ecommerce.payment.methods.exception.OrderIdNotFoundException> {
+            service.getCardDataInformation("pm-001", testOrderId, "CHECKOUT").await().indefinitely()
+        }
+    }
+
+    @Test
+    fun `should throw PaymentMethodNotFoundException when payment method does not exist for getCardData`() {
+        whenever(mockClient.getPaymentMethod(any(), any(), any()))
+            .thenReturn(
+                Uni.createFrom().failure(PaymentMethodNotFoundException("Payment method not found"))
+            )
+
+        assertThrows<PaymentMethodNotFoundException> {
+            service.getCardDataInformation("pm-001", testOrderId, "CHECKOUT").await().indefinitely()
+        }
+
+        verify(mockNpgSessionsRedis, times(0)).findById(any())
+    }
+
+    // --- updateSession tests ---
+
+    @Test
+    fun `should associate transactionId to session when no transactionId exists`() {
+        val patchRequest = PatchSessionRequest().apply { transactionId = "tx-001" }
+
+        whenever(mockClient.getPaymentMethod(any(), any(), any()))
+            .thenReturn(Uni.createFrom().item(buildAfmPaymentMethodResponse()))
+        whenever(mockNpgSessionsRedis.findById(testOrderId))
+            .thenReturn(Uni.createFrom().item(testSessionDocument))
+        whenever(mockNpgSessionsRedis.save(any()))
+            .thenReturn(Uni.createFrom().item(testSessionDocument))
+
+        assertDoesNotThrow {
+            service
+                .updateSession("pm-001", testOrderId, patchRequest, "CHECKOUT")
+                .await()
+                .indefinitely()
+        }
+
+        verify(mockNpgSessionsRedis).save(any())
+    }
+
+    @Test
+    fun `should be no-op when transactionId already matches`() {
+        val patchRequest = PatchSessionRequest().apply { transactionId = "tx-001" }
+        val sessionWithTransaction = testSessionDocument.copy(transactionId = "tx-001")
+
+        whenever(mockClient.getPaymentMethod(any(), any(), any()))
+            .thenReturn(Uni.createFrom().item(buildAfmPaymentMethodResponse()))
+        whenever(mockNpgSessionsRedis.findById(testOrderId))
+            .thenReturn(Uni.createFrom().item(sessionWithTransaction))
+
+        assertDoesNotThrow {
+            service
+                .updateSession("pm-001", testOrderId, patchRequest, "CHECKOUT")
+                .await()
+                .indefinitely()
+        }
+
+        // Should NOT save since it's a retry with same transactionId
+        verify(mockNpgSessionsRedis, times(0)).save(any())
+    }
+
+    @Test
+    fun `should throw SessionAlreadyAssociatedToTransactionException when transactionId conflicts`() {
+        val patchRequest = PatchSessionRequest().apply { transactionId = "tx-002" }
+        val sessionWithDifferentTransaction = testSessionDocument.copy(transactionId = "tx-001")
+
+        whenever(mockClient.getPaymentMethod(any(), any(), any()))
+            .thenReturn(Uni.createFrom().item(buildAfmPaymentMethodResponse()))
+        whenever(mockNpgSessionsRedis.findById(testOrderId))
+            .thenReturn(Uni.createFrom().item(sessionWithDifferentTransaction))
+
+        assertThrows<SessionAlreadyAssociatedToTransactionException> {
+            service
+                .updateSession("pm-001", testOrderId, patchRequest, "CHECKOUT")
+                .await()
+                .indefinitely()
+        }
+
+        verify(mockNpgSessionsRedis, times(0)).save(any())
+    }
+
+    @Test
+    fun `should throw OrderIdNotFoundException when session not found for updateSession`() {
+        val patchRequest = PatchSessionRequest().apply { transactionId = "tx-001" }
+
+        whenever(mockClient.getPaymentMethod(any(), any(), any()))
+            .thenReturn(Uni.createFrom().item(buildAfmPaymentMethodResponse()))
+        whenever(mockNpgSessionsRedis.findById(testOrderId)).thenReturn(Uni.createFrom().nullItem())
+
+        assertThrows<it.pagopa.ecommerce.payment.methods.exception.OrderIdNotFoundException> {
+            service
+                .updateSession("pm-001", testOrderId, patchRequest, "CHECKOUT")
+                .await()
+                .indefinitely()
+        }
+    }
+
+    @Test
+    fun `should throw PaymentMethodNotFoundException when payment method does not exist for updateSession`() {
+        val patchRequest = PatchSessionRequest().apply { transactionId = "tx-001" }
+
+        whenever(mockClient.getPaymentMethod(any(), any(), any()))
+            .thenReturn(
+                Uni.createFrom().failure(PaymentMethodNotFoundException("Payment method not found"))
+            )
+
+        assertThrows<PaymentMethodNotFoundException> {
+            service
+                .updateSession("pm-001", testOrderId, patchRequest, "CHECKOUT")
+                .await()
+                .indefinitely()
+        }
+
+        verify(mockNpgSessionsRedis, times(0)).findById(any())
+    }
+
+    // --- getTransactionIdForSession tests ---
+
+    @Test
+    fun `should return transactionId when session is valid and token matches`() {
+        val sessionWithTransaction = testSessionDocument.copy(transactionId = "tx-001")
+
+        whenever(mockClient.getPaymentMethod(any(), any(), any()))
+            .thenReturn(Uni.createFrom().item(buildAfmPaymentMethodResponse()))
+        whenever(mockNpgSessionsRedis.findById(testOrderId))
+            .thenReturn(Uni.createFrom().item(sessionWithTransaction))
+
+        val result =
+            service
+                .getTransactionIdForSession("pm-001", testOrderId, "npg-sec-token", "CHECKOUT")
+                .await()
+                .indefinitely()
+
+        assertEquals("tx-001", result)
+    }
+
+    @Test
+    fun `should throw InvalidSessionException when session has no transactionId`() {
+        whenever(mockClient.getPaymentMethod(any(), any(), any()))
+            .thenReturn(Uni.createFrom().item(buildAfmPaymentMethodResponse()))
+        whenever(mockNpgSessionsRedis.findById(testOrderId))
+            .thenReturn(Uni.createFrom().item(testSessionDocument))
+
+        assertThrows<it.pagopa.ecommerce.payment.methods.exception.InvalidSessionException> {
+            service
+                .getTransactionIdForSession("pm-001", testOrderId, "npg-sec-token", "CHECKOUT")
+                .await()
+                .indefinitely()
+        }
+    }
+
+    @Test
+    fun `should throw MismatchedSecurityTokenException when token does not match`() {
+        val sessionWithTransaction = testSessionDocument.copy(transactionId = "tx-001")
+
+        whenever(mockClient.getPaymentMethod(any(), any(), any()))
+            .thenReturn(Uni.createFrom().item(buildAfmPaymentMethodResponse()))
+        whenever(mockNpgSessionsRedis.findById(testOrderId))
+            .thenReturn(Uni.createFrom().item(sessionWithTransaction))
+
+        assertThrows<
+            it.pagopa.ecommerce.payment.methods.exception.MismatchedSecurityTokenException
+        > {
+            service
+                .getTransactionIdForSession("pm-001", testOrderId, "wrong-token", "CHECKOUT")
+                .await()
+                .indefinitely()
+        }
+    }
+
+    @Test
+    fun `should throw OrderIdNotFoundException when session not found for getTransactionId`() {
+        whenever(mockClient.getPaymentMethod(any(), any(), any()))
+            .thenReturn(Uni.createFrom().item(buildAfmPaymentMethodResponse()))
+        whenever(mockNpgSessionsRedis.findById(testOrderId)).thenReturn(Uni.createFrom().nullItem())
+
+        assertThrows<it.pagopa.ecommerce.payment.methods.exception.OrderIdNotFoundException> {
+            service
+                .getTransactionIdForSession("pm-001", testOrderId, "npg-sec-token", "CHECKOUT")
+                .await()
+                .indefinitely()
+        }
+    }
+
+    @Test
+    fun `should throw PaymentMethodNotFoundException when payment method does not exist for getTransactionId`() {
+        whenever(mockClient.getPaymentMethod(any(), any(), any()))
+            .thenReturn(
+                Uni.createFrom().failure(PaymentMethodNotFoundException("Payment method not found"))
+            )
+
+        assertThrows<PaymentMethodNotFoundException> {
+            service
+                .getTransactionIdForSession("pm-001", testOrderId, "npg-sec-token", "CHECKOUT")
+                .await()
+                .indefinitely()
+        }
+
+        verify(mockNpgSessionsRedis, times(0)).findById(any())
     }
 }

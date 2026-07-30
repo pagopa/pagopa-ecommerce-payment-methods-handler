@@ -36,7 +36,7 @@ paths:
   /payment-methods:
     post:
       tags:
-        - payment-methods
+        - payment-methods-handler
       operationId: getAllPaymentMethods
       summary: Retrieve all Payment Methods (by filter)
       description: API for retrieve payment method using the request query parameter filters
@@ -65,6 +65,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemJson'
+        '429':
+          description: Too many requests
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
         '500':
           description: Service unavailable
           content:
@@ -74,7 +80,7 @@ paths:
   /payment-methods/{id}:
     get:
       tags:
-        - payment-methods
+        - payment-methods-handler
       operationId: getPaymentMethod
       summary: Get payment method by ID
       description: API for retrieve payment method information for a given payment method ID
@@ -84,17 +90,13 @@ paths:
           description: Payment Method ID
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/PaymentMethodId'
         - name: x-client-id
           in: header
           description: client id related to a given touchpoint
           required: false
           schema:
-            type: string
-            enum:
-              - IO
-              - CHECKOUT
-              - CHECKOUT_CART
+            $ref: '#/components/schemas/ClientId'
       responses:
         '200':
           description: Payment method successfully retrieved
@@ -120,8 +122,81 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemJson'
+        '429':
+          description: Too many requests
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
         '500':
           description: Service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+  /payment-methods/{id}/sessions:
+    post:
+      tags:
+        - payment-methods-handler
+      operationId: createSession
+      summary: Create frontend field data paired with a payment gateway session
+      description: |-
+        This endpoint returns an object containing data on how a frontend can build a form
+        to allow direct exchanging of payment information to the payment gateway without eCommerce
+        having to store PCI data (or other sensitive data tied to the payment method).
+        The returned data is tied to a session on the payment gateway identified by the field `sessionId`.
+      parameters:
+        - name: id
+          in: path
+          description: Payment Method id
+          required: true
+          schema:
+            $ref: '#/components/schemas/PaymentMethodId'
+        - in: header
+          name: lang
+          required: false
+          description: language selection
+          schema:
+            $ref: '#/components/schemas/Lang'
+        - in: header
+          name: X-Client-Id
+          required: true
+          description: Transaction origin (populated by APIM policy)
+          schema:
+            $ref: '#/components/schemas/SessionClientId'
+      responses:
+        '200':
+          description: Payment form data successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateSessionResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+        '404':
+          description: Payment method not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+        '429':
+          description: Too many requests
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+        '500':
+          description: Service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+        '502':
+          description: Payment gateway did return error
           content:
             application/json:
               schema:
@@ -223,8 +298,217 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemJson'
+  /payment-methods/{id}/sessions/{orderId}:
+    get:
+      tags:
+        - payment-methods-handler
+      operationId: getSessionPaymentMethod
+      summary: Get session payment method by ID
+      description: API for retrieving card data information for a given payment method session
+      parameters:
+        - name: id
+          in: path
+          description: Payment Method ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/PaymentMethodId'
+        - name: orderId
+          in: path
+          description: Order id related to NPG session
+          required: true
+          schema:
+            type: string
+        - in: header
+          name: X-Client-Id
+          required: true
+          description: Transaction origin (populated by APIM policy)
+          schema:
+            $ref: '#/components/schemas/SessionClientId'
+      responses:
+        '200':
+          description: Session payment method successfully retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionPaymentMethodResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+        '404':
+          description: Session or payment method not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+        '500':
+          description: Service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+        '502':
+          description: Payment gateway did return error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+    patch:
+      tags:
+        - payment-methods-handler
+      operationId: updateSession
+      summary: Update a payment method session
+      description: |-
+        Associates a transaction ID to an existing NPG session identified by payment method ID and order ID.
+        Returns 204 No Content on success.
+      parameters:
+        - name: id
+          in: path
+          description: Payment Method ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/PaymentMethodId'
+        - name: orderId
+          in: path
+          description: Order id related to NPG session
+          required: true
+          schema:
+            type: string
+        - in: header
+          name: X-Client-Id
+          required: true
+          description: Transaction origin (populated by APIM policy)
+          schema:
+            $ref: '#/components/schemas/SessionClientId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchSessionRequest'
+      responses:
+        '204':
+          description: Session successfully updated
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+        '404':
+          description: Session or payment method not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+        '409':
+          description: Session already associated to a different transaction
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+        '500':
+          description: Service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+  /payment-methods/{id}/sessions/{orderId}/transactionId:
+    get:
+      tags:
+        - payment-methods-handler
+      operationId: getTransactionIdForSession
+      summary: Get eCommerce transaction id for the given NPG session
+      description: |-
+        API to get a transaction id from a NPG session.
+        Validates the session security token provided via Authorization Bearer header.
+      parameters:
+        - name: id
+          in: path
+          description: Payment Method ID
+          required: true
+          schema:
+            $ref: '#/components/schemas/PaymentMethodId'
+        - name: orderId
+          in: path
+          description: Order id related to NPG session
+          required: true
+          schema:
+            type: string
+        - in: header
+          name: Authorization
+          required: true
+          description: Bearer security token for session validation
+          schema:
+            type: string
+        - in: header
+          name: X-Client-Id
+          required: true
+          description: Transaction origin (populated by APIM policy)
+          schema:
+            $ref: '#/components/schemas/SessionClientId'
+      responses:
+        '200':
+          description: Transaction id successfully retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionGetTransactionIdResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+        '404':
+          description: Session or payment method not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+        '409':
+          description: Invalid session (no transaction associated or mismatched security token)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+        '500':
+          description: Service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
 components:
   schemas:
+    PaymentMethodId:
+      type: string
+      description: Payment Method identifier
+    ClientId:
+      type: string
+      description: Client identifier related to a given touchpoint
+      enum:
+        - IO
+        - CHECKOUT
+        - CHECKOUT_CART
+    Lang:
+      type: string
+      description: Language selection header
+    SessionClientId:
+      type: string
+      description: Transaction origin client identifier
+      enum:
+        - IO
+        - CHECKOUT
+        - CHECKOUT_CART
+        - WISP_REDIRECT
     NpgSdkIntegrityResponse:
       type: object
       required:
@@ -443,6 +727,101 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PaymentMethodResponse'
+    CreateSessionResponse:
+      type: object
+      description: Form data needed to create a payment method input form
+      properties:
+        orderId:
+          type: string
+          description: Identifier of the payment gateway session associated to the form
+        correlationId:
+          type: string
+          format: uuid
+          description: Identifier of the payment gateway session associated to the transaction flow
+        paymentMethodData:
+          $ref: "#/components/schemas/CardFormFields"
+      required:
+        - paymentMethodData
+        - orderId
+        - correlationId
+    CardFormFields:
+      type: object
+      description: Form fields for credit cards
+      properties:
+        paymentMethod:
+          type: string
+        form:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+      required:
+        - paymentMethod
+        - form
+    Field:
+      type: object
+      properties:
+        type:
+          type: string
+          example: "text"
+        class:
+          type: string
+          example: "cardData"
+        id:
+          type: string
+          example: "cardholderName"
+        src:
+          type: string
+          format: uri
+          example: "https://example.com/field.html?id=CARDHOLDER_NAME&sid=052211e8-54c8-4e0a-8402-e10bcb8ff264"
+    NpgBuildFormParams:
+      type: object
+      description: Parameters for NPG build form request
+      required:
+        - correlationId
+        - urls
+        - orderId
+        - paymentMethod
+      properties:
+        correlationId:
+          type: string
+          format: uuid
+          description: Correlation ID for the NPG request
+        urls:
+          $ref: '#/components/schemas/NpgSessionUrls'
+        orderId:
+          type: string
+          description: Order identifier
+        paymentMethod:
+          type: string
+          description: NPG payment method service name
+        language:
+          type: string
+          description: ISO language code (e.g. it, en, fr, de, sl)
+    NpgSessionUrls:
+      type: object
+      description: URLs for the NPG session
+      required:
+        - merchantUrl
+        - resultUrl
+        - notificationUrl
+        - cancelUrl
+      properties:
+        merchantUrl:
+          type: string
+          format: uri
+          description: Merchant URL
+        resultUrl:
+          type: string
+          format: uri
+          description: Result URL for the payment outcome
+        notificationUrl:
+          type: string
+          format: uri
+          description: Notification URL for async callbacks
+        cancelUrl:
+          type: string
+          format: uri
+          description: Cancel URL for user cancellation
     CalculateFeeRequest:
       description: Calculate fee request
       type: object
@@ -568,6 +947,50 @@ components:
         title:
           description: Problem title
           type: string
+    PatchSessionRequest:
+      type: object
+      description: Request body for updating a payment method session
+      required:
+        - transactionId
+      properties:
+        transactionId:
+          type: string
+          description: Transaction ID to associate with the session
+    SessionGetTransactionIdResponse:
+      type: object
+      description: Transaction id for session successful response
+      required:
+        - transactionId
+      properties:
+        transactionId:
+          type: string
+          description: Transaction id associated to this NPG session
+    SessionPaymentMethodResponse:
+      type: object
+      description: Session Payment method Response
+      properties:
+        sessionId:
+          type: string
+          description: Session Payment method ID
+        bin:
+          type: string
+          description: Bin of user card
+        lastFourDigits:
+          type: string
+          description: Last four digits of user card
+        expiringDate:
+          type: string
+          pattern: ^[0-9]{4,6}$
+          description: Expiring date of user card
+        brand:
+          description: The card brand name
+          type: string
+      required:
+        - sessionId
+        - bin
+        - lastFourDigits
+        - expiringDate
+        - brand
   requestBodies:
     PaymentMethodsRequest:
       required: true
