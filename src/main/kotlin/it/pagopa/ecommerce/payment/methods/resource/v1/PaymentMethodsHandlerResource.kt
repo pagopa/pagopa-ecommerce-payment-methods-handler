@@ -1,12 +1,16 @@
 package it.pagopa.ecommerce.payment.methods.resource.v1
 
+import it.pagopa.ecommerce.payment.methods.exception.JwtIssuerResponseException
 import it.pagopa.ecommerce.payment.methods.exception.NoBundleFoundException
+import it.pagopa.ecommerce.payment.methods.exception.NpgResponseException
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodNotFoundException
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodsClientException
+import it.pagopa.ecommerce.payment.methods.exception.UniqueIdGenerationException
 import it.pagopa.ecommerce.payment.methods.services.PaymentMethodService
 import it.pagopa.ecommerce.payment.methods.v1.server.api.PaymentMethodsApi
 import it.pagopa.ecommerce.payment.methods.v1.server.model.CalculateFeeRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.CalculateFeeResponse
+import it.pagopa.ecommerce.payment.methods.v1.server.model.CreateSessionResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
@@ -65,10 +69,54 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
 
     override fun getPaymentMethod(
         id: String,
-        xClientId: String?,
+        xClientId: it.pagopa.ecommerce.payment.methods.v1.server.model.ClientId?,
     ): CompletionStage<PaymentMethodResponse> {
         val xRequestId = UUID.randomUUID().toString()
-        return paymentMethodService.getPaymentMethod(id, xRequestId, xClientId)
+        return paymentMethodService.getPaymentMethod(id, xRequestId, xClientId?.toString())
+    }
+
+    override fun createSession(
+        id: String,
+        xClientId: @NotNull it.pagopa.ecommerce.payment.methods.v1.server.model.SessionClientId,
+        lang: String?,
+    ): CompletionStage<CreateSessionResponse> {
+        return paymentMethodService
+            .createSessionForPaymentMethod(id, lang, xClientId.toString())
+            .subscribeAsCompletionStage()
+    }
+
+    @ServerExceptionMapper
+    fun mapNpgResponseException(exception: NpgResponseException): RestResponse<ProblemJson> {
+        log.error("NPG Response Exception", exception)
+        return problemResponse(
+            Response.Status.BAD_GATEWAY,
+            "Bad Gateway",
+            exception.message.orEmpty(),
+        )
+    }
+
+    @ServerExceptionMapper
+    fun mapJwtIssuerResponseException(
+        exception: JwtIssuerResponseException
+    ): RestResponse<ProblemJson> {
+        log.error("JWT Issuer Response Exception", exception)
+        return problemResponse(
+            Response.Status.BAD_GATEWAY,
+            "Bad Gateway",
+            "Error creating notification token",
+        )
+    }
+
+    @ServerExceptionMapper
+    fun mapUniqueIdGenerationException(
+        exception: UniqueIdGenerationException
+    ): RestResponse<ProblemJson> {
+        log.error("Unique ID Generation Exception", exception)
+        return problemResponse(
+            Response.Status.INTERNAL_SERVER_ERROR,
+            "Internal Server Error",
+            exception.message.orEmpty(),
+        )
     }
 
     @ServerExceptionMapper

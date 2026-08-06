@@ -1,7 +1,9 @@
 package it.pagopa.ecommerce.payment.methods.services
 
+import io.smallrye.mutiny.Uni
 import it.pagopa.ecommerce.payment.methods.v1.server.model.CalculateFeeRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.CalculateFeeResponse
+import it.pagopa.ecommerce.payment.methods.v1.server.model.CreateSessionResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
@@ -27,4 +29,10 @@ interface PaymentMethodService {
         xLanguage: String,
         maxOccurrences: Int,
     ): CompletionStage<CalculateFeeResponse>
+
+    fun createSessionForPaymentMethod(
+        paymentMethodId: String,
+        language: String?,
+        xClientId: String,
+    ): Uni<CreateSessionResponse>
 }
