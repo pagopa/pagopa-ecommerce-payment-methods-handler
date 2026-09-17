@@ -263,7 +263,11 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
         exception: it.pagopa.ecommerce.payment.methods.exception.MismatchedSecurityTokenException
     ): RestResponse<ProblemJson> {
         log.warn("Mismatched Security Token: {}", exception.message)
-        return problemResponse(Response.Status.NOT_FOUND, "Not Found", "Order id not found")
+        return problemResponse(
+            Response.Status.FORBIDDEN,
+            "Forbidden",
+            "Invalid security token for the requested order id",
+        )
     }
 
     private fun problemResponse(
