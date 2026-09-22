@@ -11,7 +11,6 @@ import jakarta.inject.Inject
  * Redis wrapper for unique ID generation. Uses atomic SET NX EX to guarantee uniqueness, matching
  * the behavior of ecommerce-commons ReactiveUniqueIdTemplateWrapper.saveIfAbsent which maps to
  * Spring's ValueOperations.setIfAbsent(key, value, Duration).
- *
  */
 @ApplicationScoped
 class UniqueIdRedisWrapper

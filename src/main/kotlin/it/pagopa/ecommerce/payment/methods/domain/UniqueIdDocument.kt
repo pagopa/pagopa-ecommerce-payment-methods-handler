@@ -7,9 +7,9 @@ import java.time.OffsetDateTime
 /**
  * Redis document holding volatile information about a generated unique id.
  *
- * This mirrors the structure of `UniqueIdDocument` in pagopa-ecommerce-commons
- * (`id` + `creationDate`) so that the value stored under the shared `uniqueId`
- * keyspace is compatible across services.
+ * This mirrors the structure of `UniqueIdDocument` in pagopa-ecommerce-commons (`id` +
+ * `creationDate`) so that the value stored under the shared `uniqueId` keyspace is compatible
+ * across services.
  */
 data class UniqueIdDocument
 @JsonCreator
