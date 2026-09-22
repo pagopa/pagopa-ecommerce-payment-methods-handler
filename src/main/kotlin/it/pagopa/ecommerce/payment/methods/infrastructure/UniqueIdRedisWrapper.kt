@@ -1,19 +1,25 @@
 package it.pagopa.ecommerce.payment.methods.infrastructure
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import io.quarkus.redis.datasource.ReactiveRedisDataSource
 import io.smallrye.mutiny.Uni
+import it.pagopa.ecommerce.payment.methods.domain.UniqueIdDocument
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Inject
 
 /**
  * Redis wrapper for unique ID generation. Uses atomic SET NX EX to guarantee uniqueness, matching
- * the behavior of ecommerce-commons RedisTemplateWrapper.saveIfAbsent which maps to Spring's
- * ValueOperations.setIfAbsent(key, value, Duration).
+ * the behavior of ecommerce-commons ReactiveUniqueIdTemplateWrapper.saveIfAbsent which maps to
+ * Spring's ValueOperations.setIfAbsent(key, value, Duration).
+ *
  */
 @ApplicationScoped
 class UniqueIdRedisWrapper
 @Inject
-constructor(private val redisDataSource: ReactiveRedisDataSource) {
+constructor(
+    private val redisDataSource: ReactiveRedisDataSource,
+    private val objectMapper: ObjectMapper,
+) {
 
     companion object {
         private const val KEYSPACE = "uniqueId"
@@ -22,9 +28,10 @@ constructor(private val redisDataSource: ReactiveRedisDataSource) {
 
     fun saveIfAbsent(uniqueId: String): Uni<Boolean> {
         val redisKey = "$KEYSPACE:$uniqueId"
+        val value = objectMapper.writeValueAsString(UniqueIdDocument(uniqueId))
 
         return redisDataSource
-            .execute("SET", redisKey, uniqueId, "NX", "EX", TTL_SECONDS.toString())
+            .execute("SET", redisKey, value, "NX", "EX", TTL_SECONDS.toString())
             .map { response -> response != null }
     }
 }
