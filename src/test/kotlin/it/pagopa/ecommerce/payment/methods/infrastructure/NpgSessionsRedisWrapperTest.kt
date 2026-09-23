@@ -1,7 +1,5 @@
 package it.pagopa.ecommerce.payment.methods.infrastructure
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.quarkus.redis.datasource.ReactiveRedisDataSource
 import io.quarkus.redis.datasource.value.ReactiveValueCommands
 import io.smallrye.mutiny.Uni
@@ -20,15 +18,14 @@ import org.mockito.kotlin.whenever
 
 class NpgSessionsRedisWrapperTest {
 
-    private val objectMapper: ObjectMapper = jacksonObjectMapper()
-    private val valueCommands = mock<ReactiveValueCommands<String, String>>()
+    private val valueCommands = mock<ReactiveValueCommands<String, NpgSessionDocument>>()
     private val redisDataSource =
         mock<ReactiveRedisDataSource> {
-            on { value(String::class.java, String::class.java) } doReturn valueCommands
+            on { value(String::class.java, NpgSessionDocument::class.java) } doReturn valueCommands
         }
     private val ttlSeconds = 600L
 
-    private val wrapper = NpgSessionsRedisWrapper(redisDataSource, objectMapper, ttlSeconds)
+    private val wrapper = NpgSessionsRedisWrapper(redisDataSource, ttlSeconds)
 
     private val testDocument =
         NpgSessionDocument(
@@ -41,24 +38,22 @@ class NpgSessionsRedisWrapperTest {
     @Test
     fun `should save session document to Redis`() {
         val expectedKey = "npg:order-123"
-        val expectedJson = objectMapper.writeValueAsString(testDocument)
 
         doReturn(Uni.createFrom().voidItem())
             .whenever(valueCommands)
-            .setex(eq(expectedKey), eq(ttlSeconds), eq(expectedJson))
+            .setex(eq(expectedKey), eq(ttlSeconds), eq(testDocument))
 
         val result = wrapper.save(testDocument).await().indefinitely()
 
         assertEquals(testDocument, result)
-        verify(valueCommands).setex(expectedKey, ttlSeconds, expectedJson)
+        verify(valueCommands).setex(expectedKey, ttlSeconds, testDocument)
     }
 
     @Test
     fun `should find session document by orderId`() {
         val expectedKey = "npg:order-123"
-        val json = objectMapper.writeValueAsString(testDocument)
 
-        doReturn(Uni.createFrom().item(json)).whenever(valueCommands).get(eq(expectedKey))
+        doReturn(Uni.createFrom().item(testDocument)).whenever(valueCommands).get(eq(expectedKey))
 
         val result = wrapper.findById("order-123").await().indefinitely()
 
@@ -73,7 +68,9 @@ class NpgSessionsRedisWrapperTest {
     fun `should return null when session not found`() {
         val expectedKey = "npg:unknown-order"
 
-        doReturn(Uni.createFrom().nullItem<String>()).whenever(valueCommands).get(eq(expectedKey))
+        doReturn(Uni.createFrom().nullItem<NpgSessionDocument>())
+            .whenever(valueCommands)
+            .get(eq(expectedKey))
 
         val result = wrapper.findById("unknown-order").await().indefinitely()
 
@@ -108,11 +105,10 @@ class NpgSessionsRedisWrapperTest {
                     )
             )
         val expectedKey = "npg:order-123"
-        val expectedJson = objectMapper.writeValueAsString(docWithCardData)
 
         doReturn(Uni.createFrom().voidItem())
             .whenever(valueCommands)
-            .setex(eq(expectedKey), eq(ttlSeconds), eq(expectedJson))
+            .setex(eq(expectedKey), eq(ttlSeconds), eq(docWithCardData))
 
         val result = wrapper.save(docWithCardData).await().indefinitely()
 

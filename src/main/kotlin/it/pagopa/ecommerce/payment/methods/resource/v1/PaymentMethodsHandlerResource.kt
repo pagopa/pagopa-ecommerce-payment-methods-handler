@@ -1,5 +1,6 @@
 package it.pagopa.ecommerce.payment.methods.resource.v1
 
+import com.fasterxml.jackson.core.JsonProcessingException
 import it.pagopa.ecommerce.payment.methods.exception.JwtIssuerResponseException
 import it.pagopa.ecommerce.payment.methods.exception.NoBundleFoundException
 import it.pagopa.ecommerce.payment.methods.exception.NpgResponseException
@@ -179,6 +180,16 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
                 "The request is malformed, contains invalid parameters, or is missing required information."
             }
         return problemResponse(Response.Status.BAD_REQUEST, "Bad Request", detail)
+    }
+
+    @ServerExceptionMapper
+    fun mapJsonProcessingException(exception: JsonProcessingException): RestResponse<ProblemJson> {
+        log.warn("Malformed request body: {}", exception.originalMessage)
+        return problemResponse(
+            Response.Status.BAD_REQUEST,
+            "Bad Request",
+            "The request body is malformed or is missing required information.",
+        )
     }
 
     @ServerExceptionMapper
