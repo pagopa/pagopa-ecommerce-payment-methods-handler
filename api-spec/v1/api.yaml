@@ -321,7 +321,6 @@ components:
         - IO
         - CHECKOUT
         - CHECKOUT_CART
-        - WISP_REDIRECT
     NpgSdkIntegrityResponse:
       type: object
       required:
