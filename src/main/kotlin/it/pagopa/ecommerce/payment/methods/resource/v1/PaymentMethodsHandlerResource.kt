@@ -7,6 +7,7 @@ import it.pagopa.ecommerce.payment.methods.exception.NpgResponseException
 import it.pagopa.ecommerce.payment.methods.exception.OrderIdNotFoundException
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodNotFoundException
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodsClientException
+import it.pagopa.ecommerce.payment.methods.exception.SessionAlreadyAssociatedToTransactionException
 import it.pagopa.ecommerce.payment.methods.exception.UniqueIdGenerationException
 import it.pagopa.ecommerce.payment.methods.services.PaymentMethodService
 import it.pagopa.ecommerce.payment.methods.v1.server.api.PaymentMethodsApi
@@ -14,6 +15,7 @@ import it.pagopa.ecommerce.payment.methods.v1.server.model.ClientId
 import it.pagopa.ecommerce.payment.methods.v1.server.model.CalculateFeeRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.CalculateFeeResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.CreateSessionResponse
+import it.pagopa.ecommerce.payment.methods.v1.server.model.PatchSessionRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
@@ -98,6 +100,17 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
     ): CompletionStage<SessionPaymentMethodResponse> {
         return paymentMethodService
             .getCardDataInformation(id, orderId, xClientId.toString())
+            .subscribeAsCompletionStage()
+    }
+
+    override fun updateSession(
+        id: String,
+        orderId: String,
+        xClientId: @NotNull it.pagopa.ecommerce.payment.methods.v1.server.model.SessionClientId,
+        patchSessionRequest: PatchSessionRequest,
+    ): CompletionStage<Void> {
+        return paymentMethodService
+            .updateSession(id, orderId, patchSessionRequest, xClientId.toString())
             .subscribeAsCompletionStage()
     }
 
@@ -216,6 +229,18 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
     ): RestResponse<ProblemJson> {
         log.info("Order ID Not Found: {}", exception.message)
         return problemResponse(Response.Status.NOT_FOUND, "Not Found", exception.message.orEmpty())
+    }
+
+    @ServerExceptionMapper
+    fun mapSessionAlreadyAssociatedToTransactionException(
+        exception: SessionAlreadyAssociatedToTransactionException
+    ): RestResponse<ProblemJson> {
+        log.error("Session Already Associated To Transaction: {}", exception.message)
+        return problemResponse(
+            Response.Status.CONFLICT,
+            "Session already associated to transaction",
+            exception.message.orEmpty(),
+        )
     }
 
     private fun problemResponse(
