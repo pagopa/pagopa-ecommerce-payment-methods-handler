@@ -92,7 +92,7 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
         return problemResponse(
             Response.Status.BAD_GATEWAY,
             "Bad Gateway",
-            exception.message.orEmpty(),
+            "Error communicating with the payment gateway",
         )
     }
 
