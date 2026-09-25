@@ -210,6 +210,14 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
         )
     }
 
+    @ServerExceptionMapper
+    fun mapOrderIdNotFoundException(
+        exception: OrderIdNotFoundException
+    ): RestResponse<ProblemJson> {
+        log.info("Order ID Not Found: {}", exception.message)
+        return problemResponse(Response.Status.NOT_FOUND, "Not Found", exception.message.orEmpty())
+    }
+
     private fun problemResponse(
         status: Response.Status,
         title: String,
