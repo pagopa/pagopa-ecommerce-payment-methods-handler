@@ -28,3 +28,13 @@ class NpgClient(@param:RestClient private val npgBuildIntegrityApi: NpgBuildInte
         }
     }
 }
+
+/** Response from NPG getCardData endpoint. */
+data class NpgCardDataResponse
+@JsonCreator
+constructor(
+    @JsonProperty("bin") val bin: String?,
+    @JsonProperty("lastFourDigits") val lastFourDigits: String?,
+    @JsonProperty("expiringDate") val expiringDate: String?,
+    @JsonProperty("circuit") val circuit: String?,
+)
