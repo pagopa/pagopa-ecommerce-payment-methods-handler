@@ -551,7 +551,7 @@ class PaymentMethodsHandlerResourceTest {
 
         assertEquals(502, result.status)
         assertEquals("Bad Gateway", result.title)
-        assertEquals("NPG error", result.detail)
+        assertEquals("Error communicating with the payment gateway", result.detail)
     }
 
     @Test
@@ -639,11 +639,10 @@ class PaymentMethodsHandlerResourceTest {
     }
 
     @Test
-    fun `should return 502 for NpgResponseException with null message on createSession`() {
+    fun `should return 502 with generic detail for NpgResponseException with empty message on createSession`() {
         setupCreateSessionMocks()
-        // NpgResponseException wraps RuntimeException, whose getMessage() returns String? in
-        // Kotlin.
-        // To cover the .orEmpty() null-branch we construct an exception with an empty message.
+        // Even when the upstream NPG exception carries an empty message, the mapper must return a
+        // stable generic detail (no upstream/transport details leaked into the ProblemJson).
         whenever(mockNpgClient.buildForm(any()))
             .thenReturn(Uni.createFrom().failure(NpgResponseException("")))
 
@@ -661,7 +660,7 @@ class PaymentMethodsHandlerResourceTest {
 
         assertEquals(502, result.status)
         assertEquals("Bad Gateway", result.title)
-        assertEquals("", result.detail)
+        assertEquals("Error communicating with the payment gateway", result.detail)
     }
 
     @Test
