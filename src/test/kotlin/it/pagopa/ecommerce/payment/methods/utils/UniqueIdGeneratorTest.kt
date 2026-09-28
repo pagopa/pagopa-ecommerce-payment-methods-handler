@@ -52,7 +52,9 @@ class UniqueIdGeneratorTest {
 
     @Test
     fun `should throw UniqueIdGenerationException when all attempts are exhausted`() {
-        doReturn(Uni.createFrom().item(false)).whenever(uniqueIdRedisWrapper).saveIfAbsent(any())
+        whenever(uniqueIdRedisWrapper.saveIfAbsent(any())).thenAnswer {
+            Uni.createFrom().item(false)
+        }
 
         assertThrows<UniqueIdGenerationException> {
             uniqueIdGenerator.generateUniqueId().await().indefinitely()
@@ -62,28 +64,44 @@ class UniqueIdGeneratorTest {
     }
 
     @Test
-    fun `should log error and propagate failure when Redis throws unexpected exception`() {
-        val redisError = RuntimeException("Redis connection refused")
-
-        whenever(uniqueIdRedisWrapper.saveIfAbsent(any()))
-            .thenReturn(Uni.createFrom().failure(redisError))
-
-        val thrown =
-            assertThrows<RuntimeException> {
-                uniqueIdGenerator.generateUniqueId().await().indefinitely()
+    fun `should retry on transient Redis failure and eventually succeed`() {
+        var callCount = 0
+        whenever(uniqueIdRedisWrapper.saveIfAbsent(any())).thenAnswer {
+            callCount++
+            if (callCount < 3) {
+                Uni.createFrom().failure<Boolean>(RuntimeException("Redis connection refused"))
+            } else {
+                Uni.createFrom().item(true)
             }
+        }
 
-        assertEquals("Redis connection refused", thrown.message)
-        verify(uniqueIdRedisWrapper, times(1)).saveIfAbsent(any())
+        val result = uniqueIdGenerator.generateUniqueId().await().indefinitely()
+
+        assertEquals(UniqueIdGenerator.MAX_LENGTH, result.length)
+        assertTrue(result.startsWith(UniqueIdGenerator.PRODUCT_PREFIX))
+        verify(uniqueIdRedisWrapper, times(3)).saveIfAbsent(any())
+    }
+
+    @Test
+    fun `should throw UniqueIdGenerationException when Redis keeps failing`() {
+        whenever(uniqueIdRedisWrapper.saveIfAbsent(any())).thenAnswer {
+            Uni.createFrom().failure<Boolean>(RuntimeException("Redis connection refused"))
+        }
+
+        assertThrows<UniqueIdGenerationException> {
+            uniqueIdGenerator.generateUniqueId().await().indefinitely()
+        }
+
+        verify(uniqueIdRedisWrapper, times(UniqueIdGenerator.MAX_ATTEMPTS)).saveIfAbsent(any())
     }
 
     @Test
     fun `should generate different ids on each attempt when exhausted`() {
         val captor = argumentCaptor<String>()
 
-        doReturn(Uni.createFrom().item(false))
-            .whenever(uniqueIdRedisWrapper)
-            .saveIfAbsent(captor.capture())
+        whenever(uniqueIdRedisWrapper.saveIfAbsent(captor.capture())).thenAnswer {
+            Uni.createFrom().item(false)
+        }
 
         assertThrows<UniqueIdGenerationException> {
             uniqueIdGenerator.generateUniqueId().await().indefinitely()

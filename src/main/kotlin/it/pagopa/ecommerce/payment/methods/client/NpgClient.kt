@@ -1,5 +1,7 @@
 package it.pagopa.ecommerce.payment.methods.client
 
+import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonProperty
 import io.smallrye.mutiny.Uni
 import it.pagopa.ecommerce.payment.methods.exception.NpgClientException
 import it.pagopa.generated.ecommerce.npg.client.api.NpgBuildIntegrityApi

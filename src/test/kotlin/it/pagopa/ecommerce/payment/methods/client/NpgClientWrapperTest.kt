@@ -91,7 +91,7 @@ class NpgClientWrapperTest {
     }
 
     @Test
-    fun `should pass correct authorization header with Bearer prefix`() {
+    fun `should pass correlationId and raw API key to NPG client`() {
         val npgResponse = buildFieldsDto()
 
         doReturn(Uni.createFrom().item(npgResponse))

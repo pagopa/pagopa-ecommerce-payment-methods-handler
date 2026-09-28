@@ -7,8 +7,6 @@ import io.quarkus.test.junit.QuarkusTest
 import io.quarkus.test.junit.QuarkusTestProfile
 import io.quarkus.test.junit.TestProfile
 import it.pagopa.generated.ecommerce.client.api.CalculatorApi
-import io.quarkus.test.junit.QuarkusTestProfile
-import io.quarkus.test.junit.TestProfile
 import it.pagopa.generated.ecommerce.client.api.PaymentMethodsApi
 import it.pagopa.generated.ecommerce.client.model.BundleOptionDto
 import it.pagopa.generated.ecommerce.client.model.PaymentMethodRequestDto

@@ -84,7 +84,6 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
         id: String,
         xClientId: @NotNull it.pagopa.ecommerce.payment.methods.v1.server.model.SessionClientId,
         lang: String?,
-        xClientId: SessionClientId?,
     ): CompletionStage<CreateSessionResponse> {
         return paymentMethodService
             .createSessionForPaymentMethod(id, lang, xClientId.toString())
@@ -107,7 +106,7 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
         return problemResponse(
             Response.Status.BAD_GATEWAY,
             "Bad Gateway",
-            exception.message.orEmpty(),
+            "Error communicating with the payment gateway",
         )
     }
 
@@ -208,14 +207,6 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
             "Not Found",
             "No bundle found for the requested payment method.",
         )
-    }
-
-    @ServerExceptionMapper
-    fun mapOrderIdNotFoundException(
-        exception: OrderIdNotFoundException
-    ): RestResponse<ProblemJson> {
-        log.info("Order ID Not Found: {}", exception.message)
-        return problemResponse(Response.Status.NOT_FOUND, "Not Found", exception.message.orEmpty())
     }
 
     private fun problemResponse(
