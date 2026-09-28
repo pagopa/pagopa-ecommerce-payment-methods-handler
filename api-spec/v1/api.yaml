@@ -145,7 +145,7 @@ paths:
         This endpoint returns an object containing data on how a frontend can build a form
         to allow direct exchanging of payment information to the payment gateway without eCommerce
         having to store PCI data (or other sensitive data tied to the payment method).
-        The returned data is tied to a session on the payment gateway identified by the field `sessionId`.
+        The returned data is tied to a session on the payment gateway identified by the field `orderId`.
       parameters:
         - name: id
           in: path
