@@ -11,6 +11,7 @@ import it.pagopa.ecommerce.payment.methods.domain.CardDataDocument
 import it.pagopa.ecommerce.payment.methods.domain.NpgSessionDocument
 import it.pagopa.ecommerce.payment.methods.exception.InvalidSessionException
 import it.pagopa.ecommerce.payment.methods.exception.MismatchedSecurityTokenException
+import it.pagopa.ecommerce.payment.methods.exception.NpgResponseException
 import it.pagopa.ecommerce.payment.methods.exception.OrderIdNotFoundException
 import it.pagopa.ecommerce.payment.methods.exception.SessionAlreadyAssociatedToTransactionException
 import it.pagopa.ecommerce.payment.methods.infrastructure.NpgSessionsRedisWrapper
@@ -307,24 +308,46 @@ constructor(
                     npgClient
                         .getCardData(correlationId, session.sessionId)
                         .flatMap { cardData ->
-                            npgSessionsRedisWrapper
-                                .save(
-                                    NpgSessionDocument(
-                                        orderId = session.orderId,
-                                        correlationId = session.correlationId,
-                                        sessionId = session.sessionId,
-                                        securityToken = session.securityToken,
-                                        cardData =
-                                            CardDataDocument(
-                                                bin = cardData.bin ?: "",
-                                                lastFourDigits = cardData.lastFourDigits ?: "",
-                                                expiringDate = cardData.expiringDate ?: "",
-                                                circuit = cardData.circuit ?: "",
-                                            ),
-                                        transactionId = session.transactionId,
-                                    )
+                            // All these fields are required by the SessionPaymentMethodResponse
+                            // contract. A partial NPG payload must not be turned into a 200
+                            // response that violates the API contract: fail with a gateway error
+                            // instead.
+                            if (
+                                cardData.bin.isNullOrBlank() ||
+                                    cardData.lastFourDigits.isNullOrBlank() ||
+                                    cardData.expiringDate.isNullOrBlank() ||
+                                    cardData.circuit.isNullOrBlank()
+                            ) {
+                                log.error(
+                                    "Incomplete card data received from NPG for orderId: {}",
+                                    orderId,
                                 )
-                                .replaceWith(cardData)
+                                Uni.createFrom()
+                                    .failure(
+                                        NpgResponseException(
+                                            "Incomplete card data received from NPG"
+                                        )
+                                    )
+                            } else {
+                                npgSessionsRedisWrapper
+                                    .save(
+                                        NpgSessionDocument(
+                                            orderId = session.orderId,
+                                            correlationId = session.correlationId,
+                                            sessionId = session.sessionId,
+                                            securityToken = session.securityToken,
+                                            cardData =
+                                                CardDataDocument(
+                                                    bin = cardData.bin!!,
+                                                    lastFourDigits = cardData.lastFourDigits!!,
+                                                    expiringDate = cardData.expiringDate!!,
+                                                    circuit = cardData.circuit!!,
+                                                ),
+                                            transactionId = session.transactionId,
+                                        )
+                                    )
+                                    .replaceWith(cardData)
+                            }
                         }
                         .map { cardData ->
                             SessionPaymentMethodResponse().apply {

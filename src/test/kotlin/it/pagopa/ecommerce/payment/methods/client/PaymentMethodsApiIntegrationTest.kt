@@ -24,7 +24,11 @@ import org.junit.jupiter.api.extension.RegisterExtension
 
 class AfmIntegrationTestProfile : QuarkusTestProfile {
     override fun getConfigOverrides(): Map<String, String> {
-        return mapOf("quarkus.rest-client.afm_yaml.url" to "http://localhost:18089")
+        return mapOf(
+            "quarkus.rest-client.afm_yaml.url" to "http://localhost:18089",
+            "quarkus.rest-client.\"it.pagopa.generated.ecommerce.client.api.CalculatorApi\".url" to
+                "http://localhost:18089",
+        )
     }
 }
 

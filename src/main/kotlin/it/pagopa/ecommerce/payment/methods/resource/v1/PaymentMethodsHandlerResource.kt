@@ -11,6 +11,7 @@ import it.pagopa.ecommerce.payment.methods.exception.SessionAlreadyAssociatedToT
 import it.pagopa.ecommerce.payment.methods.exception.UniqueIdGenerationException
 import it.pagopa.ecommerce.payment.methods.services.PaymentMethodService
 import it.pagopa.ecommerce.payment.methods.v1.server.api.PaymentMethodsApi
+import it.pagopa.ecommerce.payment.methods.v1.server.model.ClientId
 import it.pagopa.ecommerce.payment.methods.v1.server.model.CalculateFeeRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.CalculateFeeResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.CreateSessionResponse
@@ -142,7 +143,7 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
         return problemResponse(
             Response.Status.BAD_GATEWAY,
             "Bad Gateway",
-            exception.message.orEmpty(),
+            "Error communicating with the payment gateway",
         )
     }
 
@@ -229,20 +230,20 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
     }
 
     @ServerExceptionMapper
+    fun mapOrderIdNotFoundException(
+        exception: OrderIdNotFoundException
+    ): RestResponse<ProblemJson> {
+        log.info("Order ID Not Found: {}", exception.message)
+        return problemResponse(Response.Status.NOT_FOUND, "Not Found", exception.message.orEmpty())
+    }
+
+    @ServerExceptionMapper
     fun mapNoBundleFoundException(exception: NoBundleFoundException): RestResponse<ProblemJson> {
         return problemResponse(
             Response.Status.NOT_FOUND,
             "Not Found",
             "No bundle found for the requested payment method.",
         )
-    }
-
-    @ServerExceptionMapper
-    fun mapOrderIdNotFoundException(
-        exception: OrderIdNotFoundException
-    ): RestResponse<ProblemJson> {
-        log.info("Order ID Not Found: {}", exception.message)
-        return problemResponse(Response.Status.NOT_FOUND, "Not Found", exception.message.orEmpty())
     }
 
     @ServerExceptionMapper

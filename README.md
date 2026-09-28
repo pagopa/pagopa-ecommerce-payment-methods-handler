@@ -40,6 +40,28 @@ The following environment variables are used to configure the application.
 | `NPG_API_KEY`                    | The API key required to authenticate with the Nexi B2B API.                                                                                                     |
 | `NPG_B2B_CONNECTION_TIMEOUT`     | The timeout in milliseconds for establishing a connection to the Nexi B2B API.                                                                                  |
 | `NPG_B2B_READ_TIMEOUT`           | The timeout in milliseconds for waiting for data after a connection to the Nexi B2B API has been established.                                                   |
+| **NPG Client**                   |                                                                                                                                                                 |
+| `NPG_URI`                        | The base URI for the NPG API used for session/build operations (e.g., `https://stg-ta.nexigroup.com/api/phoenix-0.0`).                                          |
+| `NPG_CONNECTION_TIMEOUT`         | The timeout in milliseconds for establishing a connection to the NPG API.                                                                                       |
+| `NPG_READ_TIMEOUT`               | The timeout in milliseconds for waiting for data after a connection to the NPG API has been established.                                                        |
+| `NPG_SESSIONS_TTL`               | Time-to-live in seconds for the NPG session data stored in Redis.                                                                                               |
+| `NPG_NOTIFICATION_JWT_VALIDITY_TIME` | Validity time in seconds for the notification JWT token generated for NPG callbacks.                                                                        |
+| **JWT Issuer Client**            |                                                                                                                                                                 |
+| `JWT_ISSUER_URI`                 | The base URI for the JWT issuer service used to mint notification tokens.                                                                                        |
+| `JWT_ISSUER_CONNECTION_TIMEOUT`  | The timeout in milliseconds for establishing a connection to the JWT issuer service.                                                                            |
+| `JWT_ISSUER_READ_TIMEOUT`        | The timeout in milliseconds for waiting for data after a connection to the JWT issuer service has been established.                                             |
+| `JWT_ISSUER_API_KEY`             | The API key required to authenticate with the JWT issuer service.                                                                                               |
+| **Session URLs**                 |                                                                                                                                                                 |
+| `SESSION_URL_BASE_PATH`          | Base URL used as the NPG `merchantUrl` for non-IO clients (checkout).                                                                                            |
+| `SESSION_URL_IO_BASE_PATH`       | Base URL used as the NPG `merchantUrl` for the IO client.                                                                                                        |
+| `SESSION_URL_OUTCOME_SUFFIX`     | Path suffix appended to the base path to build the payment result URL (default `/esito`).                                                                       |
+| `SESSION_URL_CANCEL_SUFFIX`      | Path suffix appended to the base path to build the payment cancellation URL (default `/annulla`).                                                               |
+| `SESSION_URL_NOTIFICATION_URL`   | Template URL for the NPG notification callback (supports `{orderId}` and `{sessionToken}` placeholders).                                                         |
+| **Redis**                        |                                                                                                                                                                 |
+| `REDIS_SCHEME`                   | Redis connection scheme: `redis` for plaintext (local) or `rediss` for TLS (deployed environments). Defaults to `rediss`.                                       |
+| `REDIS_HOST`                     | The Redis host name.                                                                                                                                             |
+| `REDIS_PORT`                     | The Redis port (e.g., `6379` for local plaintext, `6380` for TLS).                                                                                              |
+| `REDIS_PASSWORD`                 | The Redis access key/password.                                                                                                                                  |
 
 An example configuration of these environment variables is in the `.env.example` file.
 
