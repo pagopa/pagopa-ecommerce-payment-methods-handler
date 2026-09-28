@@ -44,18 +44,25 @@ constructor(private val uniqueIdRedisWrapper: UniqueIdRedisWrapper) {
 
         return uniqueIdRedisWrapper
             .saveIfAbsent(uniqueId)
+            // A transient Redis failure must be treated as a failed attempt (like a collision), not
+            // propagated immediately. Converting it to `false` here lets it flow into the bounded
+            // retry chain below, matching the behavior of ecommerce-commons ReactiveUniqueIdUtils
+            // (onErrorResume -> retry). This runs before the recursive call, so a
+            // UniqueIdGenerationException coming from an exhausted retry is never swallowed here.
+            .onFailure()
+            .recoverWithItem { e ->
+                log.error(
+                    "Error saving unique id on attempt $attempt for id=$uniqueId, retrying...",
+                    e,
+                )
+                false
+            }
             .flatMap { wasSet ->
                 if (wasSet) {
                     Uni.createFrom().item(uniqueId)
                 } else {
                     log.warn("UniqueId collision on attempt $attempt for id=$uniqueId, retrying...")
                     tryGenerate(attempt + 1)
-                }
-            }
-            .onFailure()
-            .invoke { e ->
-                if (e !is UniqueIdGenerationException) {
-                    log.error("Error generating unique id on attempt $attempt", e)
                 }
             }
     }
