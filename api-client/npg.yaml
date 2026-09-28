@@ -6,8 +6,16 @@ info:
 servers:
   - url: "https://{gateway_test}/api/v1"
     description: TEST
+    variables:
+      gateway_test:
+        default: stg-ta.nexigroup.com
+        description: NPG test gateway host
   - url: "https://{gateway_prod}/api/v1"
     description: PROD
+    variables:
+      gateway_prod:
+        default: xpay.nexigroup.com
+        description: NPG production gateway host
 security:
   - OAuth2: [ ]
 paths:
