@@ -16,7 +16,7 @@ val quarkusPlatformVersion: String by project
 val mockitoVersion = "5.19.0"
 val mockitoKotlinVersion = "5.1.0"
 val wireMockVersion = "3.13.1"
-val quarkusOpenApiGeneratorVersion = "2.12.1"
+val quarkusOpenApiGeneratorVersion = "2.16.0-lts"
 
 dependencies {
   implementation("io.quarkus:quarkus-jacoco")
