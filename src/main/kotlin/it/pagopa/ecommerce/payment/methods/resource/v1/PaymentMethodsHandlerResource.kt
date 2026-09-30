@@ -11,9 +11,9 @@ import it.pagopa.ecommerce.payment.methods.exception.SessionAlreadyAssociatedToT
 import it.pagopa.ecommerce.payment.methods.exception.UniqueIdGenerationException
 import it.pagopa.ecommerce.payment.methods.services.PaymentMethodService
 import it.pagopa.ecommerce.payment.methods.v1.server.api.PaymentMethodsApi
-import it.pagopa.ecommerce.payment.methods.v1.server.model.ClientId
 import it.pagopa.ecommerce.payment.methods.v1.server.model.CalculateFeeRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.CalculateFeeResponse
+import it.pagopa.ecommerce.payment.methods.v1.server.model.ClientId
 import it.pagopa.ecommerce.payment.methods.v1.server.model.CreateSessionResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PatchSessionRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodResponse
