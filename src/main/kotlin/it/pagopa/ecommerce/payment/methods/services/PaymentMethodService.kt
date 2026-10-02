@@ -7,6 +7,7 @@ import it.pagopa.ecommerce.payment.methods.v1.server.model.CreateSessionResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
+import it.pagopa.ecommerce.payment.methods.v1.server.model.SessionPaymentMethodResponse
 import java.util.concurrent.CompletionStage
 
 interface PaymentMethodService {
@@ -35,4 +36,10 @@ interface PaymentMethodService {
         language: String?,
         xClientId: String,
     ): Uni<CreateSessionResponse>
+
+    fun getCardDataInformation(
+        paymentMethodId: String,
+        orderId: String,
+        xClientId: String,
+    ): Uni<SessionPaymentMethodResponse>
 }
