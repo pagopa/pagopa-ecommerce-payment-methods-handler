@@ -11,9 +11,9 @@ import it.pagopa.ecommerce.payment.methods.exception.SessionAlreadyAssociatedToT
 import it.pagopa.ecommerce.payment.methods.exception.UniqueIdGenerationException
 import it.pagopa.ecommerce.payment.methods.services.PaymentMethodService
 import it.pagopa.ecommerce.payment.methods.v1.server.api.PaymentMethodsApi
-import it.pagopa.ecommerce.payment.methods.v1.server.model.ClientId
 import it.pagopa.ecommerce.payment.methods.v1.server.model.CalculateFeeRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.CalculateFeeResponse
+import it.pagopa.ecommerce.payment.methods.v1.server.model.ClientId
 import it.pagopa.ecommerce.payment.methods.v1.server.model.CreateSessionResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PatchSessionRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodResponse
@@ -110,6 +110,30 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
     ): CompletionStage<Void> {
         return paymentMethodService
             .updateSession(id, orderId, patchSessionRequest, xClientId.toString())
+            .subscribeAsCompletionStage()
+    }
+
+    override fun getTransactionIdForSession(
+        id: String,
+        orderId: String,
+        authorization: String,
+        xClientId: @NotNull it.pagopa.ecommerce.payment.methods.v1.server.model.SessionClientId,
+    ): CompletionStage<
+        it.pagopa.ecommerce.payment.methods.v1.server.model.SessionGetTransactionIdResponse
+    > {
+        val securityToken =
+            authorization.takeIf { it.startsWith("Bearer ") }?.removePrefix("Bearer ")
+                ?: throw jakarta.validation.ValidationException(
+                    "Missing or invalid Authorization Bearer token"
+                )
+
+        return paymentMethodService
+            .getTransactionIdForSession(id, orderId, securityToken, xClientId.toString())
+            .map { transactionId ->
+                it.pagopa.ecommerce.payment.methods.v1.server.model
+                    .SessionGetTransactionIdResponse()
+                    .apply { this.transactionId = transactionId }
+            }
             .subscribeAsCompletionStage()
     }
 
@@ -231,6 +255,30 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
             Response.Status.CONFLICT,
             "Session already associated to transaction",
             exception.message.orEmpty(),
+        )
+    }
+
+    @ServerExceptionMapper
+    fun mapInvalidSessionException(
+        exception: it.pagopa.ecommerce.payment.methods.exception.InvalidSessionException
+    ): RestResponse<ProblemJson> {
+        log.info("Invalid Session: {}", exception.message)
+        return problemResponse(
+            Response.Status.CONFLICT,
+            "Invalid session",
+            exception.message.orEmpty(),
+        )
+    }
+
+    @ServerExceptionMapper
+    fun mapMismatchedSecurityTokenException(
+        exception: it.pagopa.ecommerce.payment.methods.exception.MismatchedSecurityTokenException
+    ): RestResponse<ProblemJson> {
+        log.warn("Mismatched Security Token: {}", exception.message)
+        return problemResponse(
+            Response.Status.FORBIDDEN,
+            "Forbidden",
+            "Invalid security token for the requested order id",
         )
     }
 
