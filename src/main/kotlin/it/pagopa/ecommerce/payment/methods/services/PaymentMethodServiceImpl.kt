@@ -160,7 +160,7 @@ constructor(
     override fun createSessionForPaymentMethod(
         paymentMethodId: String,
         language: String?,
-        xClientId: String,
+        xClientId: String?,
     ): Uni<CreateSessionResponse> {
         log.info(
             "[Payment Method service] create new NPG session using paymentMethodId: {}",
@@ -194,7 +194,7 @@ constructor(
                 val correlationId = UUID.randomUUID()
                 log.info("Generated correlationId for NPG build session: {}", correlationId)
 
-                val isIoClient = xClientId.equals("IO", ignoreCase = true)
+                val isIoClient = "IO".equals(xClientId, ignoreCase = true)
                 val returnUrlBasePath =
                     if (isIoClient) sessionUrlConfig.ioBasePath() else sessionUrlConfig.basePath()
 
