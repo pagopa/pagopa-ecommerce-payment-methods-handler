@@ -161,10 +161,10 @@ paths:
             $ref: '#/components/schemas/Lang'
         - in: header
           name: X-Client-Id
-          required: true
+          required: false
           description: Transaction origin (populated by APIM policy)
           schema:
-            $ref: '#/components/schemas/SessionClientId'
+            $ref: '#/components/schemas/ClientId'
       responses:
         '200':
           description: Payment form data successfully created
@@ -368,16 +368,10 @@ components:
         - IO
         - CHECKOUT
         - CHECKOUT_CART
+        - WISP_REDIRECT
     Lang:
       type: string
       description: Language selection header
-    SessionClientId:
-      type: string
-      description: Transaction origin client identifier
-      enum:
-        - IO
-        - CHECKOUT
-        - CHECKOUT_CART
     NpgSdkIntegrityResponse:
       type: object
       required:
