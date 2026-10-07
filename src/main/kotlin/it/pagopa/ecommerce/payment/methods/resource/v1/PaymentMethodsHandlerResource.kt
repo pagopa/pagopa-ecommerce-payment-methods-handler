@@ -34,6 +34,7 @@ class PaymentMethodsHandlerResource
 @Inject
 constructor(private val paymentMethodService: PaymentMethodService) : PaymentMethodsApi {
     private val log = LoggerFactory.getLogger(PaymentMethodsHandlerResource::class.java)
+    private const val NOT_FOUND_TITLE = "Not Found"
 
     override fun calculateFees(
         paymentMethodId: String,
@@ -186,7 +187,7 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
         log.info("Payment Method Not Found: {}", exception.message)
         return problemResponse(
             Response.Status.NOT_FOUND,
-            "Not Found",
+            NOT_FOUND_TITLE,
             "The requested payment method does not exist or could not be found.",
         )
     }
@@ -196,14 +197,14 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
         exception: OrderIdNotFoundException
     ): RestResponse<ProblemJson> {
         log.info("Order ID Not Found: {}", exception.message)
-        return problemResponse(Response.Status.NOT_FOUND, "Not Found", exception.message.orEmpty())
+        return problemResponse(Response.Status.NOT_FOUND, NOT_FOUND_TITLE, exception.message.orEmpty())
     }
 
     @ServerExceptionMapper
     fun mapNoBundleFoundException(exception: NoBundleFoundException): RestResponse<ProblemJson> {
         return problemResponse(
             Response.Status.NOT_FOUND,
-            "Not Found",
+            NOT_FOUND_TITLE,
             "No bundle found for the requested payment method.",
         )
     }
