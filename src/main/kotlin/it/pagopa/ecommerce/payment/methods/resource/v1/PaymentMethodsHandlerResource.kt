@@ -11,16 +11,15 @@ import it.pagopa.ecommerce.payment.methods.exception.SessionAlreadyAssociatedToT
 import it.pagopa.ecommerce.payment.methods.exception.UniqueIdGenerationException
 import it.pagopa.ecommerce.payment.methods.services.PaymentMethodService
 import it.pagopa.ecommerce.payment.methods.v1.server.api.PaymentMethodsApi
-import it.pagopa.ecommerce.payment.methods.v1.server.model.ClientId
 import it.pagopa.ecommerce.payment.methods.v1.server.model.CalculateFeeRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.CalculateFeeResponse
+import it.pagopa.ecommerce.payment.methods.v1.server.model.ClientId
 import it.pagopa.ecommerce.payment.methods.v1.server.model.CreateSessionResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PatchSessionRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.ProblemJson
-import it.pagopa.ecommerce.payment.methods.v1.server.model.SessionClientId
 import it.pagopa.ecommerce.payment.methods.v1.server.model.SessionPaymentMethodResponse
 import jakarta.inject.Inject
 import jakarta.validation.Valid
@@ -37,6 +36,10 @@ class PaymentMethodsHandlerResource
 @Inject
 constructor(private val paymentMethodService: PaymentMethodService) : PaymentMethodsApi {
     private val log = LoggerFactory.getLogger(PaymentMethodsHandlerResource::class.java)
+
+    companion object {
+        private const val NOT_FOUND_TITLE = "Not Found"
+    }
 
     override fun calculateFees(
         paymentMethodId: String,
@@ -84,18 +87,18 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
 
     override fun createSession(
         id: String,
-        xClientId: @NotNull it.pagopa.ecommerce.payment.methods.v1.server.model.SessionClientId,
         lang: String?,
+        xClientId: it.pagopa.ecommerce.payment.methods.v1.server.model.ClientId?,
     ): CompletionStage<CreateSessionResponse> {
         return paymentMethodService
-            .createSessionForPaymentMethod(id, lang, xClientId.toString())
+            .createSessionForPaymentMethod(id, lang, xClientId?.toString())
             .subscribeAsCompletionStage()
     }
 
     override fun getSessionPaymentMethod(
         id: String,
         orderId: String,
-        xClientId: @NotNull it.pagopa.ecommerce.payment.methods.v1.server.model.SessionClientId,
+        xClientId: @NotNull it.pagopa.ecommerce.payment.methods.v1.server.model.ClientId,
     ): CompletionStage<SessionPaymentMethodResponse> {
         return paymentMethodService
             .getCardDataInformation(id, orderId, xClientId.toString())
@@ -200,7 +203,7 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
         log.info("Payment Method Not Found: {}", exception.message)
         return problemResponse(
             Response.Status.NOT_FOUND,
-            "Not Found",
+            NOT_FOUND_TITLE,
             "The requested payment method does not exist or could not be found.",
         )
     }
@@ -210,14 +213,18 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
         exception: OrderIdNotFoundException
     ): RestResponse<ProblemJson> {
         log.info("Order ID Not Found: {}", exception.message)
-        return problemResponse(Response.Status.NOT_FOUND, "Not Found", exception.message.orEmpty())
+        return problemResponse(
+            Response.Status.NOT_FOUND,
+            NOT_FOUND_TITLE,
+            exception.message.orEmpty(),
+        )
     }
 
     @ServerExceptionMapper
     fun mapNoBundleFoundException(exception: NoBundleFoundException): RestResponse<ProblemJson> {
         return problemResponse(
             Response.Status.NOT_FOUND,
-            "Not Found",
+            NOT_FOUND_TITLE,
             "No bundle found for the requested payment method.",
         )
     }

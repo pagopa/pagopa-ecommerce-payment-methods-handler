@@ -8,6 +8,7 @@ import it.pagopa.ecommerce.payment.methods.client.PaymentMethodsClient
 import it.pagopa.ecommerce.payment.methods.domain.NpgSessionDocument
 import it.pagopa.ecommerce.payment.methods.exception.JwtIssuerResponseException
 import it.pagopa.ecommerce.payment.methods.exception.NoBundleFoundException
+import it.pagopa.ecommerce.payment.methods.exception.NpgResponseException
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodNotFoundException
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodsClientException
 import it.pagopa.ecommerce.payment.methods.exception.SessionAlreadyAssociatedToTransactionException
@@ -1406,6 +1407,104 @@ class PaymentMethodsClientTest {
         }
 
         verify(mockNpgSessionsRedis, times(0)).findById(any())
+    }
+
+    @Test
+    fun `should throw NpgResponseException when NPG returns card data with missing bin`() {
+        whenever(mockClient.getPaymentMethod(any(), any(), any()))
+            .thenReturn(Uni.createFrom().item(buildAfmPaymentMethodResponse()))
+        whenever(mockNpgSessionsRedis.findById(testOrderId))
+            .thenReturn(Uni.createFrom().item(testSessionDocument))
+        whenever(mockNpgClient.getCardData(any(), any()))
+            .thenReturn(
+                Uni.createFrom()
+                    .item(
+                        it.pagopa.generated.npg.client.model.CardDataResponseDto().apply {
+                            bin = null
+                            lastFourDigits = "4321"
+                            expiringDate = "0627"
+                            circuit = "MC"
+                        }
+                    )
+            )
+
+        assertThrows<NpgResponseException> {
+            service.getCardDataInformation("pm-001", testOrderId, "CHECKOUT").await().indefinitely()
+        }
+
+        verify(mockNpgSessionsRedis, times(0)).save(any())
+    }
+
+    @Test
+    fun `should throw NpgResponseException when NPG returns card data with missing lastFourDigits`() {
+        whenever(mockClient.getPaymentMethod(any(), any(), any()))
+            .thenReturn(Uni.createFrom().item(buildAfmPaymentMethodResponse()))
+        whenever(mockNpgSessionsRedis.findById(testOrderId))
+            .thenReturn(Uni.createFrom().item(testSessionDocument))
+        whenever(mockNpgClient.getCardData(any(), any()))
+            .thenReturn(
+                Uni.createFrom()
+                    .item(
+                        it.pagopa.generated.npg.client.model.CardDataResponseDto().apply {
+                            bin = "654321"
+                            lastFourDigits = "   " // Test isBlank()
+                            expiringDate = "0627"
+                            circuit = "MC"
+                        }
+                    )
+            )
+
+        assertThrows<NpgResponseException> {
+            service.getCardDataInformation("pm-001", testOrderId, "CHECKOUT").await().indefinitely()
+        }
+    }
+
+    @Test
+    fun `should throw NpgResponseException when NPG returns card data with missing expiringDate`() {
+        whenever(mockClient.getPaymentMethod(any(), any(), any()))
+            .thenReturn(Uni.createFrom().item(buildAfmPaymentMethodResponse()))
+        whenever(mockNpgSessionsRedis.findById(testOrderId))
+            .thenReturn(Uni.createFrom().item(testSessionDocument))
+        whenever(mockNpgClient.getCardData(any(), any()))
+            .thenReturn(
+                Uni.createFrom()
+                    .item(
+                        it.pagopa.generated.npg.client.model.CardDataResponseDto().apply {
+                            bin = "654321"
+                            lastFourDigits = "4321"
+                            expiringDate = null
+                            circuit = "MC"
+                        }
+                    )
+            )
+
+        assertThrows<NpgResponseException> {
+            service.getCardDataInformation("pm-001", testOrderId, "CHECKOUT").await().indefinitely()
+        }
+    }
+
+    @Test
+    fun `should throw NpgResponseException when NPG returns card data with missing circuit`() {
+        whenever(mockClient.getPaymentMethod(any(), any(), any()))
+            .thenReturn(Uni.createFrom().item(buildAfmPaymentMethodResponse()))
+        whenever(mockNpgSessionsRedis.findById(testOrderId))
+            .thenReturn(Uni.createFrom().item(testSessionDocument))
+        whenever(mockNpgClient.getCardData(any(), any()))
+            .thenReturn(
+                Uni.createFrom()
+                    .item(
+                        it.pagopa.generated.npg.client.model.CardDataResponseDto().apply {
+                            bin = "654321"
+                            lastFourDigits = "4321"
+                            expiringDate = "0627"
+                            circuit = "" // Test isEmpty()
+                        }
+                    )
+            )
+
+        assertThrows<NpgResponseException> {
+            service.getCardDataInformation("pm-001", testOrderId, "CHECKOUT").await().indefinitely()
+        }
     }
 
     // --- updateSession tests ---
