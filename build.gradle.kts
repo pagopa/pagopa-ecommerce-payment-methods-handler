@@ -56,7 +56,7 @@ dependencies {
 
 group = "it.pagopa.ecommerce"
 
-version = "1.6.0-SNAPSHOT"
+version = "1.7.1-SNAPSHOT"
 
 java {
   sourceCompatibility = JavaVersion.VERSION_21

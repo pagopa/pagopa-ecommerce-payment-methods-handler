@@ -10,15 +10,14 @@ import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodsClientExcepti
 import it.pagopa.ecommerce.payment.methods.exception.UniqueIdGenerationException
 import it.pagopa.ecommerce.payment.methods.services.PaymentMethodService
 import it.pagopa.ecommerce.payment.methods.v1.server.api.PaymentMethodsApi
-import it.pagopa.ecommerce.payment.methods.v1.server.model.ClientId
 import it.pagopa.ecommerce.payment.methods.v1.server.model.CalculateFeeRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.CalculateFeeResponse
+import it.pagopa.ecommerce.payment.methods.v1.server.model.ClientId
 import it.pagopa.ecommerce.payment.methods.v1.server.model.CreateSessionResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.ProblemJson
-import it.pagopa.ecommerce.payment.methods.v1.server.model.SessionClientId
 import it.pagopa.ecommerce.payment.methods.v1.server.model.SessionPaymentMethodResponse
 import jakarta.inject.Inject
 import jakarta.validation.Valid
@@ -93,7 +92,7 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
     override fun getSessionPaymentMethod(
         id: String,
         orderId: String,
-        xClientId: @NotNull it.pagopa.ecommerce.payment.methods.v1.server.model.SessionClientId,
+        xClientId: @NotNull it.pagopa.ecommerce.payment.methods.v1.server.model.ClientId,
     ): CompletionStage<SessionPaymentMethodResponse> {
         return paymentMethodService
             .getCardDataInformation(id, orderId, xClientId.toString())
