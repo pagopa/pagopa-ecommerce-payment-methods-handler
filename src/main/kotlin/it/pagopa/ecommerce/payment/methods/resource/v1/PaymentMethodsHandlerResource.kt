@@ -34,7 +34,10 @@ class PaymentMethodsHandlerResource
 @Inject
 constructor(private val paymentMethodService: PaymentMethodService) : PaymentMethodsApi {
     private val log = LoggerFactory.getLogger(PaymentMethodsHandlerResource::class.java)
-    private const val NOT_FOUND_TITLE = "Not Found"
+
+    companion object {
+        private const val NOT_FOUND_TITLE = "Not Found"
+    }
 
     override fun calculateFees(
         paymentMethodId: String,
@@ -197,7 +200,11 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
         exception: OrderIdNotFoundException
     ): RestResponse<ProblemJson> {
         log.info("Order ID Not Found: {}", exception.message)
-        return problemResponse(Response.Status.NOT_FOUND, NOT_FOUND_TITLE, exception.message.orEmpty())
+        return problemResponse(
+            Response.Status.NOT_FOUND,
+            NOT_FOUND_TITLE,
+            exception.message.orEmpty(),
+        )
     }
 
     @ServerExceptionMapper
