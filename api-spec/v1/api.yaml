@@ -382,7 +382,7 @@ paths:
           required: true
           description: Transaction origin (populated by APIM policy)
           schema:
-            $ref: '#/components/schemas/SessionClientId'
+            $ref: '#/components/schemas/ClientId'
       requestBody:
         required: true
         content:
