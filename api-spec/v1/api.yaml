@@ -825,7 +825,7 @@ components:
           description: Last four digits of user card
         expiringDate:
           type: string
-          pattern: ^[0-9]{4,6}$
+          pattern: ^[0-9]{6}$
           description: Expiring date of user card
         brand:
           description: The card brand name
