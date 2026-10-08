@@ -271,7 +271,7 @@ constructor(
     override fun getCardDataInformation(
         paymentMethodId: String,
         orderId: String,
-        xClientId: String,
+        xClientId: String?,
     ): Uni<SessionPaymentMethodResponse> {
         log.info(
             "[Payment Method handler] Retrieve card data from NPG using paymentMethodId: {} and orderId: {}",
@@ -302,7 +302,7 @@ constructor(
                         )
                 } else {
                     log.info("Cache miss for orderId: {}", orderId)
-                    val correlationId = UUID.randomUUID()
+                    val correlationId = UUID.fromString(session.correlationId)
                     npgClient
                         .getCardData(correlationId, session.sessionId)
                         .flatMap { cardData ->

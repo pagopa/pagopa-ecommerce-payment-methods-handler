@@ -98,10 +98,10 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
     override fun getSessionPaymentMethod(
         id: String,
         orderId: String,
-        xClientId: @NotNull it.pagopa.ecommerce.payment.methods.v1.server.model.ClientId,
+        xClientId: it.pagopa.ecommerce.payment.methods.v1.server.model.ClientId?,
     ): CompletionStage<SessionPaymentMethodResponse> {
         return paymentMethodService
-            .getCardDataInformation(id, orderId, xClientId.toString())
+            .getCardDataInformation(id, orderId, xClientId?.toString())
             .subscribeAsCompletionStage()
     }
 
