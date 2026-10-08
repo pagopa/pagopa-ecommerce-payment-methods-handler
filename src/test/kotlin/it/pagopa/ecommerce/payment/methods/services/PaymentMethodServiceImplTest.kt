@@ -45,6 +45,7 @@ import org.mockito.Mockito
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.given
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
@@ -1510,15 +1511,28 @@ class PaymentMethodsClientTest {
     // --- updateSession tests ---
 
     @Test
-    fun `should associate transactionId to session when no transactionId exists`() {
+    fun `should complete successfully when associateTransaction returns OK`() {
         val patchRequest = PatchSessionRequest().apply { transactionId = "tx-001" }
 
         whenever(mockClient.getPaymentMethod(any(), any(), any()))
             .thenReturn(Uni.createFrom().item(buildAfmPaymentMethodResponse()))
         whenever(mockNpgSessionsRedis.findById(testOrderId))
             .thenReturn(Uni.createFrom().item(testSessionDocument))
-        whenever(mockNpgSessionsRedis.save(any()))
-            .thenReturn(Uni.createFrom().item(testSessionDocument))
+
+        whenever(mockNpgSessionsRedis.associateTransaction(any(), eq("tx-001")))
+            .thenReturn(
+                Uni.createFrom()
+                    .item(
+                        it.pagopa.ecommerce.payment.methods.infrastructure.NpgSessionsRedisWrapper
+                            .AssociateResult(
+                                it.pagopa.ecommerce.payment.methods.infrastructure
+                                    .NpgSessionsRedisWrapper
+                                    .AssociateOutcome
+                                    .OK,
+                                null,
+                            )
+                    )
+            )
 
         assertDoesNotThrow {
             service
@@ -1527,39 +1541,32 @@ class PaymentMethodsClientTest {
                 .indefinitely()
         }
 
-        verify(mockNpgSessionsRedis).save(any())
+        verify(mockNpgSessionsRedis).associateTransaction(any(), eq("tx-001"))
     }
 
     @Test
-    fun `should be no-op when transactionId already matches`() {
-        val patchRequest = PatchSessionRequest().apply { transactionId = "tx-001" }
-        val sessionWithTransaction = testSessionDocument.copy(transactionId = "tx-001")
+    fun `should throw SessionAlreadyAssociatedToTransactionException when associateTransaction returns CONFLICT`() {
+        val patchRequest = PatchSessionRequest().apply { transactionId = "tx-new" }
 
         whenever(mockClient.getPaymentMethod(any(), any(), any()))
             .thenReturn(Uni.createFrom().item(buildAfmPaymentMethodResponse()))
         whenever(mockNpgSessionsRedis.findById(testOrderId))
-            .thenReturn(Uni.createFrom().item(sessionWithTransaction))
+            .thenReturn(Uni.createFrom().item(testSessionDocument))
 
-        assertDoesNotThrow {
-            service
-                .updateSession("pm-001", testOrderId, patchRequest, "CHECKOUT")
-                .await()
-                .indefinitely()
-        }
-
-        // Should NOT save since it's a retry with same transactionId
-        verify(mockNpgSessionsRedis, times(0)).save(any())
-    }
-
-    @Test
-    fun `should throw SessionAlreadyAssociatedToTransactionException when transactionId conflicts`() {
-        val patchRequest = PatchSessionRequest().apply { transactionId = "tx-002" }
-        val sessionWithDifferentTransaction = testSessionDocument.copy(transactionId = "tx-001")
-
-        whenever(mockClient.getPaymentMethod(any(), any(), any()))
-            .thenReturn(Uni.createFrom().item(buildAfmPaymentMethodResponse()))
-        whenever(mockNpgSessionsRedis.findById(testOrderId))
-            .thenReturn(Uni.createFrom().item(sessionWithDifferentTransaction))
+        whenever(mockNpgSessionsRedis.associateTransaction(any(), eq("tx-new")))
+            .thenReturn(
+                Uni.createFrom()
+                    .item(
+                        it.pagopa.ecommerce.payment.methods.infrastructure.NpgSessionsRedisWrapper
+                            .AssociateResult(
+                                it.pagopa.ecommerce.payment.methods.infrastructure
+                                    .NpgSessionsRedisWrapper
+                                    .AssociateOutcome
+                                    .CONFLICT,
+                                "tx-old",
+                            )
+                    )
+            )
 
         assertThrows<SessionAlreadyAssociatedToTransactionException> {
             service
@@ -1567,12 +1574,43 @@ class PaymentMethodsClientTest {
                 .await()
                 .indefinitely()
         }
-
-        verify(mockNpgSessionsRedis, times(0)).save(any())
     }
 
     @Test
-    fun `should throw OrderIdNotFoundException when session not found for updateSession`() {
+    fun `should throw OrderIdNotFoundException when associateTransaction returns NOT_FOUND (edge case)`() {
+        val patchRequest = PatchSessionRequest().apply { transactionId = "tx-001" }
+
+        whenever(mockClient.getPaymentMethod(any(), any(), any()))
+            .thenReturn(Uni.createFrom().item(buildAfmPaymentMethodResponse()))
+        whenever(mockNpgSessionsRedis.findById(testOrderId))
+            .thenReturn(Uni.createFrom().item(testSessionDocument))
+
+        // Redis returns NOT_FOUND if the key expired between findById and EVAL
+        whenever(mockNpgSessionsRedis.associateTransaction(any(), eq("tx-001")))
+            .thenReturn(
+                Uni.createFrom()
+                    .item(
+                        it.pagopa.ecommerce.payment.methods.infrastructure.NpgSessionsRedisWrapper
+                            .AssociateResult(
+                                it.pagopa.ecommerce.payment.methods.infrastructure
+                                    .NpgSessionsRedisWrapper
+                                    .AssociateOutcome
+                                    .NOT_FOUND,
+                                null,
+                            )
+                    )
+            )
+
+        assertThrows<it.pagopa.ecommerce.payment.methods.exception.OrderIdNotFoundException> {
+            service
+                .updateSession("pm-001", testOrderId, patchRequest, "CHECKOUT")
+                .await()
+                .indefinitely()
+        }
+    }
+
+    @Test
+    fun `should throw OrderIdNotFoundException when session not found in findById`() {
         val patchRequest = PatchSessionRequest().apply { transactionId = "tx-001" }
 
         whenever(mockClient.getPaymentMethod(any(), any(), any()))
@@ -1585,6 +1623,9 @@ class PaymentMethodsClientTest {
                 .await()
                 .indefinitely()
         }
+
+        // Ensure associateTransaction is never called if findById is empty
+        verify(mockNpgSessionsRedis, times(0)).associateTransaction(any(), any())
     }
 
     @Test

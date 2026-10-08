@@ -108,8 +108,8 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
     override fun updateSession(
         id: String,
         orderId: String,
-        xClientId: @NotNull it.pagopa.ecommerce.payment.methods.v1.server.model.SessionClientId,
-        patchSessionRequest: PatchSessionRequest,
+        patchSessionRequest: @Valid @NotNull PatchSessionRequest,
+        xClientId: it.pagopa.ecommerce.payment.methods.v1.server.model.ClientId?,
     ): CompletionStage<Void> {
         return paymentMethodService
             .updateSession(id, orderId, patchSessionRequest, xClientId.toString())
