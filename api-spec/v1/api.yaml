@@ -161,10 +161,10 @@ paths:
             $ref: '#/components/schemas/Lang'
         - in: header
           name: X-Client-Id
-          required: true
+          required: false
           description: Transaction origin (populated by APIM policy)
           schema:
-            $ref: '#/components/schemas/SessionClientId'
+            $ref: '#/components/schemas/ClientId'
       responses:
         '200':
           description: Payment form data successfully created
@@ -321,10 +321,10 @@ paths:
             type: string
         - in: header
           name: X-Client-Id
-          required: true
+          required: false
           description: Transaction origin (populated by APIM policy)
           schema:
-            $ref: '#/components/schemas/SessionClientId'
+            $ref: '#/components/schemas/ClientId'
       responses:
         '200':
           description: Session payment method successfully retrieved
@@ -379,10 +379,10 @@ paths:
             type: string
         - in: header
           name: X-Client-Id
-          required: true
+          required: false
           description: Transaction origin (populated by APIM policy)
           schema:
-            $ref: '#/components/schemas/SessionClientId'
+            $ref: '#/components/schemas/ClientId'
       requestBody:
         required: true
         content:
@@ -499,16 +499,10 @@ components:
         - IO
         - CHECKOUT
         - CHECKOUT_CART
+        - WISP_REDIRECT
     Lang:
       type: string
       description: Language selection header
-    SessionClientId:
-      type: string
-      description: Transaction origin client identifier
-      enum:
-        - IO
-        - CHECKOUT
-        - CHECKOUT_CART
     NpgSdkIntegrityResponse:
       type: object
       required:
@@ -980,7 +974,7 @@ components:
           description: Last four digits of user card
         expiringDate:
           type: string
-          pattern: ^[0-9]{4,6}$
+          pattern: ^[0-9]{6}$
           description: Expiring date of user card
         brand:
           description: The card brand name
