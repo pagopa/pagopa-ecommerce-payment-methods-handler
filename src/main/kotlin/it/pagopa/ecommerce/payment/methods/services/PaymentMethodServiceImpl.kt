@@ -11,6 +11,7 @@ import it.pagopa.ecommerce.payment.methods.domain.CardDataDocument
 import it.pagopa.ecommerce.payment.methods.domain.NpgSessionDocument
 import it.pagopa.ecommerce.payment.methods.exception.NpgResponseException
 import it.pagopa.ecommerce.payment.methods.exception.OrderIdNotFoundException
+import it.pagopa.ecommerce.payment.methods.exception.SessionAlreadyAssociatedToTransactionException
 import it.pagopa.ecommerce.payment.methods.infrastructure.NpgSessionsRedisWrapper
 import it.pagopa.ecommerce.payment.methods.mappers.toPaymentMethodRequestDto
 import it.pagopa.ecommerce.payment.methods.mappers.toPaymentMethodResponse
@@ -23,6 +24,7 @@ import it.pagopa.ecommerce.payment.methods.v1.server.model.CreateSessionResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.Field
 import it.pagopa.ecommerce.payment.methods.v1.server.model.NpgBuildFormParams
 import it.pagopa.ecommerce.payment.methods.v1.server.model.NpgSessionUrls
+import it.pagopa.ecommerce.payment.methods.v1.server.model.PatchSessionRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
@@ -355,6 +357,72 @@ constructor(
                             }
                         }
                 }
+            }
+    }
+
+    override fun updateSession(
+        paymentMethodId: String,
+        orderId: String,
+        patchSessionRequest: PatchSessionRequest,
+        xClientId: String,
+    ): Uni<Void> {
+        log.info(
+            "[Payment Method handler] Update session for paymentMethodId: {} and orderId: {}",
+            paymentMethodId,
+            orderId,
+        )
+
+        val xRequestId = UUID.randomUUID().toString()
+        val requestedTransactionId = patchSessionRequest.transactionId
+
+        return restClient
+            .getPaymentMethod(paymentMethodId, xRequestId, xClientId)
+            .flatMap { npgSessionsRedisWrapper.findById(orderId) }
+            .onItem()
+            .ifNull()
+            .failWith { OrderIdNotFoundException(orderId) }
+            .flatMap { session ->
+                // Build the document to persist when the association succeeds. The actual
+                // read-decide-write is performed atomically inside Redis (see
+                // associateTransaction) so that two concurrent PATCH requests cannot both observe a
+                // null transaction id and overwrite each other.
+                val updatedDocument =
+                    NpgSessionDocument(
+                        orderId = session!!.orderId,
+                        correlationId = session.correlationId,
+                        sessionId = session.sessionId,
+                        securityToken = session.securityToken,
+                        cardData = session.cardData,
+                        transactionId = requestedTransactionId,
+                    )
+                npgSessionsRedisWrapper
+                    .associateTransaction(updatedDocument, requestedTransactionId)
+                    .flatMap { result ->
+                        when (result.outcome) {
+                            NpgSessionsRedisWrapper.AssociateOutcome.OK ->
+                                Uni.createFrom().voidItem()
+                            NpgSessionsRedisWrapper.AssociateOutcome.NOT_FOUND ->
+                                Uni.createFrom().failure(OrderIdNotFoundException(orderId))
+                            NpgSessionsRedisWrapper.AssociateOutcome.CONFLICT -> {
+                                val existingTransactionId =
+                                    result.existingTransactionId ?: "unknown"
+                                log.error(
+                                    "Session's transaction id ({}) differs from requested transaction id ({}) for orderId: {}",
+                                    existingTransactionId,
+                                    requestedTransactionId,
+                                    orderId,
+                                )
+                                Uni.createFrom()
+                                    .failure(
+                                        SessionAlreadyAssociatedToTransactionException(
+                                            orderId,
+                                            existingTransactionId,
+                                            requestedTransactionId,
+                                        )
+                                    )
+                            }
+                        }
+                    }
             }
     }
 
