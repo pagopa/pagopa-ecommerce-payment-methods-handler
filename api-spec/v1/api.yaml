@@ -452,10 +452,10 @@ paths:
             type: string
         - in: header
           name: X-Client-Id
-          required: true
+          required: false
           description: Transaction origin (populated by APIM policy)
           schema:
-            $ref: '#/components/schemas/SessionClientId'
+            $ref: '#/components/schemas/ClientId'
       responses:
         '200':
           description: Transaction id successfully retrieved
