@@ -882,4 +882,175 @@ class PaymentMethodsHandlerResourceTest {
             .then()
             .statusCode(409)
     }
+
+    @Test
+    fun `should return 200 and base64 encoded transactionId on successful getTransactionIdForSession`() {
+        val rawTransactionId = "tx-12345"
+        val expectedBase64 =
+            java.util.Base64.getEncoder()
+                .encodeToString(rawTransactionId.toByteArray(Charsets.UTF_8))
+        val expectedBody =
+            it.pagopa.ecommerce.payment.methods.v1.server.model
+                .SessionGetTransactionIdResponse()
+                .apply { this.transactionId = expectedBase64 }
+
+        setupCreateSessionMocks()
+        whenever(mockNpgSessionsRedis.findById(anyOrNull()))
+            .thenReturn(
+                Uni.createFrom()
+                    .item(
+                        NpgSessionDocument(
+                            "order-123",
+                            "550e8400-e29b-41d4-a716-446655440000",
+                            "npg-session-123",
+                            "valid-token",
+                            null,
+                            rawTransactionId,
+                        )
+                    )
+            )
+
+        val result =
+            RestAssured.given()
+                .header("x-api-key", "test-primary")
+                .header("x-client-id", "CHECKOUT")
+                .header("Authorization", "Bearer valid-token")
+                .contentType(ContentType.JSON)
+                .`when`()
+                .get("/payment-methods/pm-123/sessions/order-123/transaction-id")
+                .then()
+                .statusCode(200)
+                .extract()
+                .`as`(
+                    it.pagopa.ecommerce.payment.methods.v1.server.model
+                            .SessionGetTransactionIdResponse::class
+                        .java
+                )
+
+        assertEquals(expectedBody, result)
+    }
+
+    @Test
+    fun `should return 401 when Authorization header is malformed for getTransactionIdForSession`() {
+        val expectedProblem = ProblemJson()
+        expectedProblem.status = Response.Status.UNAUTHORIZED.statusCode
+        expectedProblem.title = "Unauthorized"
+        expectedProblem.detail = "Missing or invalid Authorization Bearer token"
+
+        val result =
+            RestAssured.given()
+                .header("x-api-key", "test-primary")
+                .header("x-client-id", "CHECKOUT")
+                .header("Authorization", "Basic dXNlcjpwYXNz")
+                .contentType(ContentType.JSON)
+                .`when`()
+                .get("/payment-methods/pm-123/sessions/order-123/transaction-id")
+                .then()
+                .statusCode(401)
+                .extract()
+                .`as`(ProblemJson::class.java)
+
+        assertEquals(expectedProblem, result)
+    }
+
+    @Test
+    fun `should return 401 when Authorization header has empty Bearer token for getTransactionIdForSession`() {
+        val expectedProblem = ProblemJson()
+        expectedProblem.status = Response.Status.UNAUTHORIZED.statusCode
+        expectedProblem.title = "Unauthorized"
+        expectedProblem.detail = "Missing or invalid Authorization Bearer token"
+
+        val result =
+            RestAssured.given()
+                .header("x-api-key", "test-primary")
+                .header("x-client-id", "CHECKOUT")
+                .header("Authorization", "Bearer   ")
+                .contentType(ContentType.JSON)
+                .`when`()
+                .get("/payment-methods/pm-123/sessions/order-123/transaction-id")
+                .then()
+                .statusCode(401)
+                .extract()
+                .`as`(ProblemJson::class.java)
+
+        assertEquals(expectedProblem, result)
+    }
+
+    @Test
+    fun `should return 403 when getTransactionIdForSession throws MismatchedSecurityTokenException`() {
+        setupCreateSessionMocks()
+        whenever(mockNpgSessionsRedis.findById(anyOrNull()))
+            .thenReturn(
+                Uni.createFrom()
+                    .item(
+                        NpgSessionDocument(
+                            "order-123",
+                            "550e8400-e29b-41d4-a716-446655440000",
+                            "npg-session-123",
+                            "actual-token",
+                            null,
+                            "tx-12345",
+                        )
+                    )
+            )
+
+        val expectedProblem = ProblemJson()
+        expectedProblem.status = Response.Status.FORBIDDEN.statusCode
+        expectedProblem.title = "Forbidden"
+        expectedProblem.detail = "Invalid security token for the requested order id"
+
+        val result =
+            RestAssured.given()
+                .header("x-api-key", "test-primary")
+                .header("x-client-id", "CHECKOUT")
+                .header("Authorization", "Bearer wrong-token")
+                .contentType(ContentType.JSON)
+                .`when`()
+                .get("/payment-methods/pm-123/sessions/order-123/transaction-id")
+                .then()
+                .statusCode(403)
+                .extract()
+                .`as`(ProblemJson::class.java)
+
+        assertEquals(expectedProblem, result)
+    }
+
+    @Test
+    fun `should return 409 when getTransactionIdForSession throws InvalidSessionException`() {
+        setupCreateSessionMocks()
+        whenever(mockNpgSessionsRedis.findById(anyOrNull()))
+            .thenReturn(
+                Uni.createFrom()
+                    .item(
+                        NpgSessionDocument(
+                            "order-123",
+                            "550e8400-e29b-41d4-a716-446655440000",
+                            "npg-session-123",
+                            "npg-sec-token",
+                            null,
+                            null,
+                        )
+                    )
+            )
+
+        val expectedProblem = ProblemJson()
+        expectedProblem.status = Response.Status.CONFLICT.statusCode
+        expectedProblem.title = "Invalid session"
+        expectedProblem.detail = "order-123"
+
+        val result =
+            RestAssured.given()
+                .header("x-api-key", "test-primary")
+                .header("x-client-id", "CHECKOUT")
+                .header("Authorization", "Bearer valid-token")
+                .contentType(ContentType.JSON)
+                .`when`()
+                .get("/payment-methods/pm-123/sessions/order-123/transaction-id")
+                .then()
+                .statusCode(409)
+                .extract()
+                .`as`(ProblemJson::class.java)
+
+        assertEquals(expectedProblem, result)
+    }
 }

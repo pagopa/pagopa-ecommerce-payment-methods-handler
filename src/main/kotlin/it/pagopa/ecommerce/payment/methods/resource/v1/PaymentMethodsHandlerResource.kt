@@ -25,6 +25,7 @@ import jakarta.inject.Inject
 import jakarta.validation.Valid
 import jakarta.validation.ValidationException
 import jakarta.validation.constraints.NotNull
+import jakarta.ws.rs.NotAuthorizedException
 import jakarta.ws.rs.core.Response
 import java.util.*
 import java.util.concurrent.CompletionStage
@@ -114,6 +115,43 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
         return paymentMethodService
             .updateSession(id, orderId, patchSessionRequest, xClientId.toString())
             .subscribeAsCompletionStage()
+    }
+
+    override fun getTransactionIdForSession(
+        id: String,
+        orderId: String,
+        authorization: String,
+        xClientId: it.pagopa.ecommerce.payment.methods.v1.server.model.ClientId?,
+    ): CompletionStage<
+        it.pagopa.ecommerce.payment.methods.v1.server.model.SessionGetTransactionIdResponse
+    > {
+        val securityToken =
+            authorization
+                .takeIf { it.startsWith("Bearer ") }
+                ?.removePrefix("Bearer ")
+                ?.trim()
+                ?.takeIf { it.isNotEmpty() } ?: throw NotAuthorizedException("Bearer")
+
+        return paymentMethodService
+            .getTransactionIdForSession(id, orderId, securityToken, xClientId.toString())
+            .map { transactionId ->
+                val base64EncodedId =
+                    Base64.getEncoder().encodeToString(transactionId.toByteArray(Charsets.UTF_8))
+                it.pagopa.ecommerce.payment.methods.v1.server.model
+                    .SessionGetTransactionIdResponse()
+                    .apply { this.transactionId = base64EncodedId }
+            }
+            .subscribeAsCompletionStage()
+    }
+
+    @ServerExceptionMapper
+    fun mapNotAuthorizedException(exception: NotAuthorizedException): RestResponse<ProblemJson> {
+        log.warn("Unauthorized Request: Missing or malformed Bearer token")
+        return problemResponse(
+            Response.Status.UNAUTHORIZED,
+            "Unauthorized",
+            "Missing or invalid Authorization Bearer token",
+        )
     }
 
     @ServerExceptionMapper
@@ -238,6 +276,30 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
             Response.Status.CONFLICT,
             "Session already associated to transaction",
             exception.message.orEmpty(),
+        )
+    }
+
+    @ServerExceptionMapper
+    fun mapInvalidSessionException(
+        exception: it.pagopa.ecommerce.payment.methods.exception.InvalidSessionException
+    ): RestResponse<ProblemJson> {
+        log.info("Invalid Session: {}", exception.message)
+        return problemResponse(
+            Response.Status.CONFLICT,
+            "Invalid session",
+            exception.message.orEmpty(),
+        )
+    }
+
+    @ServerExceptionMapper
+    fun mapMismatchedSecurityTokenException(
+        exception: it.pagopa.ecommerce.payment.methods.exception.MismatchedSecurityTokenException
+    ): RestResponse<ProblemJson> {
+        log.warn("Mismatched Security Token: {}", exception.message)
+        return problemResponse(
+            Response.Status.CONFLICT,
+            "Forbidden",
+            "Invalid security token for the requested order id",
         )
     }
 
