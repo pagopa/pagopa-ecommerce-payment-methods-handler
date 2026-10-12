@@ -48,13 +48,13 @@ interface PaymentMethodService {
         paymentMethodId: String,
         orderId: String,
         patchSessionRequest: PatchSessionRequest,
-        xClientId: String,
+        xClientId: String?,
     ): Uni<Void>
 
     fun getTransactionIdForSession(
         paymentMethodId: String,
         orderId: String,
         securityToken: String,
-        xClientId: String,
+        xClientId: String?,
     ): Uni<String>
 }

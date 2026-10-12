@@ -113,7 +113,7 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
         xClientId: it.pagopa.ecommerce.payment.methods.v1.server.model.ClientId?,
     ): CompletionStage<Void> {
         return paymentMethodService
-            .updateSession(id, orderId, patchSessionRequest, xClientId.toString())
+            .updateSession(id, orderId, patchSessionRequest, xClientId?.toString())
             .subscribeAsCompletionStage()
     }
 
