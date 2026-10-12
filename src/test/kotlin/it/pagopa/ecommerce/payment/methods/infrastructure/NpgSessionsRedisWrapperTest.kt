@@ -1,5 +1,6 @@
 package it.pagopa.ecommerce.payment.methods.infrastructure
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import io.quarkus.redis.datasource.ReactiveRedisDataSource
 import io.quarkus.redis.datasource.value.ReactiveValueCommands
 import io.smallrye.mutiny.Uni
@@ -25,7 +26,8 @@ class NpgSessionsRedisWrapperTest {
         }
     private val ttlSeconds = 600L
 
-    private val wrapper = NpgSessionsRedisWrapper(redisDataSource, ttlSeconds)
+    private val objectMapper = mock<ObjectMapper> { on { writeValueAsString(any()) } doReturn "{}" }
+    private val wrapper = NpgSessionsRedisWrapper(redisDataSource, objectMapper, ttlSeconds)
 
     private val testDocument =
         NpgSessionDocument(
@@ -113,5 +115,76 @@ class NpgSessionsRedisWrapperTest {
         val result = wrapper.save(docWithCardData).await().indefinitely()
 
         assertEquals(docWithCardData, result)
+    }
+
+    @Test
+    fun `should execute Lua script and return OK on associateTransaction`() {
+        val requestedTxId = "tx-001"
+        val mockResponse =
+            mock<io.vertx.mutiny.redis.client.Response> { on { toString() } doReturn "OK" }
+
+        doReturn(Uni.createFrom().item(mockResponse))
+            .whenever(redisDataSource)
+            .execute(eq("EVAL"), any(), eq("1"), any(), eq(requestedTxId), any())
+
+        val result =
+            wrapper.associateTransaction(testDocument, requestedTxId).await().indefinitely()
+
+        assertEquals(NpgSessionsRedisWrapper.AssociateOutcome.OK, result.outcome)
+        assertNull(result.existingTransactionId)
+    }
+
+    @Test
+    fun `should execute Lua script and return NOT_FOUND on associateTransaction`() {
+        val requestedTxId = "tx-001"
+        val mockResponse =
+            mock<io.vertx.mutiny.redis.client.Response> { on { toString() } doReturn "NOT_FOUND" }
+
+        doReturn(Uni.createFrom().item(mockResponse))
+            .whenever(redisDataSource)
+            .execute(eq("EVAL"), any(), eq("1"), any(), eq(requestedTxId), any())
+
+        val result =
+            wrapper.associateTransaction(testDocument, requestedTxId).await().indefinitely()
+
+        assertEquals(NpgSessionsRedisWrapper.AssociateOutcome.NOT_FOUND, result.outcome)
+        assertNull(result.existingTransactionId)
+    }
+
+    @Test
+    fun `should execute Lua script and return CONFLICT with existing id on associateTransaction`() {
+        val requestedTxId = "tx-new"
+        val existingTxId = "tx-old"
+        val mockResponse =
+            mock<io.vertx.mutiny.redis.client.Response> {
+                on { toString() } doReturn "CONFLICT:$existingTxId"
+            }
+
+        doReturn(Uni.createFrom().item(mockResponse))
+            .whenever(redisDataSource)
+            .execute(eq("EVAL"), any(), eq("1"), any(), eq(requestedTxId), any())
+
+        val result =
+            wrapper.associateTransaction(testDocument, requestedTxId).await().indefinitely()
+
+        assertEquals(NpgSessionsRedisWrapper.AssociateOutcome.CONFLICT, result.outcome)
+        assertEquals(existingTxId, result.existingTransactionId)
+    }
+
+    @Test
+    fun `should propagate error when Lua script execution fails`() {
+        val requestedTxId = "tx-001"
+        val redisError = RuntimeException("Script error")
+
+        doReturn(Uni.createFrom().failure<io.vertx.mutiny.redis.client.Response>(redisError))
+            .whenever(redisDataSource)
+            .execute(eq("EVAL"), any(), eq("1"), any(), eq(requestedTxId), any())
+
+        val thrown =
+            assertThrows<RuntimeException> {
+                wrapper.associateTransaction(testDocument, requestedTxId).await().indefinitely()
+            }
+
+        assertEquals("Script error", thrown.message)
     }
 }

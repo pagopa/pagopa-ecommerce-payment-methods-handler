@@ -3,6 +3,7 @@ package it.pagopa.ecommerce.payment.methods.resource.v1
 import io.quarkus.test.InjectMock
 import io.quarkus.test.junit.QuarkusTest
 import io.restassured.RestAssured
+import io.restassured.RestAssured.given
 import io.restassured.http.ContentType
 import io.smallrye.mutiny.Uni
 import it.pagopa.ecommerce.payment.methods.TestUtils
@@ -20,6 +21,7 @@ import it.pagopa.ecommerce.payment.methods.infrastructure.NpgSessionsRedisWrappe
 import it.pagopa.ecommerce.payment.methods.utils.UniqueIdGenerator
 import it.pagopa.ecommerce.payment.methods.v1.server.model.CalculateFeeResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.CreateSessionResponse
+import it.pagopa.ecommerce.payment.methods.v1.server.model.PatchSessionRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.PaymentMethodsResponse
@@ -803,5 +805,81 @@ class PaymentMethodsHandlerResourceTest {
             .get("/payment-methods/pm-001/sessions/$testOrderId")
             .then()
             .statusCode(404)
+    }
+
+    @Test
+    fun `should return 204 on successful session update`() {
+        val patchRequest = PatchSessionRequest().apply { transactionId = "tx-12345" }
+        setupCreateSessionMocks()
+        whenever(mockNpgSessionsRedis.findById(anyOrNull()))
+            .thenReturn(
+                Uni.createFrom()
+                    .item(
+                        NpgSessionDocument(
+                            testOrderId,
+                            "550e8400-e29b-41d4-a716-446655440000",
+                            "npg-session-123",
+                            "npg-sec-token",
+                        )
+                    )
+            )
+        whenever(mockNpgSessionsRedis.associateTransaction(anyOrNull(), anyOrNull()))
+            .thenReturn(
+                Uni.createFrom()
+                    .item(
+                        NpgSessionsRedisWrapper.AssociateResult(
+                            NpgSessionsRedisWrapper.AssociateOutcome.OK,
+                            null,
+                        )
+                    )
+            )
+
+        RestAssured.given()
+            .header("x-api-key", "test-primary")
+            .header("X-Client-Id", "CHECKOUT")
+            .contentType(ContentType.JSON)
+            .body(patchRequest)
+            .`when`()
+            .patch("/payment-methods/pm-123/sessions/$testOrderId")
+            .then()
+            .statusCode(204)
+    }
+
+    @Test
+    fun `should return 409 on session update conflict`() {
+        val patchRequest = PatchSessionRequest().apply { transactionId = "tx-12345" }
+        setupCreateSessionMocks()
+        whenever(mockNpgSessionsRedis.findById(anyOrNull()))
+            .thenReturn(
+                Uni.createFrom()
+                    .item(
+                        NpgSessionDocument(
+                            testOrderId,
+                            "550e8400-e29b-41d4-a716-446655440000",
+                            "npg-session-123",
+                            "npg-sec-token",
+                        )
+                    )
+            )
+        whenever(mockNpgSessionsRedis.associateTransaction(anyOrNull(), anyOrNull()))
+            .thenReturn(
+                Uni.createFrom()
+                    .item(
+                        NpgSessionsRedisWrapper.AssociateResult(
+                            NpgSessionsRedisWrapper.AssociateOutcome.CONFLICT,
+                            "tx-existing",
+                        )
+                    )
+            )
+
+        RestAssured.given()
+            .header("x-api-key", "test-primary")
+            .header("X-Client-Id", "CHECKOUT")
+            .contentType(ContentType.JSON)
+            .body(patchRequest)
+            .`when`()
+            .patch("/payment-methods/pm-123/sessions/$testOrderId")
+            .then()
+            .statusCode(409)
     }
 }
