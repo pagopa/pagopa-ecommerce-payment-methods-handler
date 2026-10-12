@@ -432,7 +432,7 @@ constructor(
         paymentMethodId: String,
         orderId: String,
         securityToken: String,
-        xClientId: String,
+        xClientId: String?,
     ): Uni<String> {
         log.info(
             "[Payment Method handler] Get transactionId for paymentMethodId: {} and orderId: {}",
