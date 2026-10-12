@@ -364,7 +364,7 @@ constructor(
         paymentMethodId: String,
         orderId: String,
         patchSessionRequest: PatchSessionRequest,
-        xClientId: String,
+        xClientId: String?,
     ): Uni<Void> {
         log.info(
             "[Payment Method handler] Update session for paymentMethodId: {} and orderId: {}",

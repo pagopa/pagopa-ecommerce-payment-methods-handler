@@ -48,6 +48,6 @@ interface PaymentMethodService {
         paymentMethodId: String,
         orderId: String,
         patchSessionRequest: PatchSessionRequest,
-        xClientId: String,
+        xClientId: String?,
     ): Uni<Void>
 }
