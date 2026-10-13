@@ -885,15 +885,15 @@ class PaymentMethodsHandlerResourceTest {
             .statusCode(409)
     }
 
-@Test
+    @Test
     fun `should return 200 and base64 encoded transactionId on successful getTransactionIdForSession`() {
         val rawTransactionId = "550e8400-e29b-41d4-a716-446655440000"
-        val expectedBase64Url = "VQ6EAOKbQdSnFkRmVUQAAA" 
-        
+        val expectedBase64Url = "VQ6EAOKbQdSnFkRmVUQAAA"
+
         val expectedBody =
             it.pagopa.ecommerce.payment.methods.v1.server.model
                 .SessionGetTransactionIdResponse()
-                .apply { 
+                .apply {
                     this.transactionId = rawTransactionId
                     this.base64TransactionId = expectedBase64Url
                 }
