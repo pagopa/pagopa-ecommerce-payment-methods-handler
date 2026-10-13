@@ -809,7 +809,8 @@ class PaymentMethodsHandlerResourceTest {
 
     @Test
     fun `should return 204 on successful session update`() {
-        val patchRequest = PatchSessionRequest().apply { transactionId = "tx-12345" }
+        val patchRequest =
+            PatchSessionRequest().apply { transactionId = "550e8400-e29b-41d4-a716-446655440000" }
         setupCreateSessionMocks()
         whenever(mockNpgSessionsRedis.findById(anyOrNull()))
             .thenReturn(
@@ -847,7 +848,8 @@ class PaymentMethodsHandlerResourceTest {
 
     @Test
     fun `should return 409 on session update conflict`() {
-        val patchRequest = PatchSessionRequest().apply { transactionId = "tx-12345" }
+        val patchRequest =
+            PatchSessionRequest().apply { transactionId = "550e8400-e29b-41d4-a716-446655440000" }
         setupCreateSessionMocks()
         whenever(mockNpgSessionsRedis.findById(anyOrNull()))
             .thenReturn(
@@ -883,16 +885,18 @@ class PaymentMethodsHandlerResourceTest {
             .statusCode(409)
     }
 
-    @Test
+@Test
     fun `should return 200 and base64 encoded transactionId on successful getTransactionIdForSession`() {
-        val rawTransactionId = "tx-12345"
-        val expectedBase64 =
-            java.util.Base64.getEncoder()
-                .encodeToString(rawTransactionId.toByteArray(Charsets.UTF_8))
+        val rawTransactionId = "550e8400-e29b-41d4-a716-446655440000"
+        val expectedBase64Url = "VQ6EAOKbQdSnFkRmVUQAAA" 
+        
         val expectedBody =
             it.pagopa.ecommerce.payment.methods.v1.server.model
                 .SessionGetTransactionIdResponse()
-                .apply { this.transactionId = expectedBase64 }
+                .apply { 
+                    this.transactionId = rawTransactionId
+                    this.base64TransactionId = expectedBase64Url
+                }
 
         setupCreateSessionMocks()
         whenever(mockNpgSessionsRedis.findById(anyOrNull()))
@@ -989,7 +993,7 @@ class PaymentMethodsHandlerResourceTest {
                             "npg-session-123",
                             "actual-token",
                             null,
-                            "tx-12345",
+                            "550e8400-e29b-41d4-a716-446655440000",
                         )
                     )
             )

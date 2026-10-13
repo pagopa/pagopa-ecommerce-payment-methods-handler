@@ -133,15 +133,28 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
                 ?.takeIf { it.isNotEmpty() } ?: throw NotAuthorizedException("Bearer")
 
         return paymentMethodService
-            .getTransactionIdForSession(id, orderId, securityToken, xClientId.toString())
+            .getTransactionIdForSession(id, orderId, securityToken, xClientId?.toString())
             .map { transactionId ->
-                val base64EncodedId =
-                    Base64.getEncoder().encodeToString(transactionId.toByteArray(Charsets.UTF_8))
                 it.pagopa.ecommerce.payment.methods.v1.server.model
                     .SessionGetTransactionIdResponse()
-                    .apply { this.transactionId = base64EncodedId }
+                    .apply {
+                        this.transactionId = transactionId
+                        this.base64TransactionId = uuidToBase64(UUID.fromString(transactionId))
+                    }
             }
             .subscribeAsCompletionStage()
+    }
+
+    /**
+     * Encodes a UUID into a shorter, reversible Base64 URL-safe string, encoding the 16 raw bytes
+     * of the UUID. This mirrors the conversion performed by the ecommerce-commons library so that
+     * the value stays consistent across services.
+     */
+    private fun uuidToBase64(uuid: UUID): String {
+        val buffer = java.nio.ByteBuffer.wrap(ByteArray(16))
+        buffer.putLong(uuid.mostSignificantBits)
+        buffer.putLong(uuid.leastSignificantBits)
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(buffer.array())
     }
 
     @ServerExceptionMapper
