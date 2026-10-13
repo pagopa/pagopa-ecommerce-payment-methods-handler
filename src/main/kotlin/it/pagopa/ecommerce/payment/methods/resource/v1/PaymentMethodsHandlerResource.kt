@@ -298,7 +298,7 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
         log.warn("Mismatched Security Token: {}", exception.message)
         return problemResponse(
             Response.Status.CONFLICT,
-            "Forbidden",
+            "Conflict",
             "Invalid security token for the requested order id",
         )
     }

@@ -900,7 +900,7 @@ class PaymentMethodsHandlerResourceTest {
                 Uni.createFrom()
                     .item(
                         NpgSessionDocument(
-                            "order-123",
+                            testOrderId,
                             "550e8400-e29b-41d4-a716-446655440000",
                             "npg-session-123",
                             "valid-token",
@@ -917,7 +917,7 @@ class PaymentMethodsHandlerResourceTest {
                 .header("Authorization", "Bearer valid-token")
                 .contentType(ContentType.JSON)
                 .`when`()
-                .get("/payment-methods/pm-123/sessions/order-123/transaction-id")
+                .get("/payment-methods/pm-123/sessions/$testOrderId/transactionId")
                 .then()
                 .statusCode(200)
                 .extract()
@@ -944,7 +944,7 @@ class PaymentMethodsHandlerResourceTest {
                 .header("Authorization", "Basic dXNlcjpwYXNz")
                 .contentType(ContentType.JSON)
                 .`when`()
-                .get("/payment-methods/pm-123/sessions/order-123/transaction-id")
+                .get("/payment-methods/pm-123/sessions/$testOrderId/transactionId")
                 .then()
                 .statusCode(401)
                 .extract()
@@ -967,7 +967,7 @@ class PaymentMethodsHandlerResourceTest {
                 .header("Authorization", "Bearer   ")
                 .contentType(ContentType.JSON)
                 .`when`()
-                .get("/payment-methods/pm-123/sessions/order-123/transaction-id")
+                .get("/payment-methods/pm-123/sessions/$testOrderId/transactionId")
                 .then()
                 .statusCode(401)
                 .extract()
@@ -984,7 +984,7 @@ class PaymentMethodsHandlerResourceTest {
                 Uni.createFrom()
                     .item(
                         NpgSessionDocument(
-                            "order-123",
+                            testOrderId,
                             "550e8400-e29b-41d4-a716-446655440000",
                             "npg-session-123",
                             "actual-token",
@@ -995,8 +995,8 @@ class PaymentMethodsHandlerResourceTest {
             )
 
         val expectedProblem = ProblemJson()
-        expectedProblem.status = Response.Status.FORBIDDEN.statusCode
-        expectedProblem.title = "Forbidden"
+        expectedProblem.status = Response.Status.CONFLICT.statusCode
+        expectedProblem.title = "Conflict"
         expectedProblem.detail = "Invalid security token for the requested order id"
 
         val result =
@@ -1006,9 +1006,9 @@ class PaymentMethodsHandlerResourceTest {
                 .header("Authorization", "Bearer wrong-token")
                 .contentType(ContentType.JSON)
                 .`when`()
-                .get("/payment-methods/pm-123/sessions/order-123/transaction-id")
+                .get("/payment-methods/pm-123/sessions/$testOrderId/transactionId")
                 .then()
-                .statusCode(403)
+                .statusCode(409)
                 .extract()
                 .`as`(ProblemJson::class.java)
 
@@ -1023,10 +1023,10 @@ class PaymentMethodsHandlerResourceTest {
                 Uni.createFrom()
                     .item(
                         NpgSessionDocument(
-                            "order-123",
+                            testOrderId,
                             "550e8400-e29b-41d4-a716-446655440000",
                             "npg-session-123",
-                            "npg-sec-token",
+                            "valid-token",
                             null,
                             null,
                         )
@@ -1036,7 +1036,7 @@ class PaymentMethodsHandlerResourceTest {
         val expectedProblem = ProblemJson()
         expectedProblem.status = Response.Status.CONFLICT.statusCode
         expectedProblem.title = "Invalid session"
-        expectedProblem.detail = "order-123"
+        expectedProblem.detail = "Session for orderId [$testOrderId] has no associated transaction"
 
         val result =
             RestAssured.given()
@@ -1045,7 +1045,7 @@ class PaymentMethodsHandlerResourceTest {
                 .header("Authorization", "Bearer valid-token")
                 .contentType(ContentType.JSON)
                 .`when`()
-                .get("/payment-methods/pm-123/sessions/order-123/transaction-id")
+                .get("/payment-methods/pm-123/sessions/$testOrderId/transactionId")
                 .then()
                 .statusCode(409)
                 .extract()
