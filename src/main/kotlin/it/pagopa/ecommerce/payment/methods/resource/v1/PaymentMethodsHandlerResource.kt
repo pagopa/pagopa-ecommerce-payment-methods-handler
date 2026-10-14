@@ -25,6 +25,7 @@ import jakarta.inject.Inject
 import jakarta.validation.Valid
 import jakarta.validation.ValidationException
 import jakarta.validation.constraints.NotNull
+import jakarta.ws.rs.NotAuthorizedException
 import jakarta.ws.rs.core.Response
 import java.util.*
 import java.util.concurrent.CompletionStage
@@ -114,6 +115,56 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
         return paymentMethodService
             .updateSession(id, orderId, patchSessionRequest, xClientId?.toString())
             .subscribeAsCompletionStage()
+    }
+
+    override fun getTransactionIdForSession(
+        id: String,
+        orderId: String,
+        authorization: String,
+        xClientId: it.pagopa.ecommerce.payment.methods.v1.server.model.ClientId?,
+    ): CompletionStage<
+        it.pagopa.ecommerce.payment.methods.v1.server.model.SessionGetTransactionIdResponse
+    > {
+        val securityToken =
+            authorization
+                .takeIf { it.startsWith("Bearer ") }
+                ?.removePrefix("Bearer ")
+                ?.trim()
+                ?.takeIf { it.isNotEmpty() } ?: throw NotAuthorizedException("Bearer")
+
+        return paymentMethodService
+            .getTransactionIdForSession(id, orderId, securityToken, xClientId?.toString())
+            .map { transactionId ->
+                it.pagopa.ecommerce.payment.methods.v1.server.model
+                    .SessionGetTransactionIdResponse()
+                    .apply {
+                        this.transactionId = transactionId
+                        this.base64TransactionId = uuidToBase64(UUID.fromString(transactionId))
+                    }
+            }
+            .subscribeAsCompletionStage()
+    }
+
+    /**
+     * Encodes a UUID into a shorter, reversible Base64 URL-safe string, encoding the 16 raw bytes
+     * of the UUID. This mirrors the conversion performed by the ecommerce-commons library so that
+     * the value stays consistent across services.
+     */
+    private fun uuidToBase64(uuid: UUID): String {
+        val buffer = java.nio.ByteBuffer.wrap(ByteArray(16))
+        buffer.putLong(uuid.mostSignificantBits)
+        buffer.putLong(uuid.leastSignificantBits)
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(buffer.array())
+    }
+
+    @ServerExceptionMapper
+    fun mapNotAuthorizedException(exception: NotAuthorizedException): RestResponse<ProblemJson> {
+        log.warn("Unauthorized Request: Missing or malformed Bearer token")
+        return problemResponse(
+            Response.Status.UNAUTHORIZED,
+            "Unauthorized",
+            "Missing or invalid Authorization Bearer token",
+        )
     }
 
     @ServerExceptionMapper
@@ -238,6 +289,30 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
             Response.Status.CONFLICT,
             "Session already associated to transaction",
             exception.message.orEmpty(),
+        )
+    }
+
+    @ServerExceptionMapper
+    fun mapInvalidSessionException(
+        exception: it.pagopa.ecommerce.payment.methods.exception.InvalidSessionException
+    ): RestResponse<ProblemJson> {
+        log.info("Invalid Session: {}", exception.message)
+        return problemResponse(
+            Response.Status.CONFLICT,
+            "Invalid session",
+            exception.message.orEmpty(),
+        )
+    }
+
+    @ServerExceptionMapper
+    fun mapMismatchedSecurityTokenException(
+        exception: it.pagopa.ecommerce.payment.methods.exception.MismatchedSecurityTokenException
+    ): RestResponse<ProblemJson> {
+        log.warn("Mismatched Security Token: {}", exception.message)
+        return problemResponse(
+            Response.Status.CONFLICT,
+            "Conflict",
+            "Invalid security token for the requested order id",
         )
     }
 

@@ -10,6 +10,7 @@ import it.pagopa.ecommerce.payment.methods.v1.server.model.CardFormFields
 import it.pagopa.ecommerce.payment.methods.v1.server.model.CreateSessionResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.Field
 import it.pagopa.ecommerce.payment.methods.v1.server.model.ProblemJson
+import it.pagopa.ecommerce.payment.methods.v1.server.model.SessionGetTransactionIdResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.SessionPaymentMethodResponse
 
 @RegisterForReflection(
@@ -25,6 +26,7 @@ import it.pagopa.ecommerce.payment.methods.v1.server.model.SessionPaymentMethodR
             CardDataDocument::class,
             SessionPaymentMethodResponse::class,
             UniqueIdDocument::class,
+            SessionGetTransactionIdResponse::class,
         ],
     classNames =
         [
