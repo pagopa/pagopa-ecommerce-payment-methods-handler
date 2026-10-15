@@ -236,7 +236,7 @@ paths:
               - CHECKOUT_CART
         - name: x-language
           in: header
-          required: true
+          required: false
           schema:
             type: string
             description: "The user language"
