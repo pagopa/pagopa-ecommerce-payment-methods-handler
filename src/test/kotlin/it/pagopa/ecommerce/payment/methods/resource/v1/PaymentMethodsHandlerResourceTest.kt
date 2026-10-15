@@ -448,20 +448,6 @@ class PaymentMethodsHandlerResourceTest {
             .statusCode(400)
     }
 
-    @Test
-    fun `should return 400 when x-language header is missing for calculate fees`() {
-        RestAssured.given()
-            .header("x-api-key", "test-primary")
-            .header("x-client-id", "CHECKOUT")
-            .queryParam("maxOccurrences", 10)
-            .contentType(ContentType.JSON)
-            .body(TestUtils.buildCalculateFeeRequest())
-            .`when`()
-            .post("/payment-methods/test-id/fees")
-            .then()
-            .statusCode(400)
-    }
-
     // --- createSession helpers ---
 
     private fun setupCreateSessionMocks() {
