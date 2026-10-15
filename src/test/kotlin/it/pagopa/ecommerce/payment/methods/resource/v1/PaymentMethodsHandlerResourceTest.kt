@@ -438,7 +438,6 @@ class PaymentMethodsHandlerResourceTest {
     fun `should return 400 when x-client-id header is missing for calculate fees`() {
         RestAssured.given()
             .header("x-api-key", "test-primary")
-            .header("x-language", "IT")
             .queryParam("maxOccurrences", 10)
             .contentType(ContentType.JSON)
             .body(TestUtils.buildCalculateFeeRequest())
