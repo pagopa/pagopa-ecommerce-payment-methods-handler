@@ -47,7 +47,7 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
         xClientId: @NotNull String,
         calculateFeeRequest: @Valid @NotNull CalculateFeeRequest,
         maxOccurrences: Int?,
-        xLanguage: String?
+        xLanguage: String?,
     ): CompletionStage<CalculateFeeResponse> {
         val language = xLanguage ?: "IT"
         log.info(
