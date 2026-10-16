@@ -1042,4 +1042,38 @@ class PaymentMethodsHandlerResourceTest {
 
         assertEquals(expectedProblem, result)
     }
+
+    @Test
+    fun `should return 200 and pass default IT language when x-language header is missing for calculate fees`() {
+        val paymentMethodId = "test-id"
+        val mockResponse = TestUtils.buildCalculateFeeResponse()
+
+        whenever(
+                mockClient.calculateFees(
+                    eq(paymentMethodId),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                    eq("IT"),
+                )
+            )
+            .thenReturn(Uni.createFrom().item { mockResponse })
+
+        val result =
+            RestAssured.given()
+                .header("x-api-key", "test-primary")
+                .header("x-client-id", "CHECKOUT")
+                .queryParam("maxOccurrences", 10)
+                .contentType(ContentType.JSON)
+                .body(TestUtils.buildCalculateFeeRequest())
+                .`when`()
+                .post("/payment-methods/$paymentMethodId/fees")
+                .then()
+                .statusCode(200)
+                .extract()
+                .`as`(CalculateFeeResponse::class.java)
+
+        assertEquals(mockResponse, result)
+    }
 }
