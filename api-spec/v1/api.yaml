@@ -876,6 +876,8 @@ components:
           type: object
           additionalProperties:
             type: string
+        paymentTypeCode:
+          type: string
       required:
         - bundles
         - paymentMethodName
