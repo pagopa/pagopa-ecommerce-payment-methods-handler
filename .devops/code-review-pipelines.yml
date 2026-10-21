@@ -14,7 +14,7 @@ resources:
     - repository: pagopaEcommerceLocal
       type: github
       name: pagopa/pagopa-ecommerce-local
-      ref: main
+      ref: PIDM-1947-add-client-id-for-transactions # TODO: REMOVE BEFORE MERGE
       endpoint: 'io-azure-devops-github-ro'
 
 stages:
