@@ -155,17 +155,4 @@ configure<com.diffplug.gradle.spotless.SpotlessExtension> {
     targetExclude("build/**/*.kts")
     ktfmt().googleStyle()
   }
-  java {
-    // Only format hand-written Java under src/. The project has no hand-written
-    // Java today; restricting the target keeps Spotless away from OpenAPI/Quarkus
-    // generated sources under build/, whose Eclipse formatting crashes on the CI
-    // (Linux) runner with "roundtripStateInternal/equalityStateInternal".
-    target("src/**/*.java")
-    targetExclude("build/**/*", "**/build/**/*")
-    eclipse().configFile("eclipse-style.xml")
-    toggleOffOn()
-    removeUnusedImports()
-    trimTrailingWhitespace()
-    endWithNewline()
-  }
 }
