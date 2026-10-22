@@ -156,16 +156,8 @@ configure<com.diffplug.gradle.spotless.SpotlessExtension> {
     ktfmt().googleStyle()
   }
   java {
-    // Only format handwritten Java files, exclude generated ones
-    target(
-      listOf(
-        "src/main/java/**/*.java",
-        "src/test/java/**/*.java",
-      )
-    )
+    target("**/*.java")
     targetExclude("build/**/*")
-    targetExclude("**/build/generated/**")
-    targetExclude("**/gen/java/**")
     eclipse().configFile("eclipse-style.xml")
     toggleOffOn()
     removeUnusedImports()
