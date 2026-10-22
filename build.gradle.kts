@@ -2,7 +2,7 @@ plugins {
   kotlin("jvm") version "2.2.10"
   id("io.quarkus")
   id("org.sonarqube") version "6.0.1.5171"
-  id("com.diffplug.spotless") version "7.0.2"
+  id("com.diffplug.spotless") version "7.1.0"
   id("com.dipien.semantic-version") version "2.0.0" apply false
   id("org.openapi.generator") version "7.15.0"
   jacoco
@@ -156,8 +156,16 @@ configure<com.diffplug.gradle.spotless.SpotlessExtension> {
     ktfmt().googleStyle()
   }
   java {
-    target("**/*.java")
+    // Only format handwritten Java files, exclude generated ones
+    target(
+      listOf(
+        "src/main/java/**/*.java",
+        "src/test/java/**/*.java",
+      )
+    )
     targetExclude("build/**/*")
+    targetExclude("**/build/generated/**")
+    targetExclude("**/gen/java/**")
     eclipse().configFile("eclipse-style.xml")
     toggleOffOn()
     removeUnusedImports()
