@@ -92,12 +92,9 @@ stages:
             displayName: 'Health check'
           - script: yarn global add newman
             displayName: 'newman installation'
-          - script: newman run api-tests/payment-method-handler/payment-method-handler_ecommerce_local.postman_collection.json --environment=api-tests/payment-method-handler/payment-method-handler_ecommerce_local.postman_environment.json --reporters cli,junit --reporter-junit-export Results/checkout-api-TEST.xml --verbose
+          - script: newman run api-tests/payment-method-handler/payment-method-handler_ecommerce_local.postman_collection.json --environment=api-tests/payment-method-handler/payment-method-handler_ecommerce_local.postman_environment.json --reporters cli,junit --reporter-junit-export Results/checkout-api-TEST.xml
             displayName: 'Run api test'
             continueOnError: false
-          - script: docker logs pagopa-ecommerce-payment-methods-handler
-            displayName: 'Dump application container logs on failure'
-            condition: failed()
           - task: PublishTestResults@2
             inputs:
               testResultsFormat: 'JUnit'
