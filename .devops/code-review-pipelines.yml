@@ -14,7 +14,7 @@ resources:
     - repository: pagopaEcommerceLocal
       type: github
       name: pagopa/pagopa-ecommerce-local
-      ref: main
+      ref: PIDM-1947-add-client-id-for-transactions # TODO: REMOVE BEFORE MERGE
       endpoint: 'io-azure-devops-github-ro'
 
 stages:
@@ -48,6 +48,7 @@ stages:
             inputs:
               gradleWrapperFile: 'gradlew' # string. Alias: wrapperScript. Required. Gradle wrapper. Default: gradlew.
               tasks: 'build' # string. Required. Tasks. Default: build.
+              options: '--info --stacktrace'
               publishJUnitResults: true
               testResultsFiles: '**/TEST-*.xml' # string. Required when publishJUnitResults = true. Test results files. Default: **/TEST-*.xml.
               codeCoverageToolOption: 'None' # 'None' | 'Cobertura' | 'JaCoCo'. Alias: codeCoverageTool. Code coverage tool. Default: None.
@@ -82,7 +83,7 @@ stages:
               echo "##[debug] Change placeholder for ecommerce-payment-methods-handler set branch: $(BRANCH_NAME)"
               sed -i "s|^ECOMMERCE_PAYMENT_METHODS_HANDLER_COMMIT_SHA=.*$|ECOMMERCE_PAYMENT_METHODS_HANDLER_COMMIT_SHA=$(BRANCH_NAME)|" .env
             displayName: 'Change payment-methods-handler branch name ecommerce-local .env'
-          - script: docker compose up pagopa-ecommerce-payment-methods-handler pagopa-gec-mock pagopa-npg-mock --build -d
+          - script: docker compose up pagopa-ecommerce-payment-methods-handler pagopa-gec-mock pagopa-npg-mock redis pagopa-jwt-issuer-mock --build -d
             displayName: 'Run app with docker-compose'
             env:
               GITHUB_TOKEN: $(GITHUB_RO_TOKEN)

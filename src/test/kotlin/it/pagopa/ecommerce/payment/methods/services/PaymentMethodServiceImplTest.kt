@@ -866,6 +866,8 @@ class PaymentMethodsClientTest {
 
         assertNotNull(response)
         assertEquals(2, response.bundles?.size)
+        assertEquals("CP", response.paymentTypeCode)
+        response.bundles?.forEach { assertEquals("CP", it.paymentMethod) }
     }
 
     @Test
