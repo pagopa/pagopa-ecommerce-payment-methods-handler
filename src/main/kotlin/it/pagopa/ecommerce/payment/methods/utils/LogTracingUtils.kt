@@ -23,11 +23,11 @@ class LogTracingUtils private constructor() {
     private var outcome: String = ""
     private var stackTrace: String? = null
     private var error: Throwable? = null
-    val attributes: EnumMap<AttributeKeys, String> = EnumMap(AttributeKeys::class.java)
+    private val attributes: EnumMap<AttributeKeys, String> = EnumMap(AttributeKeys::class.java)
     private var details: MutableMap<String, String> = mutableMapOf()
     val mdcKeys: MutableList<String> = mutableListOf()
 
-    var logger: Logger? = null
+    private var logger: Logger? = null
 
     companion object {
 
@@ -41,7 +41,7 @@ class LogTracingUtils private constructor() {
          *
          * @return a new {@link LogTracingUtils} instance
          */
-        fun loggerTracingUtils(logger: Logger): LogTracingUtils = LogTracingUtils()
+        fun loggerTracingUtils(): LogTracingUtils = LogTracingUtils()
 
         /**
          * Serializes the custom details map into a JSON string.
@@ -241,12 +241,7 @@ class LogTracingUtils private constructor() {
     private fun log(loggerLevel: Level) {
         // Add attributes keys and valus to MDC map
         if (attributes.isNotEmpty()) {
-            attributes.forEach { (key, value) ->
-                run {
-                    MDC.put(key.key, value)
-                    addMdcKey(key.key, value)
-                }
-            }
+            attributes.forEach { (key, value) -> run { addMdcKey(key.key, value) } }
         }
 
         // Add details key and value to MDC map
@@ -257,30 +252,27 @@ class LogTracingUtils private constructor() {
         addMdcKey(AttributeKeysPrivate.EVENT_OUTCOME.key, this.outcome)
 
         this.error?.let { error ->
-            addMdcKey(AttributeKeysPrivate.ERROR_TYPE.key, error::class.qualifiedName)
+            addMdcKey(AttributeKeysPrivate.ERROR_TYPE.key, error.javaClass.name)
         }
 
         this.stackTrace?.let { stackTrace ->
             addMdcKey(AttributeKeysPrivate.ERROR_STACK_TRACE.key, stackTrace)
         }
 
-        when (loggerLevel) {
-            Level.INFO -> logger?.info(this.message)
-            Level.ERROR -> logger?.error(this.message, this.error)
-            Level.WARN -> logger?.warn(this.message)
-            Level.DEBUG -> logger?.debug(this.message)
-            Level.TRACE -> logger?.trace(this.message)
-            else -> {
-                // Clean up MDC keys after logging
-                this.mdcKeys.forEach { key -> MDC.remove(key) }
-                this.mdcKeys.clear()
-                throw LogTracingUtilException("loggerLevel null or not defined.")
+        try {
+            when (loggerLevel) {
+                Level.INFO -> logger?.info(this.message)
+                Level.ERROR -> logger?.error(this.message, this.error)
+                Level.WARN -> logger?.warn(this.message)
+                Level.DEBUG -> logger?.debug(this.message)
+                Level.TRACE -> logger?.trace(this.message)
+                else -> throw LogTracingUtilException("loggerLevel null or not defined.")
             }
+        } finally {
+            // Clean up MDC keys after logging
+            this.mdcKeys.forEach { key -> MDC.remove(key) }
+            this.mdcKeys.clear()
         }
-
-        // Clean up MDC keys after logging
-        this.mdcKeys.forEach { key -> MDC.remove(key) }
-        this.mdcKeys.clear()
     }
 
     fun logInfo(logger: Logger, message: String) {
