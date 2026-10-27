@@ -54,6 +54,11 @@ resources:
       name: pagopa/azure-pipeline-templates
       ref: refs/tags/v6.14.0
       endpoint: "io-azure-devops-github-ro"
+    - repository: pagopaCheckoutTests
+      type: github
+      name: pagopa/pagopa-checkout-tests
+      ref: main
+      endpoint: 'io-azure-devops-github-ro'
     - repository: tas
       type: github
       name: pagopa/azure-pipeline-templates
@@ -171,6 +176,19 @@ stages:
               TEST_FILE_PREFIX: "dev"
               USE_NEWMAN_DOCKER_IMAGE: true
               SERVICE_API_KEY: $(IO_PAYMENT_HANDLER_API_KEY_DEV)
+              
+  - stage: "API_DEV_test"
+    displayName: 'Running API test on dev app'
+    dependsOn: Deploy_for_DEV
+    jobs:
+      - job: newman_api_test
+        steps:
+          - checkout: pagopaCheckoutTests
+          - template: azure-templates/api-tests.yml
+            parameters:
+              COLLECTION_TEST_FILE: "api-tests/checkout-tests/npg/checkout-for-ecommerce-api.tests.json"
+              ENV_FILE: "api-tests/dev.envs.json"
+              TEST_FILE_PREFIX: "dev"
 
   - stage: TAS_tests_DEV
     dependsOn: Deploy_for_DEV
