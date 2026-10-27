@@ -186,9 +186,11 @@ stages:
           - checkout: pagopaCheckoutTests
           - template: azure-templates/api-tests.yml
             parameters:
-              COLLECTION_TEST_FILE: "api-tests/checkout-tests/npg/checkout-for-ecommerce-api.tests.json"
+              API_TEST_FILE: "api-tests/checkout-tests/npg/checkout-for-ecommerce-api.tests.json"
               ENV_FILE: "api-tests/dev.envs.json"
               TEST_FILE_PREFIX: "dev"
+              USE_NEWMAN_DOCKER_IMAGE: false
+              SERVICE_API_KEY: ""
 
   - stage: TAS_tests_DEV
     dependsOn: Deploy_for_DEV
