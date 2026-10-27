@@ -2,6 +2,7 @@ package it.pagopa.ecommerce.payment.methods.client
 
 import io.smallrye.mutiny.Uni
 import it.pagopa.ecommerce.payment.methods.exception.JwtIssuerResponseException
+import it.pagopa.ecommerce.payment.methods.utils.LogTracingUtils
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Inject
 import org.eclipse.microprofile.config.inject.ConfigProperty
@@ -26,8 +27,33 @@ constructor(
     fun createJWTToken(request: CreateTokenRequest): Uni<CreateTokenResponse> {
         return jwtIssuerRestClient
             .createJwtToken(apiKey, request)
+            .onItem()
+            .invoke { _ ->
+                LogTracingUtils.loggerTracingUtils()
+                    .success()
+                    .details(
+                        mapOf(
+                            "audience" to request.audience,
+                            "duration" to request.duration.toString(),
+                        )
+                    )
+                    .dependency(LogTracingUtils.JWT_ISSUER_DEPENDENCY)
+                    .logInfo(log, "Notification token generated successfully!")
+            }
             .onFailure()
-            .invoke { e -> log.error("Error creating JWT token", e) }
+            .invoke { e ->
+                LogTracingUtils.loggerTracingUtils()
+                    .failure()
+                    .details(
+                        mapOf(
+                            "audience" to request.audience,
+                            "duration" to request.duration.toString(),
+                            "exception" to e.message.orEmpty(),
+                        )
+                    )
+                    .dependency(LogTracingUtils.JWT_ISSUER_DEPENDENCY)
+                    .logWithStackTrace(log, e, "Error creating JWT token")
+            }
             .onFailure()
             .transform { e ->
                 JwtIssuerResponseException("Error while invoking JWT token creation", e)

@@ -5,6 +5,7 @@ import it.pagopa.ecommerce.payment.methods.exception.NoBundleFoundException
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodNotFoundException
 import it.pagopa.ecommerce.payment.methods.exception.PaymentMethodsClientException
 import it.pagopa.ecommerce.payment.methods.utils.BundleOptions
+import it.pagopa.ecommerce.payment.methods.utils.LogTracingUtils
 import it.pagopa.ecommerce.payment.methods.v1.server.model.Bundle
 import it.pagopa.ecommerce.payment.methods.v1.server.model.CalculateFeeRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.CalculateFeeResponse
@@ -40,11 +41,43 @@ class PaymentMethodsClient(
         return paymentMethodsApi
             .searchPaymentMethods(requestDto, xRequestId)
             .onFailure()
+            .invoke { error ->
+                LogTracingUtils.loggerTracingUtils()
+                    .failure()
+                    .details(
+                        mapOf(
+                            "userTouchpoint" to requestDto.userTouchpoint.toString(),
+                            "userDevice" to requestDto.userDevice.toString(),
+                            "paymentNoticesCount" to requestDto.paymentNotice.size.toString(),
+                        )
+                    )
+                    .dependency(LogTracingUtils.AFM_DEPENDENCY)
+                    .logError(
+                        log,
+                        error,
+                        "Error during the call to PaymentMethodsApi.searchPaymentMethods",
+                    )
+            }
+            .onFailure()
             .transform { error ->
                 PaymentMethodsClientException(
                     "Error during the call to PaymentMethodsApi.searchPaymentMethods",
                     error,
                 )
+            }
+            .onItem()
+            .invoke { _ ->
+                LogTracingUtils.loggerTracingUtils()
+                    .success()
+                    .details(
+                        mapOf(
+                            "userTouchpoint" to requestDto.userTouchpoint.toString(),
+                            "userDevice" to requestDto.userDevice.toString(),
+                            "paymentNoticesCount" to requestDto.paymentNotice.size.toString(),
+                        )
+                    )
+                    .dependency(LogTracingUtils.AFM_DEPENDENCY)
+                    .logInfo(log, "Payment methods retrieved successfully!")
             }
     }
 
@@ -135,6 +168,18 @@ class PaymentMethodsClient(
         return paymentMethodsApi
             .getPaymentMethod(paymentMethodsId, xRequestId)
             .onFailure()
+            .invoke { error ->
+                LogTracingUtils.loggerTracingUtils()
+                    .failure()
+                    .details(mapOf("paymentMethodId" to paymentMethodsId))
+                    .dependency(LogTracingUtils.AFM_DEPENDENCY)
+                    .logWithStackTrace(
+                        log,
+                        error,
+                        "Error during the call to PaymentMethodsApi.calculateFees",
+                    )
+            }
+            .onFailure()
             .transform { exception ->
                 if (
                     exception is ClientWebApplicationException &&
@@ -146,13 +191,18 @@ class PaymentMethodsClient(
                     )
                 } else {
                     PaymentMethodsClientException(
-                        "Error during the call to PaymentMethodsApi.getPaymentMethod",
+                        "Error during the call to PaymentMethodsApi.calculateFees",
                         exception,
                     )
                 }
             }
             .onItem()
             .invoke { res ->
+                LogTracingUtils.loggerTracingUtils()
+                    .success()
+                    .details(mapOf("paymentMethodId" to paymentMethodsId))
+                    .dependency(LogTracingUtils.AFM_DEPENDENCY)
+                    .logInfo(log, "calculateFees successfully!")
                 if (
                     !res.userTouchpoint.contains(
                         PaymentMethodResponseDto.UserTouchpointEnum.valueOf(xClientId)
@@ -174,6 +224,38 @@ class PaymentMethodsClient(
                         "feerandom",
                     )
                     .map { bundle -> it to bundle }
+                    .onItem()
+                    .invoke { _ ->
+                        LogTracingUtils.loggerTracingUtils()
+                            .success()
+                            .details(
+                                mapOf(
+                                    "paymentMethodId" to paymentMethodsId,
+                                    "maxOccurrences" to maxOccurrences.toString(),
+                                    "isAllCCP" to requestDto.isAllCCP.toString(),
+                                )
+                            )
+                            .dependency(LogTracingUtils.AFM_DEPENDENCY)
+                            .logInfo(log, "CalculatorApi.getFeesMulti successfully!")
+                    }
+                    .onFailure()
+                    .invoke { error ->
+                        LogTracingUtils.loggerTracingUtils()
+                            .failure()
+                            .details(
+                                mapOf(
+                                    "paymentMethodId" to paymentMethodsId,
+                                    "maxOccurrences" to maxOccurrences.toString(),
+                                    "isAllCCP" to requestDto.isAllCCP.toString(),
+                                )
+                            )
+                            .dependency(LogTracingUtils.AFM_DEPENDENCY)
+                            .logWithStackTrace(
+                                log,
+                                error,
+                                "Error during the call to CalculatorApi.getFeesMulti",
+                            )
+                    }
             }
             .map { (p, b) ->
                 val bundles = removeDuplicatePspV2(b)
@@ -187,7 +269,11 @@ class PaymentMethodsClient(
             }
             .onFailure(NoBundleFoundException::class.java)
             .invoke { error ->
-                log.error("No bundle found for payment method [$paymentMethodsId]", error)
+                LogTracingUtils.loggerTracingUtils()
+                    .failure()
+                    .details(mapOf("paymentMethodId" to paymentMethodsId))
+                    .dependency(LogTracingUtils.AFM_DEPENDENCY)
+                    .logWithStackTrace(log, error, "No bundle found for this payment method")
             }
     }
 

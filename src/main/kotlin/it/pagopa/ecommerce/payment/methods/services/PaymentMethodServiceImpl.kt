@@ -18,6 +18,7 @@ import it.pagopa.ecommerce.payment.methods.infrastructure.NpgSessionsRedisWrappe
 import it.pagopa.ecommerce.payment.methods.mappers.toPaymentMethodRequestDto
 import it.pagopa.ecommerce.payment.methods.mappers.toPaymentMethodResponse
 import it.pagopa.ecommerce.payment.methods.mappers.toPaymentMethodsResponse
+import it.pagopa.ecommerce.payment.methods.utils.LogTracingUtils
 import it.pagopa.ecommerce.payment.methods.utils.UniqueIdGenerator
 import it.pagopa.ecommerce.payment.methods.v1.server.model.CalculateFeeRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.CalculateFeeResponse
@@ -64,13 +65,39 @@ constructor(
             .searchPaymentMethods(paymentMethodsRequest.toPaymentMethodRequestDto(), xRequestId)
             .map { dto -> dto.toPaymentMethodsResponse() }
             .map { dto -> filterMethods(paymentMethodsRequest, dto) }
-            .onFailure()
-            .invoke { exception ->
-                log.error("Exception during request with id $xRequestId", exception)
-            }
             .onItem()
             .invoke { _ ->
-                log.info("Payment methods retrieved successfully for request with id $xRequestId")
+                LogTracingUtils.loggerTracingUtils()
+                    .success()
+                    .details(
+                        mapOf(
+                            "userTouchpoint" to paymentMethodsRequest.userTouchpoint.toString(),
+                            "userDevice" to paymentMethodsRequest.userDevice.toString(),
+                            "paymentNoticesCount" to
+                                paymentMethodsRequest.paymentNotice.size.toString(),
+                        )
+                    )
+                    .dependency(LogTracingUtils.AFM_DEPENDENCY)
+                    .logInfo(log, "Payment methods retrieved and filtered successfully!")
+            }
+            .onFailure()
+            .invoke { exception ->
+                LogTracingUtils.loggerTracingUtils()
+                    .failure()
+                    .details(
+                        mapOf(
+                            "userTouchpoint" to paymentMethodsRequest.userTouchpoint.toString(),
+                            "userDevice" to paymentMethodsRequest.userDevice.toString(),
+                            "paymentNoticesCount" to
+                                paymentMethodsRequest.paymentNotice.size.toString(),
+                        )
+                    )
+                    .dependency(LogTracingUtils.AFM_DEPENDENCY)
+                    .logWithStackTrace(
+                        log,
+                        exception,
+                        "Exception during request searchPaymentMethods",
+                    )
             }
             .subscribeAsCompletionStage()
     }
@@ -118,16 +145,19 @@ constructor(
             .map { dto -> dto.toPaymentMethodResponse() }
             .onFailure()
             .invoke { exception ->
-                log.error(
-                    "Exception during request with id $xRequestId and client id $xClientId",
-                    exception,
-                )
+                LogTracingUtils.loggerTracingUtils()
+                    .failure()
+                    .details(mapOf("paymentMethodsId" to paymentMethodsId))
+                    .dependency(LogTracingUtils.AFM_DEPENDENCY)
+                    .logWithStackTrace(log, exception, "Exception during request getPaymentMethod")
             }
             .onItem()
             .invoke { _ ->
-                log.info(
-                    "Payment method retrieved successfully for request with id $xRequestId and client id $xClientId"
-                )
+                LogTracingUtils.loggerTracingUtils()
+                    .success()
+                    .details(mapOf("paymentMethodsId" to paymentMethodsId))
+                    .dependency(LogTracingUtils.AFM_DEPENDENCY)
+                    .logInfo(log, "Payment method retrieved successfully!")
             }
             .subscribeAsCompletionStage()
     }
@@ -151,16 +181,19 @@ constructor(
             )
             .onFailure()
             .invoke { exception ->
-                log.error(
-                    "Exception during request with id $xRequestId and client id $xClientId",
-                    exception,
-                )
+                LogTracingUtils.loggerTracingUtils()
+                    .failure()
+                    .details(mapOf("paymentMethodsId" to paymentMethodsId))
+                    .dependency(LogTracingUtils.AFM_DEPENDENCY)
+                    .logWithStackTrace(log, exception, "Exception during request calculateFees")
             }
             .onItem()
             .invoke { _ ->
-                log.info(
-                    "Bundles retrieved successfully for request with id $xRequestId and client id $xClientId"
-                )
+                LogTracingUtils.loggerTracingUtils()
+                    .success()
+                    .details(mapOf("paymentMethodsId" to paymentMethodsId))
+                    .dependency(LogTracingUtils.AFM_DEPENDENCY)
+                    .logInfo(log, "Fees calculated successfully!")
             }
             .subscribeAsCompletionStage()
     }
@@ -170,12 +203,11 @@ constructor(
         language: String?,
         xClientId: String?,
     ): Uni<CreateSessionResponse> {
-        log.info(
-            "[Payment Method handler] create new NPG session using paymentMethodId: {}",
-            paymentMethodId,
-        )
-
         val xRequestId = UUID.randomUUID().toString()
+        LogTracingUtils.enrichContext(
+            LogTracingUtils.Companion.AttributeKeys.CTX_REQUEST_ID,
+            xRequestId,
+        )
 
         return restClient
             .getPaymentMethod(paymentMethodId, xRequestId, xClientId)
@@ -196,12 +228,34 @@ constructor(
                             duration = npgNotificationTokenValidityTime,
                         )
                     )
+                    .onItem()
+                    .invoke { _ ->
+                        LogTracingUtils.loggerTracingUtils()
+                            .success()
+                            .details(
+                                mapOf(
+                                    "orderId" to orderId,
+                                    "paymentMethod" to paymentMethod.serviceName,
+                                )
+                            )
+                            .dependency(LogTracingUtils.JWT_ISSUER_DEPENDENCY)
+                            .logInfo(log, "Notification token generated successfully!")
+                    }
                     .map { tokenResponse -> Triple(orderId, paymentMethod, tokenResponse.token) }
             }
             .flatMap { (orderId, paymentMethod, notificationToken) ->
                 val correlationId = UUID.randomUUID()
-                log.info("Generated correlationId for NPG build session: {}", correlationId)
-
+                if (log.isDebugEnabled) {
+                    LogTracingUtils.loggerTracingUtils()
+                        .success()
+                        .details(
+                            mapOf(
+                                "orderId" to orderId,
+                                "paymentMethod" to paymentMethod.serviceName,
+                            )
+                        )
+                        .logDebug(log, "Generated correlationId for NPG build session")
+                }
                 val isIoClient = "IO".equals(xClientId, ignoreCase = true)
                 val returnUrlBasePath =
                     if (isIoClient) sessionUrlConfig.ioBasePath() else sessionUrlConfig.basePath()

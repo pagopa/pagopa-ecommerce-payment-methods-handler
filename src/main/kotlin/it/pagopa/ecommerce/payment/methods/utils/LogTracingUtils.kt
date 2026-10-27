@@ -26,6 +26,8 @@ class LogTracingUtils private constructor() {
     private val attributes: EnumMap<AttributeKeys, String> = EnumMap(AttributeKeys::class.java)
     private var details: MutableMap<String, String> = mutableMapOf()
     val mdcKeys: MutableList<String> = mutableListOf()
+    // List of MDC attributes that are propagated to Reactor context for downstream operations
+    private val mdcContextAttributes: MutableList<String> = mutableListOf()
 
     private var logger: Logger? = null
 
@@ -60,6 +62,33 @@ class LogTracingUtils private constructor() {
                 }
             }
             return rawDetails
+        }
+
+        /**
+         * Set the attributes to be propagated to the Reactor context for downstream operations.
+         *
+         * @param attributes map of standard {@link AttributeKeys} and their values
+         * @return this builder instance
+         */
+        fun enrichContext(attributes: Map<AttributeKeys, String>) {
+            // Add all the keys of the attributes that want to propagate to the Reactor context for
+            // downstream operations
+            for (attribute in attributes) {
+                MDC.put(attribute.key.key, attribute.value)
+            }
+        }
+
+        /**
+         * Set one attribute to be propagated to the Reactor context for downstream operations.
+         *
+         * @param key the standard {@link AttributeKeys} to set
+         * @param value the value of the attribute
+         * @return this builder instance
+         */
+        fun enrichContext(key: AttributeKeys, value: String) {
+            // Add all the keys of the attributes that want to propagate to the Reactor context for
+            // downstream operations
+            MDC.put(key.key, value)
         }
 
         const val SUCCESS: String = "success"
@@ -98,6 +127,9 @@ class LogTracingUtils private constructor() {
 
         /** Dependency value used in MDC for Notifications service operations. */
         const val NOTIFICATIONS_SERVICE_DEPENDENCY: String = "notifications-service"
+
+        /** Dependency value used in MDC for AFM operations. */
+        const val AFM_DEPENDENCY: String = "afm"
 
         /** Enumeration of standard public keys used for MDC and Reactor context population. */
         enum class AttributeKeys(val key: String, defaultValue: String) {
@@ -138,7 +170,8 @@ class LogTracingUtils private constructor() {
             CTX_WALLET_ID("ctx_wallet_id", "{walletId-not-found}"),
 
             /** Reactor context key for client id. */
-            CTX_CLIENT_ID("ctx_client_id", "{clientId-not-found}");
+            CTX_CLIENT_ID("ctx_client_id", "{clientId-not-found}"),
+            CTX_REQUEST_ID("ctx_request_id", "{requestId-not-found}");
 
             private val defaultValue: String?
 
@@ -186,6 +219,17 @@ class LogTracingUtils private constructor() {
      */
     fun attributes(attributes: Map<AttributeKeys, String>): LogTracingUtils {
         this.attributes.putAll(attributes)
+        return this
+    }
+
+    /**
+     * Adds custom details that will be serialized as a JSON string in the MDC.
+     *
+     * @param details a map containing custom key-value string pairs
+     * @return this builder instance
+     */
+    fun details(details: Map<String, String>): LogTracingUtils {
+        this.details.putAll(details)
         return this
     }
 
@@ -269,8 +313,11 @@ class LogTracingUtils private constructor() {
                 else -> throw LogTracingUtilException("loggerLevel null or not defined.")
             }
         } finally {
-            // Clean up MDC keys after logging
-            this.mdcKeys.forEach { key -> MDC.remove(key) }
+            // Clean up MDC keys after logging, remove only the parameters that are not propagated
+            // to Reactor context for downstream operations
+            this.mdcKeys
+                .filterNot { key -> this.mdcContextAttributes.contains(key) }
+                .forEach { key -> MDC.remove(key) }
             this.mdcKeys.clear()
         }
     }
