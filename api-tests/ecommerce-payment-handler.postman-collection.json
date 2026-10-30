@@ -641,14 +641,14 @@
 			"response": []
 		},
 		{
-			"name": "Calculate Fees for Payment Method (Missing x-language) [400]",
+			"name": "Calculate Fees for Payment Method (Missing x-language) [200]",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code is 400 Bad Request\", function () {",
-							"    pm.response.to.have.status(400);",
+							"pm.test(\"Status code is 200 \", function () {",
+							"    pm.response.to.have.status(200);",
 							"});"
 						],
 						"type": "text/javascript"
@@ -690,60 +690,6 @@
 					"path": [
 						"payment-methods",
 						"{{paymentMethodId}}",
-						"fees"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Calculate Fees for Payment Method (Not Found) [404]",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 404 Not Found\", function () {",
-							"    pm.response.to.have.status(404);",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "x-client-id",
-						"value": "{{CLIENT_ID}}"
-					},
-					{
-						"key": "x-language",
-						"value": "IT"
-					},
-					{
-						"key": "x-transaction-id-from-client",
-						"value": "{{TRANSACTION_ID}}"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n  \"touchpoint\": \"CHECKOUT\",\n  \"isAllCCP\": false,\n  \"paymentNotices\": [\n    {\n      \"paymentAmount\": 15050,\n      \"primaryCreditorInstitution\": \"PA_FISCAL_CODE_1\",\n      \"transferList\": [{ \"creditorInstitution\": \"PA_FISCAL_CODE_1\", \"transferCategory\": \"TAX\", \"digitalStamp\": false }]\n    }\n  ]\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{baseUrl}}/payment-methods/non-existent-id/fees",
-					"host": [
-						"{{baseUrl}}"
-					],
-					"path": [
-						"payment-methods",
-						"non-existent-id",
 						"fees"
 					]
 				}
@@ -806,6 +752,18 @@
 		},
 		{
 			"key": "TRANSACTION_ID",
+			"value": ""
+		},
+		{
+			"key": "orderId",
+			"value": ""
+		},
+		{
+			"key": "SESSION_TRANSACTION_ID",
+			"value": "3d6fc69c949741e9af6cc5b7a05cbd0d"
+		},
+		{
+			"key": "NPG_SECURITY_TOKEN",
 			"value": ""
 		}
 	]

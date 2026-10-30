@@ -45,10 +45,11 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
     override fun calculateFees(
         paymentMethodId: String,
         xClientId: @NotNull String,
-        xLanguage: @NotNull String,
         calculateFeeRequest: @Valid @NotNull CalculateFeeRequest,
         maxOccurrences: Int?,
+        xLanguage: String?,
     ): CompletionStage<CalculateFeeResponse> {
+        val language = xLanguage ?: "IT"
         log.info(
             "[Payment Method] Retrieve bundles for client [{}] list for payment method: [{}], allCcp: [{}], isMulti: [{}] and payment notice amounts: {}",
             xClientId,
@@ -66,7 +67,7 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
             calculateFeeRequest,
             xRequestId,
             xClientId,
-            xLanguage,
+            language,
             maxOccurrences ?: Int.MAX_VALUE,
         )
     }
