@@ -2,6 +2,7 @@ package it.pagopa.ecommerce.payment.methods.resource.v1
 
 import it.pagopa.ecommerce.payment.methods.exception.NpgClientException
 import it.pagopa.ecommerce.payment.methods.services.NpgSdkIntegrityService
+import it.pagopa.ecommerce.payment.methods.utils.LogTracingUtils
 import it.pagopa.ecommerce.payment.methods.v1.server.api.NpgApi
 import it.pagopa.ecommerce.payment.methods.v1.server.model.NpgSdkIntegrityResponse
 import it.pagopa.ecommerce.payment.methods.v1.server.model.ProblemJson
@@ -23,7 +24,14 @@ constructor(private val npgSdkIntegrityService: NpgSdkIntegrityService) : NpgApi
 
     @ServerExceptionMapper
     fun mapNpgClientException(exception: NpgClientException): RestResponse<ProblemJson> {
-        log.error("NPG Client Exception while retrieving SDK integrity", exception)
+        LogTracingUtils.loggerTracingUtils()
+            .failure()
+            .dependency(LogTracingUtils.NPG_DEPENDENCY)
+            .logWithStackTrace(
+                log,
+                exception,
+                "NPG Client Exception while retrieving SDK integrity",
+            )
         return problemResponse(
             Response.Status.INTERNAL_SERVER_ERROR,
             "NPG Communication Error",
@@ -33,7 +41,10 @@ constructor(private val npgSdkIntegrityService: NpgSdkIntegrityService) : NpgApi
 
     @ServerExceptionMapper
     fun mapException(exception: Exception): RestResponse<ProblemJson> {
-        log.error("Generic Exception while retrieving SDK integrity", exception)
+        LogTracingUtils.loggerTracingUtils()
+            .failure()
+            .dependency(LogTracingUtils.NPG_DEPENDENCY)
+            .logWithStackTrace(log, exception, "Generic Exception while retrieving SDK integrity")
         return problemResponse(
             Response.Status.INTERNAL_SERVER_ERROR,
             "Unexpected Exception",

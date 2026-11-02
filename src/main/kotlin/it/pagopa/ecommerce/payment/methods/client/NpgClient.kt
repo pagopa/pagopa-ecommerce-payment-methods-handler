@@ -2,6 +2,7 @@ package it.pagopa.ecommerce.payment.methods.client
 
 import io.smallrye.mutiny.Uni
 import it.pagopa.ecommerce.payment.methods.exception.NpgClientException
+import it.pagopa.ecommerce.payment.methods.utils.LogTracingUtils
 import it.pagopa.generated.ecommerce.npg.client.api.NpgBuildIntegrityApi
 import it.pagopa.generated.ecommerce.npg.client.model.BuildIntegrityResponseDto
 import jakarta.enterprise.context.ApplicationScoped
@@ -17,10 +18,10 @@ class NpgClient(@param:RestClient private val npgBuildIntegrityApi: NpgBuildInte
     fun getIntegrity(correlationId: UUID): Uni<BuildIntegrityResponseDto> {
         return npgBuildIntegrityApi.getBuildIntegrity(correlationId).onFailure().transform { error
             ->
-            log.error(
-                "Error calling NPG Build Integrity API with correlationId: $correlationId",
-                error,
-            )
+            LogTracingUtils.loggerTracingUtils()
+                .failure()
+                .dependency(LogTracingUtils.NPG_DEPENDENCY)
+                .logWithStackTrace(log, error, "Error calling NPG Build Integrity API")
             NpgClientException(
                 "Error during the call to NpgBuildIntegrityApi.getBuildIntegrity",
                 error,
