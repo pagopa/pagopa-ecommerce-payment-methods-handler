@@ -19,6 +19,10 @@ constructor(private val npgSdkIntegrityService: NpgSdkIntegrityService) : NpgApi
     private val log = LoggerFactory.getLogger(NpgSdkIntegrityResource::class.java)
 
     override fun getNpgSdkIntegrity(): CompletionStage<NpgSdkIntegrityResponse> {
+        LogTracingUtils.enrichContext(
+            LogTracingUtils.Companion.AttributeKeys.EVENT_ACTION,
+            "GET /npg/sdk/integrity",
+        )
         return npgSdkIntegrityService.getIntegrityHash().subscribeAsCompletionStage()
     }
 
