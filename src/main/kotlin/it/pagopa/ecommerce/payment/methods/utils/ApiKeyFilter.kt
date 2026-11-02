@@ -32,10 +32,7 @@ class ApiKeyFilter {
                 LogTracingUtils.loggerTracingUtils()
                     .failure()
                     .details(mapOf("path" to path))
-                    .logError(
-                        LOG,
-                        "Unauthorized request for path $path - Missing or invalid API key",
-                    )
+                    .logError(LOG, "Unauthorized request - Missing or invalid API key")
 
                 return Response.status(Response.Status.UNAUTHORIZED).build()
             }
@@ -59,7 +56,7 @@ class ApiKeyFilter {
         if (LOG.isDebugEnabled) {
             LogTracingUtils.loggerTracingUtils()
                 .details(mapOf("apiKeyType" to apiKeyType, "path" to path))
-                .logDebug(LOG, "API key type used for path $path: $apiKeyType")
+                .logDebug(LOG, "API key type used details")
         }
     }
 }
