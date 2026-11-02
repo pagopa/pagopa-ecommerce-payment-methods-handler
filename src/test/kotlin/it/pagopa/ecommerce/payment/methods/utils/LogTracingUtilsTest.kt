@@ -48,10 +48,16 @@ class LogTracingUtilsTest {
     fun `logDebug and logWarn emit their messages`() {
         val logger = mock<Logger>()
         val events = mutableListOf<String>()
-        doAnswer { events.add("debug:${it.getArgument<String>(0)}"); null }
+        doAnswer {
+                events.add("debug:${it.getArgument<String>(0)}")
+                null
+            }
             .whenever(logger)
             .debug(any())
-        doAnswer { events.add("warn:${it.getArgument<String>(0)}"); null }
+        doAnswer {
+                events.add("warn:${it.getArgument<String>(0)}")
+                null
+            }
             .whenever(logger)
             .warn(any())
 
@@ -120,9 +126,7 @@ class LogTracingUtilsTest {
     @Test
     fun `MDC keys are cleaned up when logger throws`() {
         val logger = mock<Logger>()
-        doAnswer { throw IllegalStateException("logger failed") }
-            .whenever(logger)
-            .info(any())
+        doAnswer { throw IllegalStateException("logger failed") }.whenever(logger).info(any())
 
         assertThrows(IllegalStateException::class.java) {
             LogTracingUtils.loggerTracingUtils()
@@ -141,15 +145,19 @@ class LogTracingUtilsTest {
         val logger = mock<Logger>()
         val capturedMdc = mutableMapOf<String, String>()
         doAnswer {
-            capturedMdc.clear()
-            capturedMdc.putAll(MDC.getCopyOfContextMap().orEmpty())
-            null
-        }.whenever(logger).info(any())
+                capturedMdc.clear()
+                capturedMdc.putAll(MDC.getCopyOfContextMap().orEmpty())
+                null
+            }
+            .whenever(logger)
+            .info(any())
         doAnswer {
-            capturedMdc.clear()
-            capturedMdc.putAll(MDC.getCopyOfContextMap().orEmpty())
-            null
-        }.whenever(logger).error(any<String>(), anyOrNull<Throwable>())
+                capturedMdc.clear()
+                capturedMdc.putAll(MDC.getCopyOfContextMap().orEmpty())
+                null
+            }
+            .whenever(logger)
+            .error(any<String>(), anyOrNull<Throwable>())
 
         return CapturingLogger(logger, capturedMdc)
     }
