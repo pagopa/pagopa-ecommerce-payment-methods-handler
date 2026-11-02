@@ -245,17 +245,11 @@ constructor(
             }
             .flatMap { (orderId, paymentMethod, notificationToken) ->
                 val correlationId = UUID.randomUUID()
-                if (log.isDebugEnabled) {
-                    LogTracingUtils.loggerTracingUtils()
-                        .success()
-                        .details(
-                            mapOf(
-                                "orderId" to orderId,
-                                "paymentMethod" to paymentMethod.serviceName,
-                            )
-                        )
-                        .logDebug(log, "Generated correlationId for NPG build session")
-                }
+                LogTracingUtils.enrichContext(
+                    LogTracingUtils.Companion.AttributeKeys.CORRELATION_ID,
+                    correlationId.toString(),
+                )
+
                 val isIoClient = "IO".equals(xClientId, ignoreCase = true)
                 val returnUrlBasePath =
                     if (isIoClient) sessionUrlConfig.ioBasePath() else sessionUrlConfig.basePath()
@@ -329,13 +323,12 @@ constructor(
         orderId: String,
         xClientId: String?,
     ): Uni<SessionPaymentMethodResponse> {
-        log.info(
-            "[Payment Method handler] Retrieve card data from NPG using paymentMethodId: {} and orderId: {}",
-            paymentMethodId,
-            orderId,
-        )
 
         val xRequestId = UUID.randomUUID().toString()
+        LogTracingUtils.enrichContext(
+            LogTracingUtils.Companion.AttributeKeys.CTX_REQUEST_ID,
+            xRequestId,
+        )
 
         return restClient
             .getPaymentMethod(paymentMethodId, xRequestId, xClientId)
@@ -345,7 +338,11 @@ constructor(
             .failWith { OrderIdNotFoundException(orderId) }
             .flatMap { session ->
                 if (session!!.cardData != null) {
-                    log.info("Cache hit for orderId: {}", orderId)
+                    if (log.isDebugEnabled) {
+                        LogTracingUtils.loggerTracingUtils()
+                            .details(mapOf("orderId" to orderId))
+                            .logDebug(log, "Cache hit for the specific orderId")
+                    }
                     Uni.createFrom()
                         .item(
                             SessionPaymentMethodResponse().apply {
@@ -357,7 +354,11 @@ constructor(
                             }
                         )
                 } else {
-                    log.info("Cache miss for orderId: {}", orderId)
+                    if (log.isDebugEnabled) {
+                        LogTracingUtils.loggerTracingUtils()
+                            .details(mapOf("orderId" to orderId))
+                            .logDebug(log, "Cache miss for the specific orderId")
+                    }
                     val correlationId = UUID.fromString(session.correlationId)
                     npgClient
                         .getCardData(correlationId, session.sessionId)
@@ -372,10 +373,6 @@ constructor(
                                     cardData.expiringDate.isNullOrBlank() ||
                                     cardData.circuit.isNullOrBlank()
                             ) {
-                                log.error(
-                                    "Incomplete card data received from NPG for orderId: {}",
-                                    orderId,
-                                )
                                 Uni.createFrom()
                                     .failure(
                                         NpgResponseException(
@@ -412,6 +409,16 @@ constructor(
                                 brand = cardData.circuit
                             }
                         }
+                        .onItem()
+                        .invoke { _ ->
+                            LogTracingUtils.loggerTracingUtils()
+                                .success()
+                                .details(
+                                    mapOf("orderId" to orderId, "sessionId" to session.sessionId)
+                                )
+                                .dependency(LogTracingUtils.NPG_DEPENDENCY)
+                                .logInfo(log, "NPG getCardData called successfully!")
+                        }
                 }
             }
     }
@@ -422,14 +429,15 @@ constructor(
         patchSessionRequest: PatchSessionRequest,
         xClientId: String?,
     ): Uni<Void> {
-        log.info(
-            "[Payment Method handler] Update session for paymentMethodId: {} and orderId: {}",
-            paymentMethodId,
-            orderId,
-        )
 
         val xRequestId = UUID.randomUUID().toString()
         val requestedTransactionId = patchSessionRequest.transactionId
+        LogTracingUtils.enrichContext(
+            mapOf(
+                LogTracingUtils.Companion.AttributeKeys.CTX_REQUEST_ID to xRequestId,
+                LogTracingUtils.Companion.AttributeKeys.CTX_TRANSACTION_ID to requestedTransactionId,
+            )
+        )
 
         return restClient
             .getPaymentMethod(paymentMethodId, xRequestId, xClientId)
@@ -462,12 +470,20 @@ constructor(
                             NpgSessionsRedisWrapper.AssociateOutcome.CONFLICT -> {
                                 val existingTransactionId =
                                     result.existingTransactionId ?: "unknown"
-                                log.error(
-                                    "Session's transaction id ({}) differs from requested transaction id ({}) for orderId: {}",
-                                    existingTransactionId,
-                                    requestedTransactionId,
-                                    orderId,
-                                )
+                                LogTracingUtils.loggerTracingUtils()
+                                    .failure()
+                                    .details(
+                                        mapOf(
+                                            "orderId" to orderId,
+                                            "existingTransactionId" to existingTransactionId,
+                                            "requestedTransactionId" to requestedTransactionId,
+                                        )
+                                    )
+                                    .dependency(LogTracingUtils.REDIS_DEPENDENCY)
+                                    .logError(
+                                        log,
+                                        "Session's transaction id ($existingTransactionId) differs from requested transaction id ($requestedTransactionId) for orderId: $orderId",
+                                    )
                                 Uni.createFrom()
                                     .failure(
                                         SessionAlreadyAssociatedToTransactionException(
@@ -488,13 +504,12 @@ constructor(
         securityToken: String,
         xClientId: String?,
     ): Uni<String> {
-        log.info(
-            "[Payment Method handler] Get transactionId for paymentMethodId: {} and orderId: {}",
-            paymentMethodId,
-            orderId,
-        )
 
         val xRequestId = UUID.randomUUID().toString()
+        LogTracingUtils.enrichContext(
+            LogTracingUtils.Companion.AttributeKeys.CTX_REQUEST_ID,
+            xRequestId,
+        )
 
         return restClient
             .getPaymentMethod(paymentMethodId, xRequestId, xClientId)
@@ -507,7 +522,6 @@ constructor(
                 if (transactionId == null) {
                     Uni.createFrom().failure(InvalidSessionException(orderId))
                 } else if (session.securityToken != securityToken) {
-                    log.warn("Invalid security token for requested order id {}", orderId)
                     Uni.createFrom()
                         .failure(MismatchedSecurityTokenException(orderId, transactionId))
                 } else {

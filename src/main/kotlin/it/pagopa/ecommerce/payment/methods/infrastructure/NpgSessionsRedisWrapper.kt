@@ -5,6 +5,7 @@ import io.quarkus.redis.datasource.ReactiveRedisDataSource
 import io.quarkus.redis.datasource.value.ReactiveValueCommands
 import io.smallrye.mutiny.Uni
 import it.pagopa.ecommerce.payment.methods.domain.NpgSessionDocument
+import it.pagopa.ecommerce.payment.methods.utils.LogTracingUtils
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Inject
 import org.eclipse.microprofile.config.inject.ConfigProperty
@@ -37,14 +38,58 @@ constructor(
 
     fun save(document: NpgSessionDocument): Uni<NpgSessionDocument> {
         val key = keyPrefix + document.orderId
-        return commands.setex(key, ttlSeconds, document).replaceWith(document).onFailure().invoke {
-            e ->
-            log.error("Error saving NPG session for orderId=${document.orderId}", e)
-        }
+        return commands
+            .setex(key, ttlSeconds, document)
+            .replaceWith(document)
+            .onItem()
+            .invoke { _ ->
+                LogTracingUtils.loggerTracingUtils()
+                    .success()
+                    .details(
+                        mapOf(
+                            "orderId" to document.orderId,
+                            "sessionId" to document.sessionId,
+                            "transactionId" to document.transactionId.toString(),
+                        )
+                    )
+                    .dependency(LogTracingUtils.REDIS_DEPENDENCY)
+                    .logInfo(log, "NPG session saved successfully!")
+            }
+            .onFailure()
+            .invoke { e ->
+                LogTracingUtils.loggerTracingUtils()
+                    .failure()
+                    .details(
+                        mapOf(
+                            "orderId" to document.orderId,
+                            "sessionId" to document.sessionId,
+                            "transactionId" to document.transactionId.toString(),
+                        )
+                    )
+                    .dependency(LogTracingUtils.REDIS_DEPENDENCY)
+                    .logWithStackTrace(log, e, "Error saving NPG session")
+            }
     }
 
     fun findById(orderId: String): Uni<NpgSessionDocument?> {
-        return commands.get(keyPrefix + orderId)
+        return commands
+            .get(keyPrefix + orderId)
+            .onItem()
+            .invoke { _ ->
+                LogTracingUtils.loggerTracingUtils()
+                    .success()
+                    .details(mapOf("orderId" to orderId))
+                    .dependency(LogTracingUtils.REDIS_DEPENDENCY)
+                    .logInfo(log, "NPG session retrieved successfully!")
+            }
+            .onFailure()
+            .invoke { e ->
+                LogTracingUtils.loggerTracingUtils()
+                    .failure()
+                    .details(mapOf("orderId" to orderId))
+                    .dependency(LogTracingUtils.REDIS_DEPENDENCY)
+                    .logWithStackTrace(log, e, "Error retrieving NPG session")
+            }
     }
 
     /**
@@ -98,12 +143,31 @@ constructor(
         return redisDataSource
             .execute("EVAL", script, "1", key, requestedTransactionId, newDocumentJson)
             .map { response -> parseOutcome(response.toString()) }
+            .onItem()
+            .invoke { _ ->
+                LogTracingUtils.loggerTracingUtils()
+                    .success()
+                    .details(
+                        mapOf(
+                            "orderId" to updatedDocument.orderId,
+                            "transactionId" to requestedTransactionId,
+                        )
+                    )
+                    .dependency(LogTracingUtils.REDIS_DEPENDENCY)
+                    .logInfo(log, "NPG session associated successfully!")
+            }
             .onFailure()
             .invoke { e ->
-                log.error(
-                    "Error associating transaction to NPG session for orderId=${updatedDocument.orderId}",
-                    e,
-                )
+                LogTracingUtils.loggerTracingUtils()
+                    .failure()
+                    .details(
+                        mapOf(
+                            "orderId" to updatedDocument.orderId,
+                            "transactionId" to requestedTransactionId,
+                        )
+                    )
+                    .dependency(LogTracingUtils.REDIS_DEPENDENCY)
+                    .logWithStackTrace(log, e, "Error associating transaction to NPG session")
             }
     }
 

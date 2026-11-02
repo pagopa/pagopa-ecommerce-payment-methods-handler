@@ -49,28 +49,15 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
         calculateFeeRequest: @Valid @NotNull CalculateFeeRequest,
         maxOccurrences: Int?,
     ): CompletionStage<CalculateFeeResponse> {
-        //        log.info(
-        //            "[Payment Method] Retrieve bundles for client [{}] list for payment method:
-        // [{}], allCcp: [{}], isMulti: [{}] and payment notice amounts: {}",
-        //            xClientId,
-        //            paymentMethodId,
-        //            calculateFeeRequest.isAllCCP,
-        //            calculateFeeRequest.paymentNotices.size > 1,
-        //            calculateFeeRequest.paymentNotices
-        //                .stream()
-        //                .map { paymentNotice -> paymentNotice.paymentAmount }
-        //                .toList(),
-        //        )
+
         val xRequestId = UUID.randomUUID().toString()
         // Add the details to the context for logging purposes, so that it can be propagated to
-        // downstream services and included in log messages..
+        // downstream services and included in log messages.
         LogTracingUtils.enrichContext(
-            LogTracingUtils.Companion.AttributeKeys.CTX_REQUEST_ID,
-            xRequestId,
-        )
-        LogTracingUtils.enrichContext(
-            LogTracingUtils.Companion.AttributeKeys.CTX_CLIENT_ID,
-            xClientId,
+            mapOf(
+                LogTracingUtils.Companion.AttributeKeys.CTX_CLIENT_ID to xClientId,
+                LogTracingUtils.Companion.AttributeKeys.CTX_REQUEST_ID to xRequestId,
+            )
         )
 
         return paymentMethodService.calculateFees(
@@ -88,7 +75,7 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
     ): CompletionStage<PaymentMethodsResponse> {
         val xRequestId = UUID.randomUUID().toString()
         // Add the details to the context for logging purposes, so that it can be propagated to
-        // downstream services and included in log messages..
+        // downstream services and included in log messages.
         LogTracingUtils.enrichContext(
             mapOf(
                 LogTracingUtils.Companion.AttributeKeys.CTX_REQUEST_ID to xRequestId,
@@ -104,7 +91,7 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
     ): CompletionStage<PaymentMethodResponse> {
         val xRequestId = UUID.randomUUID().toString()
         // Add the details to the context for logging purposes, so that it can be propagated to
-        // downstream services and included in log messages..
+        // downstream services and included in log messages.
         LogTracingUtils.enrichContext(
             mapOf(
                 LogTracingUtils.Companion.AttributeKeys.CTX_REQUEST_ID to xRequestId,
@@ -122,7 +109,7 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
     ): CompletionStage<CreateSessionResponse> {
         val xRequestId = UUID.randomUUID().toString()
         // Add the details to the context for logging purposes, so that it can be propagated to
-        // downstream services and included in log messages..
+        // downstream services and included in log messages.
         LogTracingUtils.enrichContext(
             mapOf(
                 LogTracingUtils.Companion.AttributeKeys.CTX_REQUEST_ID to xRequestId,

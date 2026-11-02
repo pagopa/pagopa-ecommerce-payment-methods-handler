@@ -46,8 +46,8 @@ class PaymentMethodsClient(
                     .failure()
                     .details(
                         mapOf(
-                            "userTouchpoint" to requestDto.userTouchpoint.toString(),
-                            "userDevice" to requestDto.userDevice.toString(),
+                            "userTouchpoint" to (requestDto.userTouchpoint?.toString() ?: "null"),
+                            "userDevice" to (requestDto.userDevice?.toString() ?: "null"),
                             "paymentNoticesCount" to requestDto.paymentNotice.size.toString(),
                         )
                     )
@@ -284,6 +284,14 @@ class PaymentMethodsClient(
     ): Uni<PaymentMethodResponseDto> {
         return paymentMethodsApi
             .getPaymentMethod(paymentMethodsId, xRequestId)
+            .onFailure()
+            .invoke { error ->
+                LogTracingUtils.loggerTracingUtils()
+                    .failure()
+                    .details(mapOf("paymentMethodId" to paymentMethodsId))
+                    .dependency(LogTracingUtils.AFM_DEPENDENCY)
+                    .logWithStackTrace(log, error, "Error during the call to getPaymentMethod")
+            }
             .onFailure()
             .transform { exception ->
                 if (
