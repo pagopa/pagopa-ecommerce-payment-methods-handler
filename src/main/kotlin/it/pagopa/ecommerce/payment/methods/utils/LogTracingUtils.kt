@@ -3,7 +3,6 @@ package it.pagopa.ecommerce.payment.methods.utils
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import it.pagopa.ecommerce.payment.methods.exception.LogTracingUtilException
 import java.util.EnumMap
 import org.slf4j.Logger
 import org.slf4j.MDC
@@ -310,7 +309,6 @@ class LogTracingUtils private constructor() {
                 Level.WARN -> logger?.warn(this.message)
                 Level.DEBUG -> logger?.debug(this.message)
                 Level.TRACE -> logger?.trace(this.message)
-                else -> throw LogTracingUtilException("loggerLevel null or not defined.")
             }
         } finally {
             // Clean up MDC keys after logging, remove only the parameters that are not propagated
