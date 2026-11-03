@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
-import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
@@ -124,6 +123,23 @@ class LogTracingUtilsTest {
     }
 
     @Test
+    fun `enrichContext uses the attribute default when a single value is null`() {
+        LogTracingUtils.enrichContext(AttributeKeys.CTX_ORDER_ID, null)
+
+        assertEquals("{orderId-not-found}", MDC.get("ctx_order_id"))
+    }
+
+    @Test
+    fun `enrichContext uses each attribute default when a map value is null`() {
+        LogTracingUtils.enrichContext(
+            mapOf(AttributeKeys.CTX_ORDER_ID to null, AttributeKeys.CTX_REQUEST_ID to "request-123")
+        )
+
+        assertEquals("{orderId-not-found}", MDC.get("ctx_order_id"))
+        assertEquals("request-123", MDC.get("ctx_request_id"))
+    }
+
+    @Test
     fun `MDC keys are cleaned up when logger throws`() {
         val logger = mock<Logger>()
         doAnswer { throw IllegalStateException("logger failed") }.whenever(logger).info(any())
@@ -157,7 +173,7 @@ class LogTracingUtilsTest {
                 null
             }
             .whenever(logger)
-            .error(any<String>(), anyOrNull<Throwable>())
+            .error(any())
 
         return CapturingLogger(logger, capturedMdc)
     }

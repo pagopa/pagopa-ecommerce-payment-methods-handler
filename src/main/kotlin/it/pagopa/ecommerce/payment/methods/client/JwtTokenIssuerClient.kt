@@ -48,7 +48,6 @@ constructor(
                         mapOf(
                             "audience" to request.audience,
                             "duration" to request.duration.toString(),
-                            "exception" to e.message.orEmpty(),
                         )
                     )
                     .dependency(LogTracingUtils.JWT_ISSUER_DEPENDENCY)

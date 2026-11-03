@@ -45,9 +45,13 @@ constructor(
             .invoke { _ ->
                 LogTracingUtils.loggerTracingUtils()
                     .success()
+                    .attributes(
+                        mapOf(
+                            LogTracingUtils.Companion.AttributeKeys.CTX_ORDER_ID to document.orderId
+                        )
+                    )
                     .details(
                         mapOf(
-                            "orderId" to document.orderId,
                             "sessionId" to document.sessionId,
                             "transactionId" to document.transactionId.toString(),
                         )
@@ -59,9 +63,13 @@ constructor(
             .invoke { e ->
                 LogTracingUtils.loggerTracingUtils()
                     .failure()
+                    .attributes(
+                        mapOf(
+                            LogTracingUtils.Companion.AttributeKeys.CTX_ORDER_ID to document.orderId
+                        )
+                    )
                     .details(
                         mapOf(
-                            "orderId" to document.orderId,
                             "sessionId" to document.sessionId,
                             "transactionId" to document.transactionId.toString(),
                         )
@@ -78,7 +86,9 @@ constructor(
             .invoke { _ ->
                 LogTracingUtils.loggerTracingUtils()
                     .success()
-                    .details(mapOf("orderId" to orderId))
+                    .attributes(
+                        mapOf(LogTracingUtils.Companion.AttributeKeys.CTX_ORDER_ID to orderId)
+                    )
                     .dependency(LogTracingUtils.REDIS_DEPENDENCY)
                     .logInfo(log, "NPG session retrieved successfully!")
             }
@@ -86,7 +96,9 @@ constructor(
             .invoke { e ->
                 LogTracingUtils.loggerTracingUtils()
                     .failure()
-                    .details(mapOf("orderId" to orderId))
+                    .attributes(
+                        mapOf(LogTracingUtils.Companion.AttributeKeys.CTX_ORDER_ID to orderId)
+                    )
                     .dependency(LogTracingUtils.REDIS_DEPENDENCY)
                     .logWithStackTrace(log, e, "Error retrieving NPG session")
             }
@@ -147,12 +159,13 @@ constructor(
             .invoke { _ ->
                 LogTracingUtils.loggerTracingUtils()
                     .success()
-                    .details(
+                    .attributes(
                         mapOf(
-                            "orderId" to updatedDocument.orderId,
-                            "transactionId" to requestedTransactionId,
+                            LogTracingUtils.Companion.AttributeKeys.CTX_ORDER_ID to
+                                updatedDocument.orderId
                         )
                     )
+                    .details(mapOf("transactionId" to requestedTransactionId))
                     .dependency(LogTracingUtils.REDIS_DEPENDENCY)
                     .logInfo(log, "NPG session associated successfully!")
             }
@@ -160,12 +173,13 @@ constructor(
             .invoke { e ->
                 LogTracingUtils.loggerTracingUtils()
                     .failure()
-                    .details(
+                    .attributes(
                         mapOf(
-                            "orderId" to updatedDocument.orderId,
-                            "transactionId" to requestedTransactionId,
+                            LogTracingUtils.Companion.AttributeKeys.CTX_ORDER_ID to
+                                updatedDocument.orderId
                         )
                     )
+                    .details(mapOf("transactionId" to requestedTransactionId))
                     .dependency(LogTracingUtils.REDIS_DEPENDENCY)
                     .logWithStackTrace(log, e, "Error associating transaction to NPG session")
             }

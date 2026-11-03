@@ -25,7 +25,7 @@ class LogTracingUtils private constructor() {
     private val attributes: EnumMap<AttributeKeys, String> = EnumMap(AttributeKeys::class.java)
     private var details: MutableMap<String, String> = mutableMapOf()
     val mdcKeys: MutableList<String> = mutableListOf()
-    // List of MDC attributes that are propagated to Reactor context for downstream operations
+    // List of MDC attributes that are propagated to Context for downstream operations
     private val mdcContextAttributes: MutableList<String> = mutableListOf()
 
     private var logger: Logger? = null
@@ -64,30 +64,26 @@ class LogTracingUtils private constructor() {
         }
 
         /**
-         * Set the attributes to be propagated to the Reactor context for downstream operations.
+         * Adds attributes to the SLF4J MDC. Null values are replaced with their configured
+         * defaults.
          *
          * @param attributes map of standard {@link AttributeKeys} and their values
-         * @return this builder instance
          */
-        fun enrichContext(attributes: Map<AttributeKeys, String>) {
-            // Add all the keys of the attributes that want to propagate to the Reactor context for
-            // downstream operations
+        fun enrichContext(attributes: Map<AttributeKeys, String?>) {
             for (attribute in attributes) {
-                MDC.put(attribute.key.key, attribute.value)
+                MDC.put(attribute.key.key, attribute.value ?: attribute.key.defaultValue)
             }
         }
 
         /**
-         * Set one attribute to be propagated to the Reactor context for downstream operations.
+         * Adds an attribute to the SLF4J MDC. A null value is replaced with the key's configured
+         * default.
          *
          * @param key the standard {@link AttributeKeys} to set
-         * @param value the value of the attribute
-         * @return this builder instance
+         * @param value the attribute value, or null to use the key's default
          */
-        fun enrichContext(key: AttributeKeys, value: String) {
-            // Add all the keys of the attributes that want to propagate to the Reactor context for
-            // downstream operations
-            MDC.put(key.key, value)
+        fun enrichContext(key: AttributeKeys, value: String?) {
+            MDC.put(key.key, value ?: key.defaultValue)
         }
 
         const val SUCCESS: String = "success"
@@ -130,33 +126,33 @@ class LogTracingUtils private constructor() {
         /** Dependency value used in MDC for AFM operations. */
         const val AFM_DEPENDENCY: String = "afm"
 
-        /** Enumeration of standard public keys used for MDC and Reactor context population. */
+        /** Enumeration of standard public keys used for MDC and Context population. */
         enum class AttributeKeys(val key: String, defaultValue: String) {
-            /** Reactor context key for action associated with the event. */
+            /** Context key for action associated with the event. */
             EVENT_ACTION("event_action", "{eventAction-not-found}"),
 
-            /** Reactor context key for transaction identifier. */
+            /** Context key for transaction identifier. */
             CTX_TRANSACTION_ID("ctx_transaction_id", "{transactionId-not-found}"),
 
-            /** Reactor context key for authorization request identifier. */
+            /** Context key for authorization request identifier. */
             CTX_AUTHORIZATION_REQUEST_ID(
                 "ctx_authorization_request_id",
                 "{authorizationRequestId-not-found}",
             ),
 
-            /** Reactor context key for event code. */
+            /** Context key for event code. */
             CTX_EVENT_CODE("ctx_event_code", "{eventCode-not-found}"),
 
-            /** Reactor context key for event identifier. */
+            /** Context key for event identifier. */
             CTX_EVENT_ID("ctx_event_id", "{eventId-not-found}"),
 
-            /** Reactor context key for RPT identifiers. */
+            /** Context key for RPT identifiers. */
             CTX_RPT_IDS("ctx_rpt_ids", "{rptIds-not-found}"),
 
-            /** Reactor context key for payment tokens. */
+            /** Context key for payment tokens. */
             CTX_PAYMENT_TOKENS("ctx_payment_tokens", "{paymentTokens-not-found}"),
 
-            /** Reactor context key for user identifier. */
+            /** Context key for user identifier. */
             CTX_USER_ID("ctx_user_id", "{userId-not-found}"),
 
             /** MDC key for correlation identifier. */
@@ -165,14 +161,19 @@ class LogTracingUtils private constructor() {
             /** MDC key for PSP identifier. */
             PSP_ID("psp_id", "{pspId-not-found}"),
 
-            /** Reactor context key for wallet id. */
+            /** Context key for wallet id. */
             CTX_WALLET_ID("ctx_wallet_id", "{walletId-not-found}"),
 
-            /** Reactor context key for client id. */
+            /** Context key for client id. */
             CTX_CLIENT_ID("ctx_client_id", "{clientId-not-found}"),
-            CTX_REQUEST_ID("ctx_request_id", "{requestId-not-found}");
 
-            private val defaultValue: String?
+            /** Context key for request id. */
+            CTX_REQUEST_ID("ctx_request_id", "{requestId-not-found}"),
+
+            /** Context key for order id. */
+            CTX_ORDER_ID("ctx_order_id", "{orderId-not-found}");
+
+            val defaultValue: String?
 
             init {
                 this.defaultValue = defaultValue
@@ -305,14 +306,14 @@ class LogTracingUtils private constructor() {
         try {
             when (loggerLevel) {
                 Level.INFO -> logger?.info(this.message)
-                Level.ERROR -> logger?.error(this.message, this.error)
+                Level.ERROR -> logger?.error(this.message)
                 Level.WARN -> logger?.warn(this.message)
                 Level.DEBUG -> logger?.debug(this.message)
                 Level.TRACE -> logger?.trace(this.message)
             }
         } finally {
             // Clean up MDC keys after logging, remove only the parameters that are not propagated
-            // to Reactor context for downstream operations
+            // to Context for downstream operations
             this.mdcKeys
                 .filterNot { key -> this.mdcContextAttributes.contains(key) }
                 .forEach { key -> MDC.remove(key) }

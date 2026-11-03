@@ -228,19 +228,6 @@ constructor(
                             duration = npgNotificationTokenValidityTime,
                         )
                     )
-                    .onItem()
-                    .invoke { _ ->
-                        LogTracingUtils.loggerTracingUtils()
-                            .success()
-                            .details(
-                                mapOf(
-                                    "orderId" to orderId,
-                                    "paymentMethod" to paymentMethod.serviceName,
-                                )
-                            )
-                            .dependency(LogTracingUtils.JWT_ISSUER_DEPENDENCY)
-                            .logInfo(log, "Notification token generated successfully!")
-                    }
                     .map { tokenResponse -> Triple(orderId, paymentMethod, tokenResponse.token) }
             }
             .flatMap { (orderId, paymentMethod, notificationToken) ->
@@ -340,7 +327,12 @@ constructor(
                 if (session!!.cardData != null) {
                     if (log.isDebugEnabled) {
                         LogTracingUtils.loggerTracingUtils()
-                            .details(mapOf("orderId" to orderId))
+                            .attributes(
+                                mapOf(
+                                    LogTracingUtils.Companion.AttributeKeys.CTX_ORDER_ID to
+                                        session.orderId
+                                )
+                            )
                             .logDebug(log, "Cache hit for the specific orderId")
                     }
                     Uni.createFrom()
@@ -356,7 +348,12 @@ constructor(
                 } else {
                     if (log.isDebugEnabled) {
                         LogTracingUtils.loggerTracingUtils()
-                            .details(mapOf("orderId" to orderId))
+                            .attributes(
+                                mapOf(
+                                    LogTracingUtils.Companion.AttributeKeys.CTX_ORDER_ID to
+                                        session.orderId
+                                )
+                            )
                             .logDebug(log, "Cache miss for the specific orderId")
                     }
                     val correlationId = UUID.fromString(session.correlationId)
@@ -413,8 +410,11 @@ constructor(
                         .invoke { _ ->
                             LogTracingUtils.loggerTracingUtils()
                                 .success()
-                                .details(
-                                    mapOf("orderId" to orderId, "sessionId" to session.sessionId)
+                                .attributes(
+                                    mapOf(
+                                        LogTracingUtils.Companion.AttributeKeys.CTX_ORDER_ID to
+                                            session.orderId
+                                    )
                                 )
                                 .dependency(LogTracingUtils.NPG_DEPENDENCY)
                                 .logInfo(log, "NPG getCardData called successfully!")
@@ -472,9 +472,14 @@ constructor(
                                     result.existingTransactionId ?: "unknown"
                                 LogTracingUtils.loggerTracingUtils()
                                     .failure()
+                                    .attributes(
+                                        mapOf(
+                                            LogTracingUtils.Companion.AttributeKeys.CTX_ORDER_ID to
+                                                orderId
+                                        )
+                                    )
                                     .details(
                                         mapOf(
-                                            "orderId" to orderId,
                                             "existingTransactionId" to existingTransactionId,
                                             "requestedTransactionId" to requestedTransactionId,
                                         )
@@ -482,7 +487,7 @@ constructor(
                                     .dependency(LogTracingUtils.REDIS_DEPENDENCY)
                                     .logError(
                                         log,
-                                        "Session's transaction id ($existingTransactionId) differs from requested transaction id ($requestedTransactionId) for orderId: $orderId",
+                                        "Session already associated to a different transaction",
                                     )
                                 Uni.createFrom()
                                     .failure(
