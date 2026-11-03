@@ -55,11 +55,7 @@ constructor(private val uniqueIdRedisWrapper: UniqueIdRedisWrapper) {
                     .failure()
                     .dependency(LogTracingUtils.REDIS_DEPENDENCY)
                     .details(mapOf("attempt" to attempt.toString(), "uniqueId" to uniqueId))
-                    .logError(
-                        log,
-                        e,
-                        "Error saving unique id on attempt $attempt for id=$uniqueId, retrying.",
-                    )
+                    .logWarn(log, "Error saving unique id, retrying.")
                 false
             }
             .flatMap { wasSet ->
