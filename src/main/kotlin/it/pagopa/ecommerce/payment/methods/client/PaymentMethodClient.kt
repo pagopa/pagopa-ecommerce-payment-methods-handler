@@ -52,11 +52,7 @@ class PaymentMethodsClient(
                         )
                     )
                     .dependency(LogTracingUtils.AFM_DEPENDENCY)
-                    .logError(
-                        log,
-                        error,
-                        "Error during the call to PaymentMethodsApi.searchPaymentMethods",
-                    )
+                    .logError(log, error, "Error calling searchPaymentMethods")
             }
             .onFailure()
             .transform { error ->
@@ -173,11 +169,7 @@ class PaymentMethodsClient(
                     .failure()
                     .details(mapOf("paymentMethodId" to paymentMethodsId))
                     .dependency(LogTracingUtils.AFM_DEPENDENCY)
-                    .logWithStackTrace(
-                        log,
-                        error,
-                        "Error during the call to PaymentMethodsApi.calculateFees",
-                    )
+                    .logWithStackTrace(log, error, "Error calling getPaymentMethod")
             }
             .onFailure()
             .transform { exception ->
@@ -191,7 +183,7 @@ class PaymentMethodsClient(
                     )
                 } else {
                     PaymentMethodsClientException(
-                        "Error during the call to PaymentMethodsApi.calculateFees",
+                        "Error during the call to PaymentMethodsApi.getPaymentMethod",
                         exception,
                     )
                 }
@@ -202,7 +194,7 @@ class PaymentMethodsClient(
                     .success()
                     .details(mapOf("paymentMethodId" to paymentMethodsId))
                     .dependency(LogTracingUtils.AFM_DEPENDENCY)
-                    .logInfo(log, "calculateFees successfully!")
+                    .logInfo(log, "getPaymentMethod successfully!")
                 if (
                     !res.userTouchpoint.contains(
                         PaymentMethodResponseDto.UserTouchpointEnum.valueOf(xClientId)
@@ -236,7 +228,7 @@ class PaymentMethodsClient(
                                 )
                             )
                             .dependency(LogTracingUtils.AFM_DEPENDENCY)
-                            .logInfo(log, "CalculatorApi.getFeesMulti successfully!")
+                            .logInfo(log, "CalculatorApi.getFeesMulti completed successfully!")
                     }
                     .onFailure()
                     .invoke { error ->
@@ -250,11 +242,7 @@ class PaymentMethodsClient(
                                 )
                             )
                             .dependency(LogTracingUtils.AFM_DEPENDENCY)
-                            .logWithStackTrace(
-                                log,
-                                error,
-                                "Error during the call to CalculatorApi.getFeesMulti",
-                            )
+                            .logWithStackTrace(log, error, "Error calling getFeesMulti")
                     }
             }
             .map { (p, b) ->
@@ -290,7 +278,7 @@ class PaymentMethodsClient(
                     .failure()
                     .details(mapOf("paymentMethodId" to paymentMethodsId))
                     .dependency(LogTracingUtils.AFM_DEPENDENCY)
-                    .logWithStackTrace(log, error, "Error during the call to getPaymentMethod")
+                    .logWithStackTrace(log, error, "Error calling getPaymentMethod")
             }
             .onFailure()
             .transform { exception ->
