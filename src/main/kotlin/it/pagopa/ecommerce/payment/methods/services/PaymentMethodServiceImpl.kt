@@ -304,12 +304,7 @@ constructor(
                             ) {
                                 LogTracingUtils.loggerTracingUtils()
                                     .failure()
-                                    .details(
-                                        mapOf(
-                                            "sessionId" to session.sessionId,
-                                            "cardData" to cardData.toString(),
-                                        )
-                                    )
+                                    .details(mapOf("sessionId" to session.sessionId))
                                     .dependency(LogTracingUtils.NPG_DEPENDENCY)
                                     .logWarn(
                                         log,
