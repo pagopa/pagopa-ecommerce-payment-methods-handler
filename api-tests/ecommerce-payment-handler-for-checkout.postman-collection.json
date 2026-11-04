@@ -687,8 +687,8 @@
               "    pm.response.to.be.json;",
               "    const res = pm.response.json();",
               "    pm.expect(res).to.have.property(\"status\").eql(400);",
-              "    pm.expect(res).to.have.property(\"error\").and.is.a(\"string\");",
-              "    pm.expect(res).to.have.property(\"path\").and.is.a(\"string\");",
+              "    pm.expect(res).to.have.property(\"detail\").and.is.a(\"string\");",
+              "    pm.expect(res).to.have.property(\"title\").and.is.a(\"string\");",
               "});"
             ],
             "type": "text/javascript"
@@ -759,8 +759,8 @@
               "    pm.response.to.be.json;",
               "    const res = pm.response.json();",
               "    pm.expect(res).to.have.property(\"status\").eql(400);",
-              "    pm.expect(res).to.have.property(\"error\").and.is.a(\"string\");",
-              "    pm.expect(res).to.have.property(\"path\").and.is.a(\"string\");",
+              "    pm.expect(res).to.have.property(\"detail\").and.is.a(\"string\");",
+              "    pm.expect(res).to.have.property(\"title\").and.is.a(\"string\");",
               "});"
             ],
             "type": "text/javascript"
