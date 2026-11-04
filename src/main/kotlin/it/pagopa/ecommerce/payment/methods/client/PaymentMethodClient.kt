@@ -298,6 +298,14 @@ class PaymentMethodsClient(
                 }
             }
             .onItem()
+            .invoke { _ ->
+                LogTracingUtils.loggerTracingUtils()
+                    .success()
+                    .details(mapOf("paymentMethodId" to paymentMethodsId))
+                    .dependency(LogTracingUtils.AFM_DEPENDENCY)
+                    .logInfo(log, "getPaymentMethod complete successfully!")
+            }
+            .onItem()
             .invoke { res ->
                 if (xClientId != null) {
                     val touchpoint =

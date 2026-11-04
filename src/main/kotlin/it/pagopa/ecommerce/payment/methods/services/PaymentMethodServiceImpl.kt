@@ -65,40 +65,6 @@ constructor(
             .searchPaymentMethods(paymentMethodsRequest.toPaymentMethodRequestDto(), xRequestId)
             .map { dto -> dto.toPaymentMethodsResponse() }
             .map { dto -> filterMethods(paymentMethodsRequest, dto) }
-            .onItem()
-            .invoke { _ ->
-                LogTracingUtils.loggerTracingUtils()
-                    .success()
-                    .details(
-                        mapOf(
-                            "userTouchpoint" to paymentMethodsRequest.userTouchpoint.toString(),
-                            "userDevice" to paymentMethodsRequest.userDevice.toString(),
-                            "paymentNoticesCount" to
-                                paymentMethodsRequest.paymentNotice.size.toString(),
-                        )
-                    )
-                    .dependency(LogTracingUtils.AFM_DEPENDENCY)
-                    .logInfo(log, "Payment methods retrieved and filtered successfully!")
-            }
-            .onFailure()
-            .invoke { exception ->
-                LogTracingUtils.loggerTracingUtils()
-                    .failure()
-                    .details(
-                        mapOf(
-                            "userTouchpoint" to paymentMethodsRequest.userTouchpoint.toString(),
-                            "userDevice" to paymentMethodsRequest.userDevice.toString(),
-                            "paymentNoticesCount" to
-                                paymentMethodsRequest.paymentNotice.size.toString(),
-                        )
-                    )
-                    .dependency(LogTracingUtils.AFM_DEPENDENCY)
-                    .logWithStackTrace(
-                        log,
-                        exception,
-                        "Exception during request searchPaymentMethods",
-                    )
-            }
             .subscribeAsCompletionStage()
     }
 
@@ -143,22 +109,6 @@ constructor(
         return restClient
             .getPaymentMethod(paymentMethodsId, xRequestId, xClientId)
             .map { dto -> dto.toPaymentMethodResponse() }
-            .onFailure()
-            .invoke { exception ->
-                LogTracingUtils.loggerTracingUtils()
-                    .failure()
-                    .details(mapOf("paymentMethodsId" to paymentMethodsId))
-                    .dependency(LogTracingUtils.AFM_DEPENDENCY)
-                    .logWithStackTrace(log, exception, "Exception during request getPaymentMethod")
-            }
-            .onItem()
-            .invoke { _ ->
-                LogTracingUtils.loggerTracingUtils()
-                    .success()
-                    .details(mapOf("paymentMethodsId" to paymentMethodsId))
-                    .dependency(LogTracingUtils.AFM_DEPENDENCY)
-                    .logInfo(log, "Payment method retrieved successfully!")
-            }
             .subscribeAsCompletionStage()
     }
 
@@ -179,22 +129,6 @@ constructor(
                 xClientId,
                 xLanguage,
             )
-            .onFailure()
-            .invoke { exception ->
-                LogTracingUtils.loggerTracingUtils()
-                    .failure()
-                    .details(mapOf("paymentMethodsId" to paymentMethodsId))
-                    .dependency(LogTracingUtils.AFM_DEPENDENCY)
-                    .logWithStackTrace(log, exception, "Exception during request calculateFees")
-            }
-            .onItem()
-            .invoke { _ ->
-                LogTracingUtils.loggerTracingUtils()
-                    .success()
-                    .details(mapOf("paymentMethodsId" to paymentMethodsId))
-                    .dependency(LogTracingUtils.AFM_DEPENDENCY)
-                    .logInfo(log, "Fees calculated successfully!")
-            }
             .subscribeAsCompletionStage()
     }
 
@@ -233,8 +167,11 @@ constructor(
             .flatMap { (orderId, paymentMethod, notificationToken) ->
                 val correlationId = UUID.randomUUID()
                 LogTracingUtils.enrichContext(
-                    LogTracingUtils.Companion.AttributeKeys.CORRELATION_ID,
-                    correlationId.toString(),
+                    mapOf(
+                        LogTracingUtils.Companion.AttributeKeys.CORRELATION_ID to
+                            correlationId.toString(),
+                        LogTracingUtils.Companion.AttributeKeys.CTX_ORDER_ID to orderId,
+                    )
                 )
 
                 val isIoClient = "IO".equals(xClientId, ignoreCase = true)
@@ -313,8 +250,7 @@ constructor(
 
         val xRequestId = UUID.randomUUID().toString()
         LogTracingUtils.enrichContext(
-            LogTracingUtils.Companion.AttributeKeys.CTX_REQUEST_ID,
-            xRequestId,
+            mapOf(LogTracingUtils.Companion.AttributeKeys.CTX_REQUEST_ID to xRequestId)
         )
 
         return restClient
@@ -327,12 +263,6 @@ constructor(
                 if (session!!.cardData != null) {
                     if (log.isDebugEnabled) {
                         LogTracingUtils.loggerTracingUtils()
-                            .attributes(
-                                mapOf(
-                                    LogTracingUtils.Companion.AttributeKeys.CTX_ORDER_ID to
-                                        session.orderId
-                                )
-                            )
                             .logDebug(log, "Cache hit for the specific orderId")
                     }
                     Uni.createFrom()
@@ -348,15 +278,17 @@ constructor(
                 } else {
                     if (log.isDebugEnabled) {
                         LogTracingUtils.loggerTracingUtils()
-                            .attributes(
-                                mapOf(
-                                    LogTracingUtils.Companion.AttributeKeys.CTX_ORDER_ID to
-                                        session.orderId
-                                )
-                            )
                             .logDebug(log, "Cache miss for the specific orderId")
                     }
                     val correlationId = UUID.fromString(session.correlationId)
+                    LogTracingUtils.enrichContext(
+                        mapOf(
+                            LogTracingUtils.Companion.AttributeKeys.CORRELATION_ID to
+                                session.correlationId,
+                            LogTracingUtils.Companion.AttributeKeys.CTX_TRANSACTION_ID to
+                                (session.transactionId ?: "{transactionId-not-found}"),
+                        )
+                    )
                     npgClient
                         .getCardData(correlationId, session.sessionId)
                         .flatMap { cardData ->
@@ -370,6 +302,19 @@ constructor(
                                     cardData.expiringDate.isNullOrBlank() ||
                                     cardData.circuit.isNullOrBlank()
                             ) {
+                                LogTracingUtils.loggerTracingUtils()
+                                    .failure()
+                                    .details(
+                                        mapOf(
+                                            "sessionId" to session.sessionId,
+                                            "cardData" to cardData.toString(),
+                                        )
+                                    )
+                                    .dependency(LogTracingUtils.NPG_DEPENDENCY)
+                                    .logWarn(
+                                        log,
+                                        "Incomplete card data received from NPG for specific orderId",
+                                    )
                                 Uni.createFrom()
                                     .failure(
                                         NpgResponseException(
@@ -406,19 +351,6 @@ constructor(
                                 brand = cardData.circuit
                             }
                         }
-                        .onItem()
-                        .invoke { _ ->
-                            LogTracingUtils.loggerTracingUtils()
-                                .success()
-                                .attributes(
-                                    mapOf(
-                                        LogTracingUtils.Companion.AttributeKeys.CTX_ORDER_ID to
-                                            session.orderId
-                                    )
-                                )
-                                .dependency(LogTracingUtils.NPG_DEPENDENCY)
-                                .logInfo(log, "NPG getCardData called successfully!")
-                        }
                 }
             }
     }
@@ -433,10 +365,7 @@ constructor(
         val xRequestId = UUID.randomUUID().toString()
         val requestedTransactionId = patchSessionRequest.transactionId
         LogTracingUtils.enrichContext(
-            mapOf(
-                LogTracingUtils.Companion.AttributeKeys.CTX_REQUEST_ID to xRequestId,
-                LogTracingUtils.Companion.AttributeKeys.CTX_TRANSACTION_ID to requestedTransactionId,
-            )
+            mapOf(LogTracingUtils.Companion.AttributeKeys.CTX_REQUEST_ID to xRequestId)
         )
 
         return restClient
@@ -472,17 +401,8 @@ constructor(
                                     result.existingTransactionId ?: "unknown"
                                 LogTracingUtils.loggerTracingUtils()
                                     .failure()
-                                    .attributes(
-                                        mapOf(
-                                            LogTracingUtils.Companion.AttributeKeys.CTX_ORDER_ID to
-                                                orderId
-                                        )
-                                    )
                                     .details(
-                                        mapOf(
-                                            "existingTransactionId" to existingTransactionId,
-                                            "requestedTransactionId" to requestedTransactionId,
-                                        )
+                                        mapOf("existingTransactionId" to existingTransactionId)
                                     )
                                     .dependency(LogTracingUtils.REDIS_DEPENDENCY)
                                     .logError(

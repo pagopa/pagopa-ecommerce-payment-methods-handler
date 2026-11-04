@@ -16,16 +16,23 @@ class NpgClient(@param:RestClient private val npgBuildIntegrityApi: NpgBuildInte
     private val log = LoggerFactory.getLogger(NpgClient::class.java)
 
     fun getIntegrity(correlationId: UUID): Uni<BuildIntegrityResponseDto> {
-        return npgBuildIntegrityApi.getBuildIntegrity(correlationId).onFailure().transform { error
-            ->
-            LogTracingUtils.loggerTracingUtils()
-                .failure()
-                .dependency(LogTracingUtils.NPG_DEPENDENCY)
-                .logWithStackTrace(log, error, "Error calling NPG Build Integrity API")
-            NpgClientException(
-                "Error during the call to NpgBuildIntegrityApi.getBuildIntegrity",
-                error,
-            )
-        }
+        return npgBuildIntegrityApi
+            .getBuildIntegrity(correlationId)
+            .onItem()
+            .invoke { response ->
+                LogTracingUtils.loggerTracingUtils()
+                    .success()
+                    .details(mapOf("integrityHash" to response.integrity))
+                    .dependency(LogTracingUtils.NPG_DEPENDENCY)
+                    .logInfo(log, "NPG SDK integrity hash retrieved successfully")
+            }
+            .onFailure()
+            .transform { error ->
+                LogTracingUtils.loggerTracingUtils()
+                    .failure()
+                    .dependency(LogTracingUtils.NPG_DEPENDENCY)
+                    .logWithStackTrace(log, error, "Error calling NPG Build Integrity API")
+                NpgClientException("Error calling NpgBuildIntegrityApi.getBuildIntegrity", error)
+            }
     }
 }

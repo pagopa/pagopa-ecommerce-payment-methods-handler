@@ -28,14 +28,6 @@ constructor(private val npgSdkIntegrityService: NpgSdkIntegrityService) : NpgApi
 
     @ServerExceptionMapper
     fun mapNpgClientException(exception: NpgClientException): RestResponse<ProblemJson> {
-        LogTracingUtils.loggerTracingUtils()
-            .failure()
-            .dependency(LogTracingUtils.NPG_DEPENDENCY)
-            .logWithStackTrace(
-                log,
-                exception,
-                "NPG Client Exception while retrieving SDK integrity",
-            )
         return problemResponse(
             Response.Status.INTERNAL_SERVER_ERROR,
             "NPG Communication Error",

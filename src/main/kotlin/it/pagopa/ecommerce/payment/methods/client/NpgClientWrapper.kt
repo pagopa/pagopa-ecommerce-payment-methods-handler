@@ -73,11 +73,6 @@ constructor(
             .invoke { _ ->
                 LogTracingUtils.loggerTracingUtils()
                     .success()
-                    .attributes(
-                        mapOf(
-                            LogTracingUtils.Companion.AttributeKeys.CTX_ORDER_ID to params.orderId
-                        )
-                    )
                     .dependency(LogTracingUtils.NPG_DEPENDENCY)
                     .logInfo(log, "NPG buildForm called successfully!")
             }
@@ -85,11 +80,6 @@ constructor(
             .invoke { e ->
                 LogTracingUtils.loggerTracingUtils()
                     .failure()
-                    .attributes(
-                        mapOf(
-                            LogTracingUtils.Companion.AttributeKeys.CTX_ORDER_ID to params.orderId
-                        )
-                    )
                     .dependency(LogTracingUtils.NPG_DEPENDENCY)
                     .logWithStackTrace(log, e, "Error calling NPG buildForm")
             }

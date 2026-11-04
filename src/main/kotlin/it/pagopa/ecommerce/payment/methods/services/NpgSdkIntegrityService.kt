@@ -24,16 +24,8 @@ class NpgSdkIntegrityService @Inject constructor(private val npgClient: NpgClien
             correlationId.toString(),
         )
 
-        return npgClient
-            .getIntegrity(correlationId)
-            .map { dto -> NpgSdkIntegrityResponse().apply { integrityHash = dto.integrity } }
-            .onItem()
-            .invoke { response ->
-                LogTracingUtils.loggerTracingUtils()
-                    .success()
-                    .details(mapOf("integrityHash" to response.integrityHash))
-                    .dependency(LogTracingUtils.NPG_DEPENDENCY)
-                    .logInfo(log, "NPG SDK integrity hash retrieved successfully")
-            }
+        return npgClient.getIntegrity(correlationId).map { dto ->
+            NpgSdkIntegrityResponse().apply { integrityHash = dto.integrity }
+        }
     }
 }

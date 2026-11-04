@@ -109,12 +109,10 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
         lang: String?,
         xClientId: it.pagopa.ecommerce.payment.methods.v1.server.model.ClientId?,
     ): CompletionStage<CreateSessionResponse> {
-        val xRequestId = UUID.randomUUID().toString()
         // Add the details to the context for logging purposes, so that it can be propagated to
         // downstream services and included in log messages.
         LogTracingUtils.enrichContext(
             mapOf(
-                LogTracingUtils.Companion.AttributeKeys.CTX_REQUEST_ID to xRequestId,
                 LogTracingUtils.Companion.AttributeKeys.EVENT_ACTION to
                     "POST /payment-methods/{id}/sessions",
                 LogTracingUtils.Companion.AttributeKeys.CTX_CLIENT_ID to xClientId.toString(),
@@ -137,6 +135,7 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
                 LogTracingUtils.Companion.AttributeKeys.EVENT_ACTION to
                     "GET /payment-methods/{id}/sessions/{orderId}",
                 LogTracingUtils.Companion.AttributeKeys.CTX_CLIENT_ID to xClientId.toString(),
+                LogTracingUtils.Companion.AttributeKeys.CTX_ORDER_ID to orderId,
             )
         )
         return paymentMethodService
@@ -150,15 +149,16 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
         patchSessionRequest: @Valid @NotNull PatchSessionRequest,
         xClientId: it.pagopa.ecommerce.payment.methods.v1.server.model.ClientId?,
     ): CompletionStage<Void> {
-        val xRequestId = UUID.randomUUID().toString()
         // Add the details to the context for logging purposes, so that it can be propagated to
         // downstream services and included in log messages
         LogTracingUtils.enrichContext(
             mapOf(
-                LogTracingUtils.Companion.AttributeKeys.CTX_REQUEST_ID to xRequestId,
                 LogTracingUtils.Companion.AttributeKeys.EVENT_ACTION to
                     "PATCH /payment-methods/{id}/sessions/{orderId}",
                 LogTracingUtils.Companion.AttributeKeys.CTX_CLIENT_ID to xClientId.toString(),
+                LogTracingUtils.Companion.AttributeKeys.CTX_TRANSACTION_ID to
+                    patchSessionRequest.transactionId,
+                LogTracingUtils.Companion.AttributeKeys.CTX_ORDER_ID to orderId,
             )
         )
         return paymentMethodService
@@ -218,12 +218,10 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
 
     @ServerExceptionMapper
     fun mapNotAuthorizedException(exception: NotAuthorizedException): RestResponse<ProblemJson> {
-        if (log.isDebugEnabled) {
-            LogTracingUtils.loggerTracingUtils()
-                .failure()
-                .details(mapOf("exception" to exception.message.orEmpty()))
-                .logDebug(log, "Unauthorized Request: Missing or malformed Bearer token")
-        }
+
+        LogTracingUtils.loggerTracingUtils()
+            .failure()
+            .logWarn(log, "Unauthorized Request: Missing or malformed Bearer token")
 
         return problemResponse(
             Response.Status.UNAUTHORIZED,
@@ -234,12 +232,11 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
 
     @ServerExceptionMapper
     fun mapNpgResponseException(exception: NpgResponseException): RestResponse<ProblemJson> {
-        if (log.isDebugEnabled) {
-            LogTracingUtils.loggerTracingUtils()
-                .failure()
-                .details(mapOf("exception" to exception.message.orEmpty()))
-                .logDebug(log, "NPG Response Exception")
-        }
+
+        LogTracingUtils.loggerTracingUtils()
+            .failure()
+            .logWithStackTrace(log, exception, "NPG Response Exception")
+
         return problemResponse(
             Response.Status.BAD_GATEWAY,
             "Bad Gateway",
@@ -268,12 +265,11 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
     fun mapUniqueIdGenerationException(
         exception: UniqueIdGenerationException
     ): RestResponse<ProblemJson> {
-        if (log.isDebugEnabled) {
-            LogTracingUtils.loggerTracingUtils()
-                .failure()
-                .details(mapOf("exception" to exception.message.orEmpty()))
-                .logDebug(log, "Unique ID Generation Exception")
-        }
+
+        LogTracingUtils.loggerTracingUtils()
+            .failure()
+            .logWithStackTrace(log, exception, "Unique ID Generation Exception")
+
         return problemResponse(
             Response.Status.INTERNAL_SERVER_ERROR,
             "Internal Server Error",
@@ -300,12 +296,11 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
 
     @ServerExceptionMapper
     fun mapException(exception: Exception): RestResponse<ProblemJson> {
-        if (log.isDebugEnabled) {
-            LogTracingUtils.loggerTracingUtils()
-                .failure()
-                .details(mapOf("exception" to exception.message.orEmpty()))
-                .logDebug(log, "Generic Exception While Processing the Request")
-        }
+
+        LogTracingUtils.loggerTracingUtils()
+            .failure()
+            .logWithStackTrace(log, exception, "Generic Exception While Processing the Request")
+
         return problemResponse(
             Response.Status.INTERNAL_SERVER_ERROR,
             "Unexpected Exception",
@@ -411,12 +406,9 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
     fun mapInvalidSessionException(
         exception: it.pagopa.ecommerce.payment.methods.exception.InvalidSessionException
     ): RestResponse<ProblemJson> {
-        if (log.isDebugEnabled) {
-            LogTracingUtils.loggerTracingUtils()
-                .failure()
-                .details(mapOf("exception" to exception.message.orEmpty()))
-                .logDebug(log, "Invalid Session")
-        }
+
+        LogTracingUtils.loggerTracingUtils().failure().logWarn(log, "Invalid Session")
+
         return problemResponse(
             Response.Status.CONFLICT,
             "Invalid session",
@@ -428,12 +420,11 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
     fun mapMismatchedSecurityTokenException(
         exception: it.pagopa.ecommerce.payment.methods.exception.MismatchedSecurityTokenException
     ): RestResponse<ProblemJson> {
-        if (log.isDebugEnabled) {
-            LogTracingUtils.loggerTracingUtils()
-                .failure()
-                .details(mapOf("exception" to exception.message.orEmpty()))
-                .logDebug(log, "Mismatched Security Token")
-        }
+
+        LogTracingUtils.loggerTracingUtils()
+            .failure()
+            .logWithStackTrace(log, exception, "Mismatched Security Token")
+
         return problemResponse(
             Response.Status.CONFLICT,
             "Conflict",

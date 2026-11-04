@@ -49,8 +49,16 @@ constructor(private val uniqueIdRedisWrapper: UniqueIdRedisWrapper) {
             // retry chain below, matching the behavior of ecommerce-commons ReactiveUniqueIdUtils
             // (onErrorResume -> retry). This runs before the recursive call, so a
             // UniqueIdGenerationException coming from an exhausted retry is never swallowed here.
+            .onItem()
+            .invoke { _ ->
+                LogTracingUtils.loggerTracingUtils()
+                    .success()
+                    .details(mapOf("attempt" to attempt.toString(), "uniqueId" to uniqueId))
+                    .dependency(LogTracingUtils.REDIS_DEPENDENCY)
+                    .logInfo(log, "Unique id saved successfully!")
+            }
             .onFailure()
-            .recoverWithItem { e ->
+            .recoverWithItem { _ ->
                 LogTracingUtils.loggerTracingUtils()
                     .failure()
                     .dependency(LogTracingUtils.REDIS_DEPENDENCY)

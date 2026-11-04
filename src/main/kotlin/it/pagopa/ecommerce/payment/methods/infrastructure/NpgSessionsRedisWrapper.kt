@@ -45,17 +45,7 @@ constructor(
             .invoke { _ ->
                 LogTracingUtils.loggerTracingUtils()
                     .success()
-                    .attributes(
-                        mapOf(
-                            LogTracingUtils.Companion.AttributeKeys.CTX_ORDER_ID to document.orderId
-                        )
-                    )
-                    .details(
-                        mapOf(
-                            "sessionId" to document.sessionId,
-                            "transactionId" to document.transactionId.toString(),
-                        )
-                    )
+                    .details(mapOf("sessionId" to document.sessionId))
                     .dependency(LogTracingUtils.REDIS_DEPENDENCY)
                     .logInfo(log, "NPG session saved successfully!")
             }
@@ -63,17 +53,7 @@ constructor(
             .invoke { e ->
                 LogTracingUtils.loggerTracingUtils()
                     .failure()
-                    .attributes(
-                        mapOf(
-                            LogTracingUtils.Companion.AttributeKeys.CTX_ORDER_ID to document.orderId
-                        )
-                    )
-                    .details(
-                        mapOf(
-                            "sessionId" to document.sessionId,
-                            "transactionId" to document.transactionId.toString(),
-                        )
-                    )
+                    .details(mapOf("sessionId" to document.sessionId))
                     .dependency(LogTracingUtils.REDIS_DEPENDENCY)
                     .logWithStackTrace(log, e, "Error saving NPG session")
             }
@@ -83,12 +63,10 @@ constructor(
         return commands
             .get(keyPrefix + orderId)
             .onItem()
-            .invoke { _ ->
+            .invoke { session ->
                 LogTracingUtils.loggerTracingUtils()
                     .success()
-                    .attributes(
-                        mapOf(LogTracingUtils.Companion.AttributeKeys.CTX_ORDER_ID to orderId)
-                    )
+                    .details(mapOf("sessionId" to (session?.sessionId ?: "{sessionId-not-found}")))
                     .dependency(LogTracingUtils.REDIS_DEPENDENCY)
                     .logInfo(log, "NPG session retrieved successfully!")
             }
@@ -96,9 +74,6 @@ constructor(
             .invoke { e ->
                 LogTracingUtils.loggerTracingUtils()
                     .failure()
-                    .attributes(
-                        mapOf(LogTracingUtils.Companion.AttributeKeys.CTX_ORDER_ID to orderId)
-                    )
                     .dependency(LogTracingUtils.REDIS_DEPENDENCY)
                     .logWithStackTrace(log, e, "Error retrieving NPG session")
             }
@@ -159,13 +134,6 @@ constructor(
             .invoke { _ ->
                 LogTracingUtils.loggerTracingUtils()
                     .success()
-                    .attributes(
-                        mapOf(
-                            LogTracingUtils.Companion.AttributeKeys.CTX_ORDER_ID to
-                                updatedDocument.orderId
-                        )
-                    )
-                    .details(mapOf("transactionId" to requestedTransactionId))
                     .dependency(LogTracingUtils.REDIS_DEPENDENCY)
                     .logInfo(log, "NPG session associated successfully!")
             }
@@ -173,13 +141,6 @@ constructor(
             .invoke { e ->
                 LogTracingUtils.loggerTracingUtils()
                     .failure()
-                    .attributes(
-                        mapOf(
-                            LogTracingUtils.Companion.AttributeKeys.CTX_ORDER_ID to
-                                updatedDocument.orderId
-                        )
-                    )
-                    .details(mapOf("transactionId" to requestedTransactionId))
                     .dependency(LogTracingUtils.REDIS_DEPENDENCY)
                     .logWithStackTrace(log, e, "Error associating transaction to NPG session")
             }
