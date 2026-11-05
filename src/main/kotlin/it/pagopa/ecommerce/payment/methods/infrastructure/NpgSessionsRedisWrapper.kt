@@ -131,11 +131,24 @@ constructor(
             .execute("EVAL", script, "1", key, requestedTransactionId, newDocumentJson)
             .map { response -> parseOutcome(response.toString()) }
             .onItem()
-            .invoke { _ ->
-                LogTracingUtils.loggerTracingUtils()
-                    .success()
-                    .dependency(LogTracingUtils.REDIS_DEPENDENCY)
-                    .logInfo(log, "NPG session associated successfully!")
+            .invoke { result ->
+                when (result.outcome) {
+                    AssociateOutcome.OK ->
+                        LogTracingUtils.loggerTracingUtils()
+                            .success()
+                            .dependency(LogTracingUtils.REDIS_DEPENDENCY)
+                            .logInfo(log, "NPG session associated successfully!")
+                    AssociateOutcome.CONFLICT ->
+                        LogTracingUtils.loggerTracingUtils()
+                            .failure()
+                            .dependency(LogTracingUtils.REDIS_DEPENDENCY)
+                            .logWarn(log, "NPG session association conflict")
+                    AssociateOutcome.NOT_FOUND ->
+                        LogTracingUtils.loggerTracingUtils()
+                            .failure()
+                            .dependency(LogTracingUtils.REDIS_DEPENDENCY)
+                            .logWarn(log, "NPG session not found for association")
+                }
             }
             .onFailure()
             .invoke { e ->
