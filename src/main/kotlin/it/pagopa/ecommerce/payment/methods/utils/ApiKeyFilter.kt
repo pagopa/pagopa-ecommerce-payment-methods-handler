@@ -54,7 +54,7 @@ class ApiKeyFilter {
             }
         if (LOG.isDebugEnabled) {
             LogTracingUtils.loggerTracingUtils()
-                .details(mapOf("apiKeyType" to apiKeyType, "path" to path))
+                .details(mapOf("api_key_type" to apiKeyType, "path" to path))
                 .logDebug(LOG, "API key type used details")
         }
     }

@@ -27,14 +27,14 @@ class LogTracingUtilsTest {
 
         LogTracingUtils.loggerTracingUtils()
             .attributes(mapOf(AttributeKeys.CTX_TRANSACTION_ID to "transaction-123"))
-            .details(mapOf("paymentMethod" to "card"))
+            .details(mapOf("payment_method" to "card"))
             .dependency(LogTracingUtils.PAYMENT_METHODS_HANDLER_DEPENDENCY)
             .success()
             .logInfo(capturingLogger.logger, "Payment method handled")
 
         assertEquals("transaction-123", capturingLogger.mdc["ctx_transaction_id"])
         assertEquals(
-            """{"paymentMethod":"card","dependency":"payment-methods-handler"}""",
+            """{"payment_method":"card","dependency":"payment-methods-handler"}""",
             capturingLogger.mdc["ctx_details"],
         )
         assertEquals("success", capturingLogger.mdc["event_outcome"])
@@ -147,7 +147,7 @@ class LogTracingUtilsTest {
         assertThrows(IllegalStateException::class.java) {
             LogTracingUtils.loggerTracingUtils()
                 .attributes(mapOf(AttributeKeys.CTX_TRANSACTION_ID to "transaction-123"))
-                .details(mapOf("paymentMethod" to "card"))
+                .details(mapOf("payment_method" to "card"))
                 .success()
                 .logInfo(logger, "Payment method handled")
         }

@@ -45,7 +45,7 @@ constructor(
             .invoke { _ ->
                 LogTracingUtils.loggerTracingUtils()
                     .success()
-                    .details(mapOf("sessionId" to document.sessionId))
+                    .details(mapOf("session_id" to document.sessionId))
                     .dependency(LogTracingUtils.REDIS_DEPENDENCY)
                     .logInfo(log, "NPG session saved successfully!")
             }
@@ -53,7 +53,7 @@ constructor(
             .invoke { e ->
                 LogTracingUtils.loggerTracingUtils()
                     .failure()
-                    .details(mapOf("sessionId" to document.sessionId))
+                    .details(mapOf("session_id" to document.sessionId))
                     .dependency(LogTracingUtils.REDIS_DEPENDENCY)
                     .logWithStackTrace(log, e, "Error saving NPG session")
             }
@@ -66,7 +66,7 @@ constructor(
             .invoke { session ->
                 LogTracingUtils.loggerTracingUtils()
                     .success()
-                    .details(mapOf("sessionId" to (session?.sessionId ?: "{sessionId-not-found}")))
+                    .details(mapOf("session_id" to (session?.sessionId ?: "{sessionId-not-found}")))
                     .dependency(LogTracingUtils.REDIS_DEPENDENCY)
                     .logInfo(log, "NPG session retrieved successfully!")
             }

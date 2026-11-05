@@ -22,7 +22,7 @@ class NpgClient(@param:RestClient private val npgBuildIntegrityApi: NpgBuildInte
             .invoke { response ->
                 LogTracingUtils.loggerTracingUtils()
                     .success()
-                    .details(mapOf("integrityHash" to response.integrity))
+                    .details(mapOf("integrity_hash" to response.integrity))
                     .dependency(LogTracingUtils.NPG_DEPENDENCY)
                     .logInfo(log, "NPG SDK integrity hash retrieved successfully")
             }

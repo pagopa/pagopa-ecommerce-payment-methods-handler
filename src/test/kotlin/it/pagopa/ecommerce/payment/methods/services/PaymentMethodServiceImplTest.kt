@@ -171,6 +171,7 @@ class PaymentMethodsClientTest {
     @Test
     fun `should handle failure from PaymentMethodsApi get all methods`() {
         val requestDto = PaymentMethodRequestDto()
+        requestDto.userTouchpoint = PaymentMethodRequestDto.UserTouchpointEnum.CHECKOUT
         val simulatedError = RuntimeException("API failure")
 
         whenever(mockApi.searchPaymentMethods(requestDto, "test-id"))

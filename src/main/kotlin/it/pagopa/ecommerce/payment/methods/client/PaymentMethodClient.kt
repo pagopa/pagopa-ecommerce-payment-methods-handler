@@ -46,9 +46,9 @@ class PaymentMethodsClient(
                     .failure()
                     .details(
                         mapOf(
-                            "userTouchpoint" to (requestDto.userTouchpoint?.toString() ?: "null"),
-                            "userDevice" to (requestDto.userDevice?.toString() ?: "null"),
-                            "paymentNoticesCount" to requestDto.paymentNotice.size.toString(),
+                            "user_touchpoint" to (requestDto.userTouchpoint.toString()),
+                            "user_device" to (requestDto.userDevice?.toString() ?: "null"),
+                            "payment_notices_count" to requestDto.paymentNotice.size.toString(),
                         )
                     )
                     .dependency(LogTracingUtils.AFM_DEPENDENCY)
@@ -67,9 +67,9 @@ class PaymentMethodsClient(
                     .success()
                     .details(
                         mapOf(
-                            "userTouchpoint" to requestDto.userTouchpoint.toString(),
-                            "userDevice" to requestDto.userDevice.toString(),
-                            "paymentNoticesCount" to requestDto.paymentNotice.size.toString(),
+                            "user_touchpoint" to requestDto.userTouchpoint.toString(),
+                            "user_device" to requestDto.userDevice.toString(),
+                            "payment_notices_count" to requestDto.paymentNotice.size.toString(),
                         )
                     )
                     .dependency(LogTracingUtils.AFM_DEPENDENCY)
@@ -176,7 +176,7 @@ class PaymentMethodsClient(
                 } else {
                     LogTracingUtils.loggerTracingUtils()
                         .failure()
-                        .details(mapOf("paymentMethodId" to paymentMethodsId))
+                        .details(mapOf("payment_method_id" to paymentMethodsId))
                         .dependency(LogTracingUtils.AFM_DEPENDENCY)
                         .logWithStackTrace(log, exception, "Error calling getPaymentMethod")
 
@@ -190,7 +190,7 @@ class PaymentMethodsClient(
             .invoke { res ->
                 LogTracingUtils.loggerTracingUtils()
                     .success()
-                    .details(mapOf("paymentMethodId" to paymentMethodsId))
+                    .details(mapOf("payment_method_id" to paymentMethodsId))
                     .dependency(LogTracingUtils.AFM_DEPENDENCY)
                     .logInfo(log, "getPaymentMethod completed successfully!")
                 if (
@@ -220,9 +220,9 @@ class PaymentMethodsClient(
                             .success()
                             .details(
                                 mapOf(
-                                    "paymentMethodId" to paymentMethodsId,
-                                    "maxOccurrences" to maxOccurrences.toString(),
-                                    "isAllCCP" to requestDto.isAllCCP.toString(),
+                                    "payment_method_id" to paymentMethodsId,
+                                    "max_occurrences" to maxOccurrences.toString(),
+                                    "is_all_ccp" to requestDto.isAllCCP.toString(),
                                 )
                             )
                             .dependency(LogTracingUtils.AFM_DEPENDENCY)
@@ -234,9 +234,9 @@ class PaymentMethodsClient(
                             .failure()
                             .details(
                                 mapOf(
-                                    "paymentMethodId" to paymentMethodsId,
-                                    "maxOccurrences" to maxOccurrences.toString(),
-                                    "isAllCCP" to requestDto.isAllCCP.toString(),
+                                    "payment_method_id" to paymentMethodsId,
+                                    "max_occurrences" to maxOccurrences.toString(),
+                                    "is_all_ccp" to requestDto.isAllCCP.toString(),
                                 )
                             )
                             .dependency(LogTracingUtils.AFM_DEPENDENCY)
@@ -257,7 +257,7 @@ class PaymentMethodsClient(
             .invoke { _ ->
                 LogTracingUtils.loggerTracingUtils()
                     .failure()
-                    .details(mapOf("paymentMethodId" to paymentMethodsId))
+                    .details(mapOf("payment_method_id" to paymentMethodsId))
                     .dependency(LogTracingUtils.AFM_DEPENDENCY)
                     .logWarn(log, "No bundle found for this payment method")
             }
@@ -283,7 +283,7 @@ class PaymentMethodsClient(
                 } else {
                     LogTracingUtils.loggerTracingUtils()
                         .failure()
-                        .details(mapOf("paymentMethodId" to paymentMethodsId))
+                        .details(mapOf("payment_method_id" to paymentMethodsId))
                         .dependency(LogTracingUtils.AFM_DEPENDENCY)
                         .logWithStackTrace(log, exception, "Error calling getPaymentMethod")
                     PaymentMethodsClientException(
@@ -296,7 +296,7 @@ class PaymentMethodsClient(
             .invoke { _ ->
                 LogTracingUtils.loggerTracingUtils()
                     .success()
-                    .details(mapOf("paymentMethodId" to paymentMethodsId))
+                    .details(mapOf("payment_method_id" to paymentMethodsId))
                     .dependency(LogTracingUtils.AFM_DEPENDENCY)
                     .logInfo(log, "getPaymentMethod complete successfully!")
             }

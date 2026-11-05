@@ -304,7 +304,7 @@ constructor(
                             ) {
                                 LogTracingUtils.loggerTracingUtils()
                                     .failure()
-                                    .details(mapOf("sessionId" to session.sessionId))
+                                    .details(mapOf("session_id" to session.sessionId))
                                     .dependency(LogTracingUtils.NPG_DEPENDENCY)
                                     .logWarn(
                                         log,
@@ -397,7 +397,7 @@ constructor(
                                 LogTracingUtils.loggerTracingUtils()
                                     .failure()
                                     .details(
-                                        mapOf("existingTransactionId" to existingTransactionId)
+                                        mapOf("existing_transaction_id" to existingTransactionId)
                                     )
                                     .dependency(LogTracingUtils.REDIS_DEPENDENCY)
                                     .logWarn(

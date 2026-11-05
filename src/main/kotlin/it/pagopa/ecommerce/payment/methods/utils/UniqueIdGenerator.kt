@@ -54,7 +54,7 @@ constructor(private val uniqueIdRedisWrapper: UniqueIdRedisWrapper) {
                 LogTracingUtils.loggerTracingUtils()
                     .failure()
                     .dependency(LogTracingUtils.REDIS_DEPENDENCY)
-                    .details(mapOf("attempt" to attempt.toString(), "uniqueId" to uniqueId))
+                    .details(mapOf("attempt" to attempt.toString(), "unique_id" to uniqueId))
                     .logWarn(log, "Error saving unique id, retrying.")
                 false
             }
@@ -62,7 +62,7 @@ constructor(private val uniqueIdRedisWrapper: UniqueIdRedisWrapper) {
                 if (wasSet) {
                     LogTracingUtils.loggerTracingUtils()
                         .success()
-                        .details(mapOf("attempt" to attempt.toString(), "uniqueId" to uniqueId))
+                        .details(mapOf("attempt" to attempt.toString(), "unique_id" to uniqueId))
                         .dependency(LogTracingUtils.REDIS_DEPENDENCY)
                         .logInfo(log, "Unique id saved successfully!")
                     Uni.createFrom().item(uniqueId)

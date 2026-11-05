@@ -102,7 +102,7 @@ constructor(
             .invoke { _ ->
                 LogTracingUtils.loggerTracingUtils()
                     .success()
-                    .details(mapOf("sessionId" to sessionId))
+                    .details(mapOf("session_id" to sessionId))
                     .dependency(LogTracingUtils.NPG_DEPENDENCY)
                     .logInfo(log, "NPG getCardData called successfully!")
             }
@@ -110,7 +110,7 @@ constructor(
             .invoke { e ->
                 LogTracingUtils.loggerTracingUtils()
                     .failure()
-                    .details(mapOf("sessionId" to sessionId))
+                    .details(mapOf("session_id" to sessionId))
                     .dependency(LogTracingUtils.NPG_DEPENDENCY)
                     .logWithStackTrace(log, e, "Error calling NPG getCardData")
             }
