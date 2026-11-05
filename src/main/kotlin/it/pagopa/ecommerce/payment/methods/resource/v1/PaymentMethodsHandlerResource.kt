@@ -57,8 +57,6 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
             mapOf(
                 LogTracingUtils.Companion.AttributeKeys.CTX_CLIENT_ID to xClientId,
                 LogTracingUtils.Companion.AttributeKeys.CTX_REQUEST_ID to xRequestId,
-                LogTracingUtils.Companion.AttributeKeys.EVENT_ACTION to
-                    "POST /payment-methods/{id}/fees",
             )
         )
 
@@ -79,10 +77,7 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
         // Add the details to the context for logging purposes, so that it can be propagated to
         // downstream services and included in log messages.
         LogTracingUtils.enrichContext(
-            mapOf(
-                LogTracingUtils.Companion.AttributeKeys.CTX_REQUEST_ID to xRequestId,
-                LogTracingUtils.Companion.AttributeKeys.EVENT_ACTION to "POST /payment-methods",
-            )
+            mapOf(LogTracingUtils.Companion.AttributeKeys.CTX_REQUEST_ID to xRequestId)
         )
         return paymentMethodService.searchPaymentMethods(paymentMethodsRequest, xRequestId)
     }
@@ -97,7 +92,6 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
         LogTracingUtils.enrichContext(
             mapOf(
                 LogTracingUtils.Companion.AttributeKeys.CTX_REQUEST_ID to xRequestId,
-                LogTracingUtils.Companion.AttributeKeys.EVENT_ACTION to "GET /payment-methods/{id}",
                 LogTracingUtils.Companion.AttributeKeys.CTX_CLIENT_ID to xClientId?.toString(),
             )
         )
@@ -112,11 +106,7 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
         // Add the details to the context for logging purposes, so that it can be propagated to
         // downstream services and included in log messages.
         LogTracingUtils.enrichContext(
-            mapOf(
-                LogTracingUtils.Companion.AttributeKeys.EVENT_ACTION to
-                    "POST /payment-methods/{id}/sessions",
-                LogTracingUtils.Companion.AttributeKeys.CTX_CLIENT_ID to xClientId?.toString(),
-            )
+            mapOf(LogTracingUtils.Companion.AttributeKeys.CTX_CLIENT_ID to xClientId?.toString())
         )
         return paymentMethodService
             .createSessionForPaymentMethod(id, lang, xClientId?.toString())
@@ -132,8 +122,6 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
         // downstream services and included in log messages
         LogTracingUtils.enrichContext(
             mapOf(
-                LogTracingUtils.Companion.AttributeKeys.EVENT_ACTION to
-                    "GET /payment-methods/{id}/sessions/{orderId}",
                 LogTracingUtils.Companion.AttributeKeys.CTX_CLIENT_ID to xClientId?.toString(),
                 LogTracingUtils.Companion.AttributeKeys.CTX_ORDER_ID to orderId,
             )
@@ -153,8 +141,6 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
         // downstream services and included in log messages
         LogTracingUtils.enrichContext(
             mapOf(
-                LogTracingUtils.Companion.AttributeKeys.EVENT_ACTION to
-                    "PATCH /payment-methods/{id}/sessions/{orderId}",
                 LogTracingUtils.Companion.AttributeKeys.CTX_CLIENT_ID to xClientId?.toString(),
                 LogTracingUtils.Companion.AttributeKeys.CTX_TRANSACTION_ID to
                     patchSessionRequest.transactionId,
@@ -178,8 +164,6 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
         // downstream services and included in log messages
         LogTracingUtils.enrichContext(
             mapOf(
-                LogTracingUtils.Companion.AttributeKeys.EVENT_ACTION to
-                    "GET /payment-methods/{id}/sessions/{orderId}/transactionId",
                 LogTracingUtils.Companion.AttributeKeys.CTX_CLIENT_ID to xClientId?.toString(),
                 LogTracingUtils.Companion.AttributeKeys.CTX_ORDER_ID to orderId,
             )
