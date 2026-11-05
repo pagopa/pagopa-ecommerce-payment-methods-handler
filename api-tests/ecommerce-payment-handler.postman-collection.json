@@ -695,6 +695,60 @@
 				}
 			},
 			"response": []
+		},
+		{
+			"name": "Calculate Fees for Payment Method (Not Found) [404]",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 404 Not Found\", function () {",
+							"    pm.response.to.have.status(404);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "x-client-id",
+						"value": "{{CLIENT_ID}}"
+					},
+					{
+						"key": "x-language",
+						"value": "IT"
+					},
+					{
+						"key": "x-transaction-id-from-client",
+						"value": "{{TRANSACTION_ID}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"touchpoint\": \"CHECKOUT\",\n  \"isAllCCP\": false,\n  \"paymentNotices\": [\n    {\n      \"paymentAmount\": 15050,\n      \"primaryCreditorInstitution\": \"PA_FISCAL_CODE_1\",\n      \"transferList\": [{ \"creditorInstitution\": \"PA_FISCAL_CODE_1\", \"transferCategory\": \"TAX\", \"digitalStamp\": false }]\n    }\n  ]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/payment-methods/non-existent-id/fees",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"payment-methods",
+						"non-existent-id",
+						"fees"
+					]
+				}
+			},
+			"response": []
 		}
 	],
 	"auth": {
