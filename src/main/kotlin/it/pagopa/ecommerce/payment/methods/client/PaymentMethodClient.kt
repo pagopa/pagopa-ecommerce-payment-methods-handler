@@ -52,7 +52,7 @@ class PaymentMethodsClient(
                         )
                     )
                     .dependency(LogTracingUtils.AFM_DEPENDENCY)
-                    .logError(log, error, "Error calling searchPaymentMethods")
+                    .logWithStackTrace(log, error, "Error calling searchPaymentMethods")
             }
             .onFailure()
             .transform { error ->
@@ -164,14 +164,6 @@ class PaymentMethodsClient(
         return paymentMethodsApi
             .getPaymentMethod(paymentMethodsId, xRequestId)
             .onFailure()
-            .invoke { error ->
-                LogTracingUtils.loggerTracingUtils()
-                    .failure()
-                    .details(mapOf("paymentMethodId" to paymentMethodsId))
-                    .dependency(LogTracingUtils.AFM_DEPENDENCY)
-                    .logWithStackTrace(log, error, "Error calling getPaymentMethod")
-            }
-            .onFailure()
             .transform { exception ->
                 if (
                     exception is ClientWebApplicationException &&
@@ -182,6 +174,12 @@ class PaymentMethodsClient(
                         exception,
                     )
                 } else {
+                    LogTracingUtils.loggerTracingUtils()
+                        .failure()
+                        .details(mapOf("paymentMethodId" to paymentMethodsId))
+                        .dependency(LogTracingUtils.AFM_DEPENDENCY)
+                        .logWithStackTrace(log, exception, "Error calling getPaymentMethod")
+
                     PaymentMethodsClientException(
                         "Error during the call to PaymentMethodsApi.getPaymentMethod",
                         exception,
@@ -194,7 +192,7 @@ class PaymentMethodsClient(
                     .success()
                     .details(mapOf("paymentMethodId" to paymentMethodsId))
                     .dependency(LogTracingUtils.AFM_DEPENDENCY)
-                    .logInfo(log, "getPaymentMethod successfully!")
+                    .logInfo(log, "getPaymentMethod completed successfully!")
                 if (
                     !res.userTouchpoint.contains(
                         PaymentMethodResponseDto.UserTouchpointEnum.valueOf(xClientId)
@@ -256,12 +254,12 @@ class PaymentMethodsClient(
                 }
             }
             .onFailure(NoBundleFoundException::class.java)
-            .invoke { error ->
+            .invoke { _ ->
                 LogTracingUtils.loggerTracingUtils()
                     .failure()
                     .details(mapOf("paymentMethodId" to paymentMethodsId))
                     .dependency(LogTracingUtils.AFM_DEPENDENCY)
-                    .logWithStackTrace(log, error, "No bundle found for this payment method")
+                    .logWarn(log, "No bundle found for this payment method")
             }
     }
 
@@ -273,14 +271,6 @@ class PaymentMethodsClient(
         return paymentMethodsApi
             .getPaymentMethod(paymentMethodsId, xRequestId)
             .onFailure()
-            .invoke { error ->
-                LogTracingUtils.loggerTracingUtils()
-                    .failure()
-                    .details(mapOf("paymentMethodId" to paymentMethodsId))
-                    .dependency(LogTracingUtils.AFM_DEPENDENCY)
-                    .logWithStackTrace(log, error, "Error calling getPaymentMethod")
-            }
-            .onFailure()
             .transform { exception ->
                 if (
                     exception is ClientWebApplicationException &&
@@ -291,6 +281,11 @@ class PaymentMethodsClient(
                         exception,
                     )
                 } else {
+                    LogTracingUtils.loggerTracingUtils()
+                        .failure()
+                        .details(mapOf("paymentMethodId" to paymentMethodsId))
+                        .dependency(LogTracingUtils.AFM_DEPENDENCY)
+                        .logWithStackTrace(log, exception, "Error calling getPaymentMethod")
                     PaymentMethodsClientException(
                         "Error during the call to PaymentMethodsApi.getPaymentMethod",
                         exception,

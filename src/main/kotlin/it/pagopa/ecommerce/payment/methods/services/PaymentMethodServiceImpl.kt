@@ -400,7 +400,7 @@ constructor(
                                         mapOf("existingTransactionId" to existingTransactionId)
                                     )
                                     .dependency(LogTracingUtils.REDIS_DEPENDENCY)
-                                    .logError(
+                                    .logWarn(
                                         log,
                                         "Session already associated to a different transaction",
                                     )
@@ -439,6 +439,11 @@ constructor(
             .failWith { OrderIdNotFoundException(orderId) }
             .flatMap { session ->
                 val transactionId = session!!.transactionId
+                // Add the transactionId to the context
+                LogTracingUtils.enrichContext(
+                    LogTracingUtils.Companion.AttributeKeys.CTX_TRANSACTION_ID,
+                    transactionId,
+                )
                 if (transactionId == null) {
                     Uni.createFrom().failure(InvalidSessionException(orderId))
                 } else if (session.securityToken != securityToken) {

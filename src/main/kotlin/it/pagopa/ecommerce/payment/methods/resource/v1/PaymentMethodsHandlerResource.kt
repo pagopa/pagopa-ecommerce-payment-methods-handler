@@ -98,7 +98,7 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
             mapOf(
                 LogTracingUtils.Companion.AttributeKeys.CTX_REQUEST_ID to xRequestId,
                 LogTracingUtils.Companion.AttributeKeys.EVENT_ACTION to "GET /payment-methods/{id}",
-                LogTracingUtils.Companion.AttributeKeys.CTX_CLIENT_ID to xClientId.toString(),
+                LogTracingUtils.Companion.AttributeKeys.CTX_CLIENT_ID to xClientId?.toString(),
             )
         )
         return paymentMethodService.getPaymentMethod(id, xRequestId, xClientId?.toString())
@@ -115,7 +115,7 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
             mapOf(
                 LogTracingUtils.Companion.AttributeKeys.EVENT_ACTION to
                     "POST /payment-methods/{id}/sessions",
-                LogTracingUtils.Companion.AttributeKeys.CTX_CLIENT_ID to xClientId.toString(),
+                LogTracingUtils.Companion.AttributeKeys.CTX_CLIENT_ID to xClientId?.toString(),
             )
         )
         return paymentMethodService
@@ -134,7 +134,7 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
             mapOf(
                 LogTracingUtils.Companion.AttributeKeys.EVENT_ACTION to
                     "GET /payment-methods/{id}/sessions/{orderId}",
-                LogTracingUtils.Companion.AttributeKeys.CTX_CLIENT_ID to xClientId.toString(),
+                LogTracingUtils.Companion.AttributeKeys.CTX_CLIENT_ID to xClientId?.toString(),
                 LogTracingUtils.Companion.AttributeKeys.CTX_ORDER_ID to orderId,
             )
         )
@@ -155,7 +155,7 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
             mapOf(
                 LogTracingUtils.Companion.AttributeKeys.EVENT_ACTION to
                     "PATCH /payment-methods/{id}/sessions/{orderId}",
-                LogTracingUtils.Companion.AttributeKeys.CTX_CLIENT_ID to xClientId.toString(),
+                LogTracingUtils.Companion.AttributeKeys.CTX_CLIENT_ID to xClientId?.toString(),
                 LogTracingUtils.Companion.AttributeKeys.CTX_TRANSACTION_ID to
                     patchSessionRequest.transactionId,
                 LogTracingUtils.Companion.AttributeKeys.CTX_ORDER_ID to orderId,
@@ -180,7 +180,8 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
             mapOf(
                 LogTracingUtils.Companion.AttributeKeys.EVENT_ACTION to
                     "GET /payment-methods/{id}/sessions/{orderId}/transactionId",
-                LogTracingUtils.Companion.AttributeKeys.CTX_CLIENT_ID to xClientId.toString(),
+                LogTracingUtils.Companion.AttributeKeys.CTX_CLIENT_ID to xClientId?.toString(),
+                LogTracingUtils.Companion.AttributeKeys.CTX_ORDER_ID to orderId,
             )
         )
 
@@ -233,9 +234,9 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
     @ServerExceptionMapper
     fun mapNpgResponseException(exception: NpgResponseException): RestResponse<ProblemJson> {
 
-        LogTracingUtils.loggerTracingUtils()
-            .failure()
-            .logWithStackTrace(log, exception, "NPG Response Exception")
+        if (log.isDebugEnabled) {
+            LogTracingUtils.loggerTracingUtils().failure().logDebug(log, "NPG Response Exception")
+        }
 
         return problemResponse(
             Response.Status.BAD_GATEWAY,
@@ -346,12 +347,12 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
     fun mapMethodNotFoundException(
         exception: PaymentMethodNotFoundException
     ): RestResponse<ProblemJson> {
-        if (log.isDebugEnabled) {
-            LogTracingUtils.loggerTracingUtils()
-                .failure()
-                .details(mapOf("exception" to exception.message.orEmpty()))
-                .logDebug(log, "Payment Method Not Found")
-        }
+
+        LogTracingUtils.loggerTracingUtils()
+            .failure()
+            .details(mapOf("exception" to exception.message.orEmpty()))
+            .logWarn(log, "Payment Method Not Found")
+
         return problemResponse(
             Response.Status.NOT_FOUND,
             NOT_FOUND_TITLE,
@@ -421,9 +422,7 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
         exception: it.pagopa.ecommerce.payment.methods.exception.MismatchedSecurityTokenException
     ): RestResponse<ProblemJson> {
 
-        LogTracingUtils.loggerTracingUtils()
-            .failure()
-            .logWithStackTrace(log, exception, "Mismatched Security Token")
+        LogTracingUtils.loggerTracingUtils().failure().logWarn(log, "Mismatched Security Token")
 
         return problemResponse(
             Response.Status.CONFLICT,

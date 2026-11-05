@@ -299,6 +299,10 @@ class LogTracingUtils private constructor() {
             addMdcKey(AttributeKeysPrivate.ERROR_TYPE.key, error.javaClass.name)
         }
 
+        this.error?.message?.let { errorMessage ->
+            addMdcKey(AttributeKeysPrivate.ERROR_MESSAGE.key, errorMessage)
+        }
+
         this.stackTrace?.let { stackTrace ->
             addMdcKey(AttributeKeysPrivate.ERROR_STACK_TRACE.key, stackTrace)
         }

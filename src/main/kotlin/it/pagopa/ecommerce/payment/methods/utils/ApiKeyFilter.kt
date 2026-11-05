@@ -31,8 +31,7 @@ class ApiKeyFilter {
             if (!isValidApiKey(apiKey)) {
                 LogTracingUtils.loggerTracingUtils()
                     .failure()
-                    .details(mapOf("path" to path))
-                    .logError(LOG, "Unauthorized request - Missing or invalid API key")
+                    .logWarn(LOG, "Unauthorized request - Missing or invalid API key")
 
                 return Response.status(Response.Status.UNAUTHORIZED).build()
             }
