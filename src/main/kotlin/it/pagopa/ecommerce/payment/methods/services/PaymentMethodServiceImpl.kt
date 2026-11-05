@@ -171,7 +171,7 @@ constructor(
         xClientId: String?,
     ): Uni<CreateSessionResponse> {
         log.info(
-            "[Payment Method handler] create new NPG session using paymentMethodId: {}",
+            "[Payment Methods Handler] Create new NPG session using paymentMethodId: {}",
             paymentMethodId,
         )
 
@@ -276,7 +276,7 @@ constructor(
         xClientId: String?,
     ): Uni<SessionPaymentMethodResponse> {
         log.info(
-            "[Payment Method handler] Retrieve card data from NPG using paymentMethodId: {} and orderId: {}",
+            "[Payment Methods Handler] Retrieve card data from NPG using paymentMethodId: {} and orderId: {}",
             paymentMethodId,
             orderId,
         )
@@ -369,7 +369,7 @@ constructor(
         xClientId: String?,
     ): Uni<Void> {
         log.info(
-            "[Payment Method handler] Update session for paymentMethodId: {} and orderId: {}",
+            "[Payment Methods Handler] Update session for paymentMethodId: {} and orderId: {}",
             paymentMethodId,
             orderId,
         )
@@ -435,7 +435,7 @@ constructor(
         xClientId: String?,
     ): Uni<String> {
         log.info(
-            "[Payment Method handler] Get transactionId for paymentMethodId: {} and orderId: {}",
+            "[Payment Methods Handler] Get transactionId for paymentMethodId: {} and orderId: {}",
             paymentMethodId,
             orderId,
         )

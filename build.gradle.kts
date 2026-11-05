@@ -155,13 +155,4 @@ configure<com.diffplug.gradle.spotless.SpotlessExtension> {
     targetExclude("build/**/*.kts")
     ktfmt().googleStyle()
   }
-  java {
-    target("**/*.java")
-    targetExclude("build/**/*")
-    eclipse().configFile("eclipse-style.xml")
-    toggleOffOn()
-    removeUnusedImports()
-    trimTrailingWhitespace()
-    endWithNewline()
-  }
 }

@@ -121,6 +121,7 @@ class PaymentMethodsClient(
             this.bundles = bundles
             asset = paymentMethodResponse.paymentMethodAsset
             brandAssets = paymentMethodResponse.paymentMethodsBrandAssets
+            paymentTypeCode = paymentMethodResponse.group
         }
     }
 
