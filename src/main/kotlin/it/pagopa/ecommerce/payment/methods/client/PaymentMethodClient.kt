@@ -298,7 +298,7 @@ class PaymentMethodsClient(
                     .success()
                     .details(mapOf("payment_method_id" to paymentMethodsId))
                     .dependency(LogTracingUtils.AFM_DEPENDENCY)
-                    .logInfo(log, "getPaymentMethod complete successfully!")
+                    .logInfo(log, "getPaymentMethod completed successfully!")
             }
             .onItem()
             .invoke { res ->
