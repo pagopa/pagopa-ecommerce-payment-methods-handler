@@ -64,11 +64,19 @@ constructor(
             .get(keyPrefix + orderId)
             .onItem()
             .invoke { session ->
-                LogTracingUtils.loggerTracingUtils()
-                    .success()
-                    .details(mapOf("session_id" to (session?.sessionId ?: "{sessionId-not-found}")))
-                    .dependency(LogTracingUtils.REDIS_DEPENDENCY)
-                    .logInfo(log, "NPG session retrieved successfully!")
+                if (session != null) {
+                    LogTracingUtils.loggerTracingUtils()
+                        .success()
+                        .details(mapOf("session_id" to session.sessionId))
+                        .dependency(LogTracingUtils.REDIS_DEPENDENCY)
+                        .logInfo(log, "NPG session retrieved successfully!")
+                } else {
+                    LogTracingUtils.loggerTracingUtils()
+                        .failure()
+                        .details(mapOf("session_id" to "{sessionId-not-found}"))
+                        .dependency(LogTracingUtils.REDIS_DEPENDENCY)
+                        .logWarn(log, "NPG session not found")
+                }
             }
             .onFailure()
             .invoke { e ->

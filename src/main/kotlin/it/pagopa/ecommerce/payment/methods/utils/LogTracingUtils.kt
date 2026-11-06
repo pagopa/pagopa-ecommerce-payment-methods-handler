@@ -19,7 +19,7 @@ import org.slf4j.event.Level
 class LogTracingUtils private constructor() {
 
     private var message: String = ""
-    private var outcome: String = ""
+    private var outcome: String = AttributeKeysPrivate.EVENT_OUTCOME.defaultValue
     private var stackTrace: String? = null
     private var error: Throwable? = null
     private val attributes: EnumMap<AttributeKeys, String> = EnumMap(AttributeKeys::class.java)
@@ -203,7 +203,7 @@ class LogTracingUtils private constructor() {
             /** MDC key for the complete error stack trace. */
             ERROR_STACK_TRACE("error.stack_trace", "{errorStackTrace-not-found}");
 
-            private val defaultValue: String?
+            val defaultValue: String
 
             init {
                 this.defaultValue = defaultValue

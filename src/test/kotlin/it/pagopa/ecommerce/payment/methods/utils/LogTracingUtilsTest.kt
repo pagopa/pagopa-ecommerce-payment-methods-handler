@@ -104,7 +104,7 @@ class LogTracingUtilsTest {
 
         assertEquals(IllegalArgumentException::class.java.name, capturingLogger.mdc["error.type"])
         assertEquals(error.stackTraceToString(), capturingLogger.mdc["error.stack_trace"])
-        assertEquals("", capturingLogger.mdc["event_outcome"])
+        assertEquals("{eventOutcome-not-found}", capturingLogger.mdc["event_outcome"])
     }
 
     @Test
