@@ -18,6 +18,7 @@ import it.pagopa.ecommerce.payment.methods.infrastructure.NpgSessionsRedisWrappe
 import it.pagopa.ecommerce.payment.methods.mappers.toPaymentMethodRequestDto
 import it.pagopa.ecommerce.payment.methods.mappers.toPaymentMethodResponse
 import it.pagopa.ecommerce.payment.methods.mappers.toPaymentMethodsResponse
+import it.pagopa.ecommerce.payment.methods.utils.LogTracingUtils
 import it.pagopa.ecommerce.payment.methods.utils.UniqueIdGenerator
 import it.pagopa.ecommerce.payment.methods.v1.server.model.CalculateFeeRequest
 import it.pagopa.ecommerce.payment.methods.v1.server.model.CalculateFeeResponse
@@ -64,14 +65,6 @@ constructor(
             .searchPaymentMethods(paymentMethodsRequest.toPaymentMethodRequestDto(), xRequestId)
             .map { dto -> dto.toPaymentMethodsResponse() }
             .map { dto -> filterMethods(paymentMethodsRequest, dto) }
-            .onFailure()
-            .invoke { exception ->
-                log.error("Exception during request with id $xRequestId", exception)
-            }
-            .onItem()
-            .invoke { _ ->
-                log.info("Payment methods retrieved successfully for request with id $xRequestId")
-            }
             .subscribeAsCompletionStage()
     }
 
@@ -116,19 +109,6 @@ constructor(
         return restClient
             .getPaymentMethod(paymentMethodsId, xRequestId, xClientId)
             .map { dto -> dto.toPaymentMethodResponse() }
-            .onFailure()
-            .invoke { exception ->
-                log.error(
-                    "Exception during request with id $xRequestId and client id $xClientId",
-                    exception,
-                )
-            }
-            .onItem()
-            .invoke { _ ->
-                log.info(
-                    "Payment method retrieved successfully for request with id $xRequestId and client id $xClientId"
-                )
-            }
             .subscribeAsCompletionStage()
     }
 
@@ -149,19 +129,6 @@ constructor(
                 xClientId,
                 xLanguage,
             )
-            .onFailure()
-            .invoke { exception ->
-                log.error(
-                    "Exception during request with id $xRequestId and client id $xClientId",
-                    exception,
-                )
-            }
-            .onItem()
-            .invoke { _ ->
-                log.info(
-                    "Bundles retrieved successfully for request with id $xRequestId and client id $xClientId"
-                )
-            }
             .subscribeAsCompletionStage()
     }
 
@@ -170,12 +137,11 @@ constructor(
         language: String?,
         xClientId: String?,
     ): Uni<CreateSessionResponse> {
-        log.info(
-            "[Payment Method handler] create new NPG session using paymentMethodId: {}",
-            paymentMethodId,
-        )
-
         val xRequestId = UUID.randomUUID().toString()
+        LogTracingUtils.enrichContext(
+            LogTracingUtils.Companion.AttributeKeys.CTX_REQUEST_ID,
+            xRequestId,
+        )
 
         return restClient
             .getPaymentMethod(paymentMethodId, xRequestId, xClientId)
@@ -200,7 +166,13 @@ constructor(
             }
             .flatMap { (orderId, paymentMethod, notificationToken) ->
                 val correlationId = UUID.randomUUID()
-                log.info("Generated correlationId for NPG build session: {}", correlationId)
+                LogTracingUtils.enrichContext(
+                    mapOf(
+                        LogTracingUtils.Companion.AttributeKeys.CORRELATION_ID to
+                            correlationId.toString(),
+                        LogTracingUtils.Companion.AttributeKeys.CTX_ORDER_ID to orderId,
+                    )
+                )
 
                 val isIoClient = "IO".equals(xClientId, ignoreCase = true)
                 val returnUrlBasePath =
@@ -275,13 +247,11 @@ constructor(
         orderId: String,
         xClientId: String?,
     ): Uni<SessionPaymentMethodResponse> {
-        log.info(
-            "[Payment Method handler] Retrieve card data from NPG using paymentMethodId: {} and orderId: {}",
-            paymentMethodId,
-            orderId,
-        )
 
         val xRequestId = UUID.randomUUID().toString()
+        LogTracingUtils.enrichContext(
+            mapOf(LogTracingUtils.Companion.AttributeKeys.CTX_REQUEST_ID to xRequestId)
+        )
 
         return restClient
             .getPaymentMethod(paymentMethodId, xRequestId, xClientId)
@@ -291,7 +261,10 @@ constructor(
             .failWith { OrderIdNotFoundException(orderId) }
             .flatMap { session ->
                 if (session!!.cardData != null) {
-                    log.info("Cache hit for orderId: {}", orderId)
+                    if (log.isDebugEnabled) {
+                        LogTracingUtils.loggerTracingUtils()
+                            .logDebug(log, "Cache hit for the specific orderId")
+                    }
                     Uni.createFrom()
                         .item(
                             SessionPaymentMethodResponse().apply {
@@ -303,8 +276,19 @@ constructor(
                             }
                         )
                 } else {
-                    log.info("Cache miss for orderId: {}", orderId)
+                    if (log.isDebugEnabled) {
+                        LogTracingUtils.loggerTracingUtils()
+                            .logDebug(log, "Cache miss for the specific orderId")
+                    }
                     val correlationId = UUID.fromString(session.correlationId)
+                    LogTracingUtils.enrichContext(
+                        mapOf(
+                            LogTracingUtils.Companion.AttributeKeys.CORRELATION_ID to
+                                session.correlationId,
+                            LogTracingUtils.Companion.AttributeKeys.CTX_TRANSACTION_ID to
+                                (session.transactionId ?: "{transactionId-not-found}"),
+                        )
+                    )
                     npgClient
                         .getCardData(correlationId, session.sessionId)
                         .flatMap { cardData ->
@@ -318,10 +302,14 @@ constructor(
                                     cardData.expiringDate.isNullOrBlank() ||
                                     cardData.circuit.isNullOrBlank()
                             ) {
-                                log.error(
-                                    "Incomplete card data received from NPG for orderId: {}",
-                                    orderId,
-                                )
+                                LogTracingUtils.loggerTracingUtils()
+                                    .failure()
+                                    .details(mapOf("session_id" to session.sessionId))
+                                    .dependency(LogTracingUtils.NPG_DEPENDENCY)
+                                    .logWarn(
+                                        log,
+                                        "Incomplete card data received from NPG for specific orderId",
+                                    )
                                 Uni.createFrom()
                                     .failure(
                                         NpgResponseException(
@@ -368,14 +356,12 @@ constructor(
         patchSessionRequest: PatchSessionRequest,
         xClientId: String?,
     ): Uni<Void> {
-        log.info(
-            "[Payment Method handler] Update session for paymentMethodId: {} and orderId: {}",
-            paymentMethodId,
-            orderId,
-        )
 
         val xRequestId = UUID.randomUUID().toString()
         val requestedTransactionId = patchSessionRequest.transactionId
+        LogTracingUtils.enrichContext(
+            mapOf(LogTracingUtils.Companion.AttributeKeys.CTX_REQUEST_ID to xRequestId)
+        )
 
         return restClient
             .getPaymentMethod(paymentMethodId, xRequestId, xClientId)
@@ -408,12 +394,16 @@ constructor(
                             NpgSessionsRedisWrapper.AssociateOutcome.CONFLICT -> {
                                 val existingTransactionId =
                                     result.existingTransactionId ?: "unknown"
-                                log.error(
-                                    "Session's transaction id ({}) differs from requested transaction id ({}) for orderId: {}",
-                                    existingTransactionId,
-                                    requestedTransactionId,
-                                    orderId,
-                                )
+                                LogTracingUtils.loggerTracingUtils()
+                                    .failure()
+                                    .details(
+                                        mapOf("existing_transaction_id" to existingTransactionId)
+                                    )
+                                    .dependency(LogTracingUtils.REDIS_DEPENDENCY)
+                                    .logWarn(
+                                        log,
+                                        "Session already associated to a different transaction",
+                                    )
                                 Uni.createFrom()
                                     .failure(
                                         SessionAlreadyAssociatedToTransactionException(
@@ -434,13 +424,12 @@ constructor(
         securityToken: String,
         xClientId: String?,
     ): Uni<String> {
-        log.info(
-            "[Payment Method handler] Get transactionId for paymentMethodId: {} and orderId: {}",
-            paymentMethodId,
-            orderId,
-        )
 
         val xRequestId = UUID.randomUUID().toString()
+        LogTracingUtils.enrichContext(
+            LogTracingUtils.Companion.AttributeKeys.CTX_REQUEST_ID,
+            xRequestId,
+        )
 
         return restClient
             .getPaymentMethod(paymentMethodId, xRequestId, xClientId)
@@ -450,10 +439,14 @@ constructor(
             .failWith { OrderIdNotFoundException(orderId) }
             .flatMap { session ->
                 val transactionId = session!!.transactionId
+                // Add the transactionId to the context
+                LogTracingUtils.enrichContext(
+                    LogTracingUtils.Companion.AttributeKeys.CTX_TRANSACTION_ID,
+                    transactionId,
+                )
                 if (transactionId == null) {
                     Uni.createFrom().failure(InvalidSessionException(orderId))
                 } else if (session.securityToken != securityToken) {
-                    log.warn("Invalid security token for requested order id {}", orderId)
                     Uni.createFrom()
                         .failure(MismatchedSecurityTokenException(orderId, transactionId))
                 } else {
