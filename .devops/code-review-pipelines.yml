@@ -14,7 +14,7 @@ resources:
     - repository: pagopaEcommerceLocal
       type: github
       name: pagopa/pagopa-ecommerce-local
-      ref: PIDM-2507-porting-handler-tests # TODO: RESTORE BEFORE MERGE
+      ref: main
       endpoint: 'io-azure-devops-github-ro'
 
 stages:

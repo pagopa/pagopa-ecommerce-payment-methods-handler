@@ -2,6 +2,7 @@ package it.pagopa.ecommerce.payment.methods.client
 
 import io.smallrye.mutiny.Uni
 import it.pagopa.ecommerce.payment.methods.exception.NpgResponseException
+import it.pagopa.ecommerce.payment.methods.utils.LogTracingUtils
 import it.pagopa.ecommerce.payment.methods.v1.server.model.NpgBuildFormParams
 import it.pagopa.generated.npg.client.api.PaymentServicesApi
 import it.pagopa.generated.npg.client.model.ActionTypeDto
@@ -31,12 +32,6 @@ constructor(
     private val defaultLanguage = "ITA"
 
     fun buildForm(params: NpgBuildFormParams): Uni<FieldsDto> {
-        log.info(
-            "Calling NPG buildForm with correlationId={}, orderId={}, paymentMethod={}",
-            params.correlationId,
-            params.orderId,
-            params.paymentMethod,
-        )
 
         val npgLanguage =
             params.language?.let { langMap.getOrDefault(it, defaultLanguage) } ?: defaultLanguage
@@ -74,9 +69,19 @@ constructor(
                 }
                 response
             }
+            .onItem()
+            .invoke { _ ->
+                LogTracingUtils.loggerTracingUtils()
+                    .success()
+                    .dependency(LogTracingUtils.NPG_DEPENDENCY)
+                    .logInfo(log, "NPG buildForm called successfully!")
+            }
             .onFailure()
             .invoke { e ->
-                log.error("Error calling NPG buildForm for orderId=${params.orderId}", e)
+                LogTracingUtils.loggerTracingUtils()
+                    .failure()
+                    .dependency(LogTracingUtils.NPG_DEPENDENCY)
+                    .logWithStackTrace(log, e, "Error calling NPG buildForm")
             }
             .onFailure()
             .transform { e ->
@@ -91,16 +96,24 @@ constructor(
     }
 
     fun getCardData(correlationId: UUID, sessionId: String): Uni<CardDataResponseDto> {
-        log.info(
-            "Calling NPG getCardData with correlationId={}, sessionId={}",
-            correlationId,
-            sessionId,
-        )
-
         return npgRestClient
             .pspApiV1BuildCardDataGet(correlationId, sessionId, npgDefaultApiKey)
+            .onItem()
+            .invoke { _ ->
+                LogTracingUtils.loggerTracingUtils()
+                    .success()
+                    .details(mapOf("session_id" to sessionId))
+                    .dependency(LogTracingUtils.NPG_DEPENDENCY)
+                    .logInfo(log, "NPG getCardData called successfully!")
+            }
             .onFailure()
-            .invoke { e -> log.error("Error calling NPG getCardData for sessionId=$sessionId", e) }
+            .invoke { e ->
+                LogTracingUtils.loggerTracingUtils()
+                    .failure()
+                    .details(mapOf("session_id" to sessionId))
+                    .dependency(LogTracingUtils.NPG_DEPENDENCY)
+                    .logWithStackTrace(log, e, "Error calling NPG getCardData")
+            }
             .onFailure()
             .transform { e ->
                 if (e is NpgResponseException) {

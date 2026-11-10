@@ -42,6 +42,7 @@ dependencies {
   implementation("io.quarkus:quarkus-cache")
   implementation("io.quarkus:quarkus-smallrye-openapi")
   implementation("io.quarkus:quarkus-redis-client")
+  implementation("io.quarkus:quarkus-smallrye-context-propagation")
   testImplementation("com.fasterxml.jackson.module:jackson-module-kotlin")
   testImplementation("io.quarkus:quarkus-junit5")
   testImplementation("io.quarkus:quarkus-junit5-mockito")
@@ -56,7 +57,7 @@ dependencies {
 
 group = "it.pagopa.ecommerce"
 
-version = "1.10.0-SNAPSHOT"
+version = "1.11.0-SNAPSHOT"
 
 java {
   sourceCompatibility = JavaVersion.VERSION_21
