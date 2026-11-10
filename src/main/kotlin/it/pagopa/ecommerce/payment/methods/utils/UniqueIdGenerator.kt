@@ -50,18 +50,23 @@ constructor(private val uniqueIdRedisWrapper: UniqueIdRedisWrapper) {
             // (onErrorResume -> retry). This runs before the recursive call, so a
             // UniqueIdGenerationException coming from an exhausted retry is never swallowed here.
             .onFailure()
-            .recoverWithItem { e ->
-                log.error(
-                    "Error saving unique id on attempt $attempt for id=$uniqueId, retrying...",
-                    e,
-                )
+            .recoverWithItem { _ ->
+                LogTracingUtils.loggerTracingUtils()
+                    .failure()
+                    .dependency(LogTracingUtils.REDIS_DEPENDENCY)
+                    .details(mapOf("attempt" to attempt.toString(), "unique_id" to uniqueId))
+                    .logWarn(log, "Error saving unique id, retrying.")
                 false
             }
             .flatMap { wasSet ->
                 if (wasSet) {
+                    LogTracingUtils.loggerTracingUtils()
+                        .success()
+                        .details(mapOf("attempt" to attempt.toString(), "unique_id" to uniqueId))
+                        .dependency(LogTracingUtils.REDIS_DEPENDENCY)
+                        .logInfo(log, "Unique id saved successfully!")
                     Uni.createFrom().item(uniqueId)
                 } else {
-                    log.warn("UniqueId collision on attempt $attempt for id=$uniqueId, retrying...")
                     tryGenerate(attempt + 1)
                 }
             }
