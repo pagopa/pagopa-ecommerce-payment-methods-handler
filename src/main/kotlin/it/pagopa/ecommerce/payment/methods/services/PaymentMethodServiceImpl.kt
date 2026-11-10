@@ -137,11 +137,6 @@ constructor(
         language: String?,
         xClientId: String?,
     ): Uni<CreateSessionResponse> {
-        log.info(
-            "[Payment Methods Handler] Create new NPG session using paymentMethodId: {}",
-            paymentMethodId,
-        )
-
         val xRequestId = UUID.randomUUID().toString()
         LogTracingUtils.enrichContext(
             LogTracingUtils.Companion.AttributeKeys.CTX_REQUEST_ID,
@@ -252,12 +247,6 @@ constructor(
         orderId: String,
         xClientId: String?,
     ): Uni<SessionPaymentMethodResponse> {
-        log.info(
-            "[Payment Methods Handler] Retrieve card data from NPG using paymentMethodId: {} and orderId: {}",
-            paymentMethodId,
-            orderId,
-        )
-
         val xRequestId = UUID.randomUUID().toString()
         LogTracingUtils.enrichContext(
             mapOf(LogTracingUtils.Companion.AttributeKeys.CTX_REQUEST_ID to xRequestId)
@@ -366,12 +355,6 @@ constructor(
         patchSessionRequest: PatchSessionRequest,
         xClientId: String?,
     ): Uni<Void> {
-        log.info(
-            "[Payment Methods Handler] Update session for paymentMethodId: {} and orderId: {}",
-            paymentMethodId,
-            orderId,
-        )
-
         val xRequestId = UUID.randomUUID().toString()
         val requestedTransactionId = patchSessionRequest.transactionId
         LogTracingUtils.enrichContext(
@@ -439,12 +422,6 @@ constructor(
         securityToken: String,
         xClientId: String?,
     ): Uni<String> {
-        log.info(
-            "[Payment Methods Handler] Get transactionId for paymentMethodId: {} and orderId: {}",
-            paymentMethodId,
-            orderId,
-        )
-
         val xRequestId = UUID.randomUUID().toString()
         LogTracingUtils.enrichContext(
             LogTracingUtils.Companion.AttributeKeys.CTX_REQUEST_ID,

@@ -50,17 +50,6 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
         xLanguage: String?,
     ): CompletionStage<CalculateFeeResponse> {
         val language = xLanguage ?: "IT"
-        log.info(
-            "[Payment Method] Retrieve bundles for client [{}] list for payment method: [{}], allCcp: [{}], isMulti: [{}] and payment notice amounts: {}",
-            xClientId,
-            paymentMethodId,
-            calculateFeeRequest.isAllCCP,
-            calculateFeeRequest.paymentNotices.size > 1,
-            calculateFeeRequest.paymentNotices
-                .stream()
-                .map { paymentNotice -> paymentNotice.paymentAmount }
-                .toList(),
-        )
         val xRequestId = UUID.randomUUID().toString()
         // Add the details to the context for logging purposes, so that it can be propagated to
         // downstream services and included in log messages.
