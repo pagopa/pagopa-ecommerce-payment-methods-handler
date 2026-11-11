@@ -884,6 +884,7 @@ components:
         - paymentMethodStatus
         - paymentMethodDescription
         - asset
+        - paymentTypeCode
     Bundle:
       description: Bundle object
       type: object

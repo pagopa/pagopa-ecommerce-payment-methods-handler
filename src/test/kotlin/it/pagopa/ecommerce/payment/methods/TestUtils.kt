@@ -58,6 +58,7 @@ class TestUtils {
                     CalculateFeeResponse.PaymentMethodStatusEnum.ENABLED,
                     listOf(),
                     "asset-url",
+                    "CP",
                 )
                 .apply {
                     belowThreshold = false
