@@ -793,13 +793,13 @@
 			"response": []
 		},
 		{
-			"name": "Calculate Fees for Payment Method (Missing x-language) [400]",
+			"name": "Calculate Fees for Payment Method (Missing x-language) [200]",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code is 200 \", function () {",
+							"pm.test(\"Status code is 200 OK when x-language is missing (defaults to IT)\", function () {",
 							"    pm.response.to.have.status(200);",
 							"});"
 						],

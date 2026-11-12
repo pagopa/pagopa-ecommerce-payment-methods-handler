@@ -45,11 +45,11 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
     override fun calculateFees(
         paymentMethodId: String,
         xClientId: @NotNull String,
-        xLanguage: @NotNull String,
         calculateFeeRequest: @Valid @NotNull CalculateFeeRequest,
         maxOccurrences: Int?,
+        xLanguage: String?,
     ): CompletionStage<CalculateFeeResponse> {
-
+        val language = xLanguage ?: "IT"
         val xRequestId = UUID.randomUUID().toString()
         // Add the details to the context for logging purposes, so that it can be propagated to
         // downstream services and included in log messages.
@@ -65,7 +65,7 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
             calculateFeeRequest,
             xRequestId,
             xClientId,
-            xLanguage,
+            language,
             maxOccurrences ?: Int.MAX_VALUE,
         )
     }
