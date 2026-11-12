@@ -68,7 +68,7 @@ class PaymentMethodsClient(
                     .details(
                         mapOf(
                             "user_touchpoint" to requestDto.userTouchpoint.toString(),
-                            "user_device" to requestDto.userDevice.toString(),
+                            "user_device" to (requestDto.userDevice?.toString() ?: "null"),
                             "payment_notices_count" to requestDto.paymentNotice.size.toString(),
                         )
                     )

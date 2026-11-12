@@ -370,17 +370,8 @@
 				},
 				"method": "GET",
 				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"userTouchpoint\": \"IO\",\n    \"userDevice\": \"WEB\",\n    \"totalAmount\": 15050,\n    \"paymentNotice\": [\n        {\n            \"paymentAmount\": 15050,\n            \"primaryCreditorInstitution\": \"PA_FISCAL_CODE_1\",\n            \"transferList\": [\n                {\n                    \"creditorInstitution\": \"PA_FISCAL_CODE_1\",\n                    \"transferCategory\": \"TAX\",\n                    \"digitalStamp\": false\n                }\n            ]\n        }\n    ],\n    \"allCCp\": false\n }",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
 				"url": {
-					"raw": "{{baseUrlV2}}/payment-methods?amount=12000",
+					"raw": "{{baseUrlV2}}/payment-methods?amount=12000&devicePlatform=WEB",
 					"host": [
 						"{{baseUrlV2}}"
 					],
@@ -391,15 +382,19 @@
 						{
 							"key": "amount",
 							"value": "12000"
-						}
+						},
+                        {
+                          "key": "devicePlatform",
+                          "value": "WEB"
+                        }
 					]
 				},
-				"description": "GET with request body, no resource will be created: API for retrieve payment method using the request query parameter filters"
+				"description": "GET with query parameters 'amount' and 'devicePlatform', no resource will be created: API for retrieve payment method using the request query parameter filters"
 			},
 			"response": []
 		},
 		{
-			"name": "Retrieve all Payment Methods V2 (no amount)",
+			"name": "Retrieve all Payment Methods V2 (no amount) - uses policy default value",
 			"event": [
 				{
 					"listen": "test",
@@ -465,15 +460,6 @@
 				},
 				"method": "GET",
 				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"userTouchpoint\": \"IO\",\n    \"userDevice\": \"WEB\",\n    \"totalAmount\": 15050,\n    \"paymentNotice\": [\n        {\n            \"paymentAmount\": 15050,\n            \"primaryCreditorInstitution\": \"PA_FISCAL_CODE_1\",\n            \"transferList\": [\n                {\n                    \"creditorInstitution\": \"PA_FISCAL_CODE_1\",\n                    \"transferCategory\": \"TAX\",\n                    \"digitalStamp\": false\n                }\n            ]\n        }\n    ],\n    \"allCCp\": false\n }",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
 				"url": {
 					"raw": "{{baseUrlV2}}/payment-methods",
 					"host": [
@@ -483,7 +469,7 @@
 						"payment-methods"
 					]
 				},
-				"description": "GET with request body, no resource will be created: API for retrieve payment method using the request query parameter filters"
+				"description": "GET without query parameters, no resource will be created: API for retrieve payment method using the request query parameter filters"
 			},
 			"response": []
 		},
