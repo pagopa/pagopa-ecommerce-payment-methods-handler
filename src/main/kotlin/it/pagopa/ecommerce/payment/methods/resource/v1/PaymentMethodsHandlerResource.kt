@@ -183,11 +183,27 @@ constructor(private val paymentMethodService: PaymentMethodService) : PaymentMet
                     .SessionGetTransactionIdResponse()
                     .apply {
                         this.transactionId = transactionId
-                        this.base64TransactionId = uuidToBase64(UUID.fromString(transactionId))
+                        this.base64TransactionId = uuidToBase64(parseTransactionId(transactionId))
                     }
             }
             .subscribeAsCompletionStage()
     }
+
+    /**
+     * Parses a transaction id as UUID. The transactions-service stores ids as 32 hex characters
+     * without dashes (ecommerce-commons TransactionId), which [UUID.fromString] rejects, so the
+     * dashes are restored when missing. Dashed ids are accepted as they are.
+     */
+    private fun parseTransactionId(transactionId: String): UUID =
+        if (transactionId.length == 32) {
+            UUID.fromString(
+                "${transactionId.substring(0, 8)}-${transactionId.substring(8, 12)}-" +
+                    "${transactionId.substring(12, 16)}-${transactionId.substring(16, 20)}-" +
+                    transactionId.substring(20)
+            )
+        } else {
+            UUID.fromString(transactionId)
+        }
 
     /**
      * Encodes a UUID into a shorter, reversible Base64 URL-safe string, encoding the 16 raw bytes
