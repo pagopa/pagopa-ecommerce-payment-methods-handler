@@ -77,6 +77,7 @@ microservice-chart:
       maxSurge: 2
       maxUnavailable: 0
   envConfig:
+    JAVA_OPTS: "-XX:-UseBASE64Intrinsics"
     ROOT_LOG_LEVEL: INFO
     OTEL_RESOURCE_ATTRIBUTES: "service.name=pagopa-ecommerce-payment-methods-handler,deployment.environment=prod"
     OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector.elastic-system.svc:4317"
