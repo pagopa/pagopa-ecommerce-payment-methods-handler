@@ -127,9 +127,7 @@ class PaymentMethodsClient(
         localizedMap: Map<String, String>?,
         language: String,
     ): String? =
-        localizedMap?.get(language)
-            ?: localizedMap?.get(DEFAULT_LOCALIZED_KEY)
-            ?: localizedMap?.values?.firstOrNull()
+        localizedMap?.let { it[language] ?: it[DEFAULT_LOCALIZED_KEY] ?: it.values.firstOrNull() }
 
     private fun bundleOptionToResponse(
         paymentMethodResponse: PaymentMethodResponseDto,

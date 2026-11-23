@@ -872,8 +872,8 @@ class PaymentMethodsClientTest {
     }
 
     private fun calculateFeesWithLocalizedMaps(
-        names: Map<String, String>,
-        descriptions: Map<String, String>,
+        names: Map<String, String>?,
+        descriptions: Map<String, String>?,
         language: String,
     ): it.pagopa.ecommerce.payment.methods.v1.server.model.CalculateFeeResponse {
         val methodId = "test-id"
@@ -972,6 +972,14 @@ class PaymentMethodsClientTest {
 
         assertEquals("Cards", response.paymentMethodName)
         assertEquals("Description", response.paymentMethodDescription)
+    }
+
+    @Test
+    fun `should return null name and description when localized maps are null`() {
+        val response = calculateFeesWithLocalizedMaps(null, null, "IT")
+
+        assertEquals(null, response.paymentMethodName)
+        assertEquals(null, response.paymentMethodDescription)
     }
 
     @Test

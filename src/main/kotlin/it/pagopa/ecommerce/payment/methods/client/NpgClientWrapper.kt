@@ -33,9 +33,7 @@ constructor(
 
     fun buildForm(params: NpgBuildFormParams): Uni<FieldsDto> {
 
-        val npgLanguage =
-            params.language?.let { langMap.getOrDefault(it.lowercase(), defaultLanguage) }
-                ?: defaultLanguage
+        val npgLanguage = params.language?.let { langMap[it.lowercase()] } ?: defaultLanguage
 
         val request =
             CreateHostedOrderRequestDto().apply {
