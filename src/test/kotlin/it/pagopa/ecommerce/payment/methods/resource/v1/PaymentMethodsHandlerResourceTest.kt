@@ -871,17 +871,13 @@ class PaymentMethodsHandlerResourceTest {
     }
 
     @Test
-    fun `should return 200 and base64 encoded transactionId on successful getTransactionIdForSession`() {
+    fun `should return 200 and transactionId on successful getTransactionIdForSession`() {
         val rawTransactionId = "550e8400-e29b-41d4-a716-446655440000"
-        val expectedBase64Url = "VQ6EAOKbQdSnFkRmVUQAAA"
 
         val expectedBody =
             it.pagopa.ecommerce.payment.methods.v1.server.model
                 .SessionGetTransactionIdResponse()
-                .apply {
-                    this.transactionId = rawTransactionId
-                    this.base64TransactionId = expectedBase64Url
-                }
+                .apply { this.transactionId = rawTransactionId }
 
         setupCreateSessionMocks()
         whenever(mockNpgSessionsRedis.findById(anyOrNull()))
@@ -920,17 +916,14 @@ class PaymentMethodsHandlerResourceTest {
     }
 
     @Test
-    fun `should return 200 when getTransactionIdForSession stored transactionId has no dashes`() {
-        // same UUID as the dashed test, in the format saved by the transactions-service
+    fun `should return transactionId as stored when getTransactionIdForSession id has no dashes`() {
+        // format saved by the transactions-service (32 chars, no dashes): returned untouched
         val rawTransactionId = "550e8400e29b41d4a716446655440000"
 
         val expectedBody =
             it.pagopa.ecommerce.payment.methods.v1.server.model
                 .SessionGetTransactionIdResponse()
-                .apply {
-                    this.transactionId = rawTransactionId
-                    this.base64TransactionId = "VQ6EAOKbQdSnFkRmVUQAAA"
-                }
+                .apply { this.transactionId = rawTransactionId }
 
         setupCreateSessionMocks()
         whenever(mockNpgSessionsRedis.findById(anyOrNull()))

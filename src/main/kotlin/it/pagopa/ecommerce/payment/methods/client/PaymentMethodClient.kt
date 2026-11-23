@@ -33,6 +33,10 @@ class PaymentMethodsClient(
 
     private val log = LoggerFactory.getLogger(PaymentMethodsClient::class.java)
 
+    private companion object {
+        const val DEFAULT_LOCALIZED_KEY = "IT"
+    }
+
     fun searchPaymentMethods(
         requestDto: PaymentMethodRequestDto,
         xRequestId: String,
@@ -115,6 +119,18 @@ class PaymentMethodsClient(
         return BundleOptions.removeDuplicatePsp(bundle)
     }
 
+    /**
+     * Resolves a localized value from an AFM localized map (keys are upper case language codes).
+     * Falls back to the IT value and then to the first available one, or null if the map is empty.
+     */
+    private fun resolveLocalizedValue(
+        localizedMap: Map<String, String>?,
+        language: String,
+    ): String? =
+        localizedMap?.get(language)
+            ?: localizedMap?.get(DEFAULT_LOCALIZED_KEY)
+            ?: localizedMap?.values?.firstOrNull()
+
     private fun bundleOptionToResponse(
         paymentMethodResponse: PaymentMethodResponseDto,
         bundle: BundleOptionDto,
@@ -141,8 +157,9 @@ class PaymentMethodsClient(
 
         return CalculateFeeResponse().apply {
             belowThreshold = bundle.belowThreshold
-            paymentMethodName = paymentMethodResponse.name[language]
-            paymentMethodDescription = paymentMethodResponse.description[language]
+            paymentMethodName = resolveLocalizedValue(paymentMethodResponse.name, language)
+            paymentMethodDescription =
+                resolveLocalizedValue(paymentMethodResponse.description, language)
             paymentMethodStatus =
                 CalculateFeeResponse.PaymentMethodStatusEnum.valueOf(
                     paymentMethodResponse.status.name

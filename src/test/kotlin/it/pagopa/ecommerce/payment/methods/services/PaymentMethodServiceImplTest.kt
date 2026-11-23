@@ -871,6 +871,117 @@ class PaymentMethodsClientTest {
         response.bundles?.forEach { assertEquals("CP", it.paymentMethod) }
     }
 
+    private fun calculateFeesWithLocalizedMaps(
+        names: Map<String, String>,
+        descriptions: Map<String, String>,
+        language: String,
+    ): it.pagopa.ecommerce.payment.methods.v1.server.model.CalculateFeeResponse {
+        val methodId = "test-id"
+        whenever(mockApi.getPaymentMethod(methodId, "test-id"))
+            .thenReturn(
+                Uni.createFrom().item {
+                    PaymentMethodResponseDto().apply {
+                        paymentMethodId = methodId
+                        userTouchpoint =
+                            listOf(PaymentMethodResponseDto.UserTouchpointEnum.CHECKOUT)
+                        status = PaymentMethodResponseDto.StatusEnum.ENABLED
+                        group = "CP"
+                        name = names
+                        description = descriptions
+                    }
+                }
+            )
+        whenever(
+                calculatorMockApi.getFeesMulti(
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                )
+            )
+            .thenReturn(
+                Uni.createFrom().item {
+                    BundleOptionDto().apply {
+                        bundleOptions =
+                            listOf(
+                                TransferDto().apply {
+                                    idPsp = "psp-1"
+                                    taxPayerFee = 100L
+                                    bundleName = "bundle"
+                                    abi = "abi"
+                                    idBundle = "bundle-id"
+                                    idChannel = "channel"
+                                    idBrokerPsp = "broker"
+                                    onUs = false
+                                    touchpoint = "CHECKOUT"
+                                    pspBusinessName = "PSP Name"
+                                }
+                            )
+                    }
+                }
+            )
+        return client
+            .calculateFees(
+                methodId,
+                TestUtils.buildCalculateFeeRequest(),
+                10,
+                "test-id",
+                "CHECKOUT",
+                language,
+            )
+            .await()
+            .indefinitely()
+    }
+
+    @Test
+    fun `should return name and description in the requested language`() {
+        val response =
+            calculateFeesWithLocalizedMaps(
+                mapOf("IT" to "Carte", "EN" to "Cards"),
+                mapOf("IT" to "Descrizione", "EN" to "Description"),
+                "EN",
+            )
+
+        assertEquals("Cards", response.paymentMethodName)
+        assertEquals("Description", response.paymentMethodDescription)
+    }
+
+    @Test
+    fun `should fall back to IT name and description when requested language is missing`() {
+        val response =
+            calculateFeesWithLocalizedMaps(
+                mapOf("IT" to "Carte", "EN" to "Cards"),
+                mapOf("IT" to "Descrizione", "EN" to "Description"),
+                "FR",
+            )
+
+        assertEquals("Carte", response.paymentMethodName)
+        assertEquals("Descrizione", response.paymentMethodDescription)
+    }
+
+    @Test
+    fun `should fall back to first available name and description when IT is missing`() {
+        val response =
+            calculateFeesWithLocalizedMaps(
+                mapOf("EN" to "Cards"),
+                mapOf("EN" to "Description"),
+                "FR",
+            )
+
+        assertEquals("Cards", response.paymentMethodName)
+        assertEquals("Description", response.paymentMethodDescription)
+    }
+
+    @Test
+    fun `should return null name and description when localized maps are empty`() {
+        val response = calculateFeesWithLocalizedMaps(emptyMap(), emptyMap(), "IT")
+
+        assertEquals(null, response.paymentMethodName)
+        assertEquals(null, response.paymentMethodDescription)
+    }
+
     @Test
     fun `should throw NoBundleFoundException with cause when no bundles are returned`() {
         val methodId = "test-id"
