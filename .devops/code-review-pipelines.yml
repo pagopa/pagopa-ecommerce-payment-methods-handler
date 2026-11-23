@@ -14,7 +14,7 @@ resources:
     - repository: pagopaEcommerceLocal
       type: github
       name: pagopa/pagopa-ecommerce-local
-      ref: main
+      ref: PIDM-2615-remove-base64-transaction-id-handler #TODO: REMOVE BEFORE MERGE
       endpoint: 'io-azure-devops-github-ro'
 
 stages:
