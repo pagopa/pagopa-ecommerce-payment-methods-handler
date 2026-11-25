@@ -871,17 +871,59 @@ class PaymentMethodsHandlerResourceTest {
     }
 
     @Test
-    fun `should return 200 and base64 encoded transactionId on successful getTransactionIdForSession`() {
+    fun `should return 200 and transactionId on successful getTransactionIdForSession`() {
         val rawTransactionId = "550e8400-e29b-41d4-a716-446655440000"
-        val expectedBase64Url = "VQ6EAOKbQdSnFkRmVUQAAA"
 
         val expectedBody =
             it.pagopa.ecommerce.payment.methods.v1.server.model
                 .SessionGetTransactionIdResponse()
-                .apply {
-                    this.transactionId = rawTransactionId
-                    this.base64TransactionId = expectedBase64Url
-                }
+                .apply { this.transactionId = rawTransactionId }
+
+        setupCreateSessionMocks()
+        whenever(mockNpgSessionsRedis.findById(anyOrNull()))
+            .thenReturn(
+                Uni.createFrom()
+                    .item(
+                        NpgSessionDocument(
+                            testOrderId,
+                            "550e8400-e29b-41d4-a716-446655440000",
+                            "npg-session-123",
+                            "valid-token",
+                            null,
+                            rawTransactionId,
+                        )
+                    )
+            )
+
+        val result =
+            RestAssured.given()
+                .header("x-api-key", "test-primary")
+                .header("x-client-id", "CHECKOUT")
+                .header("Authorization", "Bearer valid-token")
+                .contentType(ContentType.JSON)
+                .`when`()
+                .get("/payment-methods/pm-123/sessions/$testOrderId/transactionId")
+                .then()
+                .statusCode(200)
+                .extract()
+                .`as`(
+                    it.pagopa.ecommerce.payment.methods.v1.server.model
+                            .SessionGetTransactionIdResponse::class
+                        .java
+                )
+
+        assertEquals(expectedBody, result)
+    }
+
+    @Test
+    fun `should return transactionId as stored when getTransactionIdForSession id has no dashes`() {
+        // format saved by the transactions-service (32 chars, no dashes): returned untouched
+        val rawTransactionId = "550e8400e29b41d4a716446655440000"
+
+        val expectedBody =
+            it.pagopa.ecommerce.payment.methods.v1.server.model
+                .SessionGetTransactionIdResponse()
+                .apply { this.transactionId = rawTransactionId }
 
         setupCreateSessionMocks()
         whenever(mockNpgSessionsRedis.findById(anyOrNull()))

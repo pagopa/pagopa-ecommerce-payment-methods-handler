@@ -6,6 +6,7 @@ import it.pagopa.ecommerce.payment.methods.v1.server.model.NpgBuildFormParams
 import it.pagopa.ecommerce.payment.methods.v1.server.model.NpgSessionUrls
 import it.pagopa.generated.npg.client.api.PaymentServicesApi
 import it.pagopa.generated.npg.client.model.CardDataResponseDto
+import it.pagopa.generated.npg.client.model.CreateHostedOrderRequestDto
 import it.pagopa.generated.npg.client.model.FieldDto
 import it.pagopa.generated.npg.client.model.FieldsDto
 import java.net.URI
@@ -14,7 +15,10 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -159,6 +163,40 @@ class NpgClientWrapperTest {
         val result = npgClientWrapper.buildForm(buildParams(language = "xx")).await().indefinitely()
 
         assertEquals("session-123", result.sessionId)
+    }
+
+    private fun buildFormAndCaptureNpgLanguage(language: String?): String? {
+        doReturn(Uni.createFrom().item(buildFieldsDto()))
+            .whenever(npgRestClient)
+            .pspApiV1OrdersBuildPost(any(), any(), any())
+
+        npgClientWrapper.buildForm(buildParams(language = language)).await().indefinitely()
+
+        val captor = argumentCaptor<CreateHostedOrderRequestDto>()
+        verify(npgRestClient).pspApiV1OrdersBuildPost(any(), any(), captor.capture())
+        return captor.firstValue.paymentSession.language
+    }
+
+    @ParameterizedTest
+    @CsvSource("it,ITA", "fr,FRA", "de,DEU", "sl,SLV", "en,ENG")
+    fun `should map lower case language to NPG language`(language: String, expected: String) {
+        assertEquals(expected, buildFormAndCaptureNpgLanguage(language))
+    }
+
+    @ParameterizedTest
+    @CsvSource("IT,ITA", "FR,FRA", "De,DEU", "SL,SLV", "EN,ENG")
+    fun `should map language to NPG language ignoring case`(language: String, expected: String) {
+        assertEquals(expected, buildFormAndCaptureNpgLanguage(language))
+    }
+
+    @Test
+    fun `should send default NPG language when language is unknown`() {
+        assertEquals("ITA", buildFormAndCaptureNpgLanguage("xx"))
+    }
+
+    @Test
+    fun `should send default NPG language when language is null`() {
+        assertEquals("ITA", buildFormAndCaptureNpgLanguage(null))
     }
 
     @Test
